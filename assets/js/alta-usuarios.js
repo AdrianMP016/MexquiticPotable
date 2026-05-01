@@ -3825,19 +3825,19 @@ $(function () {
     cargarComboRutas($("#editRuta"), comunidadIdPorNombre($(this).val()));
   });
 
-  $("#btnRecargarMedidores").on("click", function () {
+  $(document).on("click", "#btnRecargarMedidores", function () {
     $("#buscarMedidorListado").val("");
     $("#medidoresCampoBusqueda").val("todos");
     medidoresPaginaActual = 1;
     cargarMedidores(1);
   });
 
-  $("#btnBuscarMedidores").on("click", function () {
+  $(document).on("click", "#btnBuscarMedidores", function () {
     medidoresPaginaActual = 1;
     cargarMedidores(1);
   });
 
-  $("#btnLimpiarBusquedaMedidores").on("click", function () {
+  $(document).on("click", "#btnLimpiarBusquedaMedidores", function () {
     $("#buscarMedidorListado").val("");
     $("#medidoresCampoBusqueda").val("todos");
     medidoresPaginaActual = 1;
