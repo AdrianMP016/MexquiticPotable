@@ -11,7 +11,7 @@ class UsuariosSistema
         $this->db = $db;
     }
 
-    public function listar(string $termino = '', int $page = 1, int $perPage = 20): array
+    public function listar(string $termino = '', int $page = 1, int $perPage = 25): array
     {
         $page = max(1, $page);
         $perPage = (int) $perPage;

@@ -47,11 +47,15 @@ class Pagos
 
     public function recibosPorUsuario(int $usuarioId): array
     {
-        return $this->recibos($usuarioId);
+        $data = $this->recibos($usuarioId, 1, 0);
+        return $data['recibos'] ?? [];
     }
 
-    public function recibos(int $usuarioId = 0): array
+    public function recibos(int $usuarioId = 0, int $page = 1, int $perPage = 25): array
     {
+        $page = max(1, $page);
+        $perPage = (int) $perPage;
+        $allowAll = $perPage <= 0;
         $params = [];
         $where = '';
 
@@ -104,12 +108,37 @@ class Pagos
         );
         $stmt->execute($params);
 
-        return array_map(function (array $row): array {
+        $recibos = array_map(function (array $row): array {
             $row['saldo'] = max((float) $row['total'] - (float) $row['total_pagado'], 0);
             $row['estado_pago'] = $this->estadoPago((float) $row['total'], (float) $row['total_pagado'], (string) $row['estado_recibo']);
             $row['recibo_entregado'] = (int) ($row['recibo_entregado'] ?? 0);
             return $row;
         }, $stmt->fetchAll());
+
+        $total = count($recibos);
+        if ($allowAll) {
+            $effectivePerPage = $total > 0 ? $total : 1;
+        } else {
+            $effectivePerPage = max(1, min($perPage, 500));
+        }
+
+        $totalPages = $total > 0 ? (int) ceil($total / $effectivePerPage) : 1;
+        $page = min($page, $totalPages);
+        $offset = ($page - 1) * $effectivePerPage;
+        $pagedRecibos = $allowAll ? $recibos : array_slice($recibos, $offset, $effectivePerPage);
+
+        return [
+            'recibos' => $pagedRecibos,
+            'pagination' => [
+                'page' => $page,
+                'per_page' => $allowAll ? 0 : $effectivePerPage,
+                'effective_per_page' => $effectivePerPage,
+                'total' => $total,
+                'total_pages' => $totalPages,
+                'from' => $total > 0 ? $offset + 1 : 0,
+                'to' => $total > 0 ? $offset + count($pagedRecibos) : 0,
+            ],
+        ];
     }
 
     public function obtenerRecibo(int $reciboId): array

@@ -22,8 +22,11 @@ class Recibos
         $this->qrSecret = (string) (getenv('MEXQUITIC_QR_SECRET') ?: 'mexquitic-agua-qr-2026-v1');
     }
 
-    public function listarLecturas(string $termino = '', string $estadoCobro = '', int $periodoId = 0): array
+    public function listarLecturas(string $termino = '', string $estadoCobro = '', int $periodoId = 0, int $page = 1, int $perPage = 25): array
     {
+        $page = max(1, $page);
+        $perPage = (int) $perPage;
+        $allowAll = $perPage <= 0;
         $params = [];
         $conditions = [];
 
@@ -98,13 +101,53 @@ class Recibos
         $estadoCobro = $this->normalizarFiltroEstadoCobro($estadoCobro);
         $rows = array_map(fn (array $row): array => $this->enriquecerEstadoCobro($row), $stmt->fetchAll());
 
-        if ($estadoCobro === '') {
-            return $rows;
+        if ($estadoCobro !== '') {
+            $rows = array_values(array_filter($rows, function (array $row) use ($estadoCobro): bool {
+            return ($row['estado_cobro'] ?? '') === $estadoCobro;
+            }));
         }
 
-        return array_values(array_filter($rows, function (array $row) use ($estadoCobro): bool {
-            return ($row['estado_cobro'] ?? '') === $estadoCobro;
-        }));
+        $summary = [
+            'adeudo' => 0,
+            'pendiente' => 0,
+            'parcial' => 0,
+            'pagado' => 0,
+            'sin_recibo' => 0,
+        ];
+
+        foreach ($rows as $row) {
+            $estado = (string) ($row['estado_cobro'] ?? 'sin_recibo');
+            if (!array_key_exists($estado, $summary)) {
+                $summary[$estado] = 0;
+            }
+            $summary[$estado]++;
+        }
+
+        $total = count($rows);
+        if ($allowAll) {
+            $effectivePerPage = $total > 0 ? $total : 1;
+        } else {
+            $effectivePerPage = max(1, min($perPage, 500));
+        }
+
+        $totalPages = $total > 0 ? (int) ceil($total / $effectivePerPage) : 1;
+        $page = min($page, $totalPages);
+        $offset = ($page - 1) * $effectivePerPage;
+        $lecturas = $allowAll ? $rows : array_slice($rows, $offset, $effectivePerPage);
+
+        return [
+            'lecturas' => $lecturas,
+            'summary' => $summary,
+            'pagination' => [
+                'page' => $page,
+                'per_page' => $allowAll ? 0 : $effectivePerPage,
+                'effective_per_page' => $effectivePerPage,
+                'total' => $total,
+                'total_pages' => $totalPages,
+                'from' => $total > 0 ? $offset + 1 : 0,
+                'to' => $total > 0 ? $offset + count($lecturas) : 0,
+            ],
+        ];
     }
 
     public function obtenerLectura(int $lecturaId): array

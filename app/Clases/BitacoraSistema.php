@@ -35,7 +35,7 @@ class BitacoraSistema
         ]);
     }
 
-    public function listar(array $filters = [], int $page = 1, int $perPage = 20): array
+    public function listar(array $filters = [], int $page = 1, int $perPage = 25): array
     {
         $page = max(1, $page);
         $perPage = max(1, min($perPage, 100));

@@ -9,7 +9,7 @@ class Medidores
         $this->db = $db;
     }
 
-    public function listar(int $page = 1, int $perPage = 30): array
+    public function listar(int $page = 1, int $perPage = 25): array
     {
         $page = max(1, $page);
         $perPage = (int) $perPage;

@@ -3,33 +3,41 @@ $(function () {
   let lecturaReciboActual = null;
   let reciboPagoActual = null;
   let usuariosPaginaActual = 1;
-  let usuariosPorPaginaActual = 0;
+  let usuariosPorPaginaActual = 25;
   let usuariosTotalPaginas = 1;
   let usuariosRequestToken = 0;
   let medidoresPaginaActual = 1;
-  let medidoresPorPaginaActual = 0;
+  let medidoresPorPaginaActual = 25;
   let medidoresTotalPaginas = 1;
   let medidoresRequestToken = 0;
   let catalogoMedidoresAlta = [];
   let normalizandoMedidorAlta = false;
   let rutasPaginaActual = 1;
-  let rutasPorPaginaActual = 0;
+  let rutasPorPaginaActual = 25;
   let rutasTotalPaginas = 1;
   let rutasRequestToken = 0;
   let periodosPaginaActual = 1;
-  let periodosPorPaginaActual = 0;
+  let periodosPorPaginaActual = 25;
   let periodosTotalPaginas = 1;
   let periodosRequestToken = 0;
+  let lecturasPaginaActual = 1;
+  let lecturasPorPaginaActual = 25;
+  let lecturasTotalPaginas = 1;
+  let lecturasRequestToken = 0;
+  let pagosPaginaActual = 1;
+  let pagosPorPaginaActual = 25;
+  let pagosTotalPaginas = 1;
+  let pagosRequestToken = 0;
   let colaNotificacionesMasivas = [];
   let indiceNotificacionMasiva = 0;
   let envioMasivoActivo = false;
   let temporizadorNotificacionMasiva = null;
   let colaPreviewRecibosPeriodo = [];
   let sistemaUsuariosPaginaActual = 1;
-  let sistemaUsuariosPorPaginaActual = 0;
+  let sistemaUsuariosPorPaginaActual = 25;
   let sistemaUsuariosTotalPaginas = 1;
   let bitacoraPaginaActual = 1;
-  let bitacoraPorPaginaActual = 20;
+  let bitacoraPorPaginaActual = 25;
   let bitacoraTotalPaginas = 1;
   let sessionDataActual = null;
   const bootstrapAdminData = window.__mexquiticBootstrapData || {};
@@ -1530,6 +1538,7 @@ $(function () {
     if (view === "lecturas") {
       renderLecturas(data.lecturas || []);
       actualizarResumenCobro(data.summary || {});
+      renderLecturasPaginacion(data.pagination || {});
       bootstrapAdminConsumido[view] = true;
       return;
     }
@@ -1537,6 +1546,7 @@ $(function () {
     if (view === "pagos") {
       renderUsuariosPagoOptions(data.usuarios || [], data.selected_usuario_id || "");
       renderRecibosPago(data.recibos || []);
+      renderPagosPaginacion(data.pagination || {});
       bootstrapAdminConsumido[view] = true;
       return;
     }
@@ -1604,7 +1614,7 @@ $(function () {
 
     usuariosPaginaActual = page;
     usuariosTotalPaginas = totalPages;
-    $("#usuariosPorPagina").val(String(data.effective_per_page || data.per_page || usuariosPorPaginaActual || 30));
+    $("#usuariosPorPagina").val(String(data.per_page === 0 ? 0 : (data.effective_per_page || data.per_page || usuariosPorPaginaActual || 25)));
 
     let resumen = "Sin registros para mostrar";
 
@@ -1619,7 +1629,7 @@ $(function () {
 
   function cargarUsuarios(page) {
     const targetPage = page || usuariosPaginaActual || 1;
-    const perPage = Number($("#usuariosPorPagina").val() || usuariosPorPaginaActual || 30);
+    const perPage = Number($("#usuariosPorPagina").val() || usuariosPorPaginaActual || 25);
     const requestToken = ++usuariosRequestToken;
 
     usuariosPorPaginaActual = perPage;
@@ -1817,7 +1827,7 @@ $(function () {
 
   function cargarMedidores(page) {
     const targetPage = page || medidoresPaginaActual || 1;
-    const perPage = Number($("#medidoresPorPagina").val() || medidoresPorPaginaActual || 30);
+    const perPage = Number($("#medidoresPorPagina").val() || medidoresPorPaginaActual || 25);
     const requestToken = ++medidoresRequestToken;
 
     medidoresPorPaginaActual = perPage;
@@ -2054,7 +2064,7 @@ $(function () {
 
   function cargarRutas(page) {
     const targetPage = page || rutasPaginaActual || 1;
-    const perPage = Number($("#rutasPorPagina").val() || rutasPorPaginaActual || 30);
+    const perPage = Number($("#rutasPorPagina").val() || rutasPorPaginaActual || 25);
     const requestToken = ++rutasRequestToken;
 
     rutasPorPaginaActual = perPage;
@@ -2242,7 +2252,7 @@ $(function () {
 
   function cargarPeriodos(page) {
     const targetPage = page || periodosPaginaActual || 1;
-    const perPage = Number($("#periodosPorPagina").val() || periodosPorPaginaActual || 30);
+    const perPage = Number($("#periodosPorPagina").val() || periodosPorPaginaActual || 25);
     const requestToken = ++periodosRequestToken;
 
     periodosPorPaginaActual = perPage;
@@ -2481,28 +2491,79 @@ $(function () {
     $tbody.html(rows);
   }
 
-  function cargarLecturas() {
+  function renderLecturasPaginacion(pagination) {
+    const data = pagination || {};
+    const total = Number(data.total || 0);
+    const page = Number(data.page || 1);
+    const totalPages = Number(data.total_pages || 1);
+    const from = Number(data.from || 0);
+    const to = Number(data.to || 0);
+
+    lecturasPaginaActual = page;
+    lecturasTotalPaginas = totalPages;
+    $("#lecturasPorPagina").val(String(data.per_page === 0 ? 0 : (data.effective_per_page || lecturasPorPaginaActual || 25)));
+
+    let resumen = "Sin registros para mostrar";
+
+    if (Number(data.per_page || 0) === 0 && total > 0) {
+      resumen = "Total " + total + " registros";
+    } else if (total > 0) {
+      resumen = "Total " + total + " registros | " + from + "-" + to + " | Pagina " + page + " de " + totalPages;
+    }
+
+    $("#lecturasResumenPaginacionInferior").text(resumen);
+    const allMode = Number(data.per_page || 0) === 0;
+    $("#btnLecturasAnterior").prop("disabled", page <= 1 || total === 0 || allMode);
+    $("#btnLecturasSiguiente").prop("disabled", page >= totalPages || total === 0 || allMode);
+  }
+
+  function cargarLecturas(page) {
+    const targetPage = page || lecturasPaginaActual || 1;
+    const perPage = Number($("#lecturasPorPagina").val() || lecturasPorPaginaActual || 25);
+    const requestToken = ++lecturasRequestToken;
+
+    lecturasPorPaginaActual = perPage;
+
     $.ajax({
       url: ajaxUrl,
       method: "POST",
       dataType: "json",
       data: {
         accion: "lecturas.listar",
+        page: targetPage,
+        per_page: perPage,
         termino: $("#buscarLectura").val(),
         estado_cobro: $("#filtroEstadoRecibo").val(),
         periodo_id: $("#filtroPeriodoLectura").val()
       },
       beforeSend: function () {
+        $("#lecturasPorPagina").prop("disabled", true);
+        $("#btnLecturasAnterior").prop("disabled", true);
+        $("#btnLecturasSiguiente").prop("disabled", true);
         $("#tablaLecturas tbody").html('<tr><td colspan="9" class="text-center text-muted py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando lecturas...</td></tr>');
       },
       success: function (response) {
+        if (requestToken !== lecturasRequestToken) {
+          return;
+        }
         const lecturas = response.data && response.data.lecturas ? response.data.lecturas : [];
         actualizarResumenCobro(response.data && response.data.summary ? response.data.summary : {});
         renderLecturas(lecturas);
+        renderLecturasPaginacion(response.data && response.data.pagination ? response.data.pagination : {});
       },
       error: function (xhr) {
+        if (requestToken !== lecturasRequestToken) {
+          return;
+        }
         showLecturasFeedback("danger", extractAjaxMessage(xhr, "No se pudieron consultar las lecturas."));
         $("#tablaLecturas tbody").html('<tr><td colspan="9" class="text-center text-danger py-4">Error al cargar lecturas.</td></tr>');
+        $("#lecturasResumenPaginacionInferior").text("No fue posible cargar la paginacion");
+      },
+      complete: function () {
+        if (requestToken !== lecturasRequestToken) {
+          return;
+        }
+        $("#lecturasPorPagina").prop("disabled", false);
       }
     });
   }
@@ -2846,8 +2907,39 @@ $(function () {
     $tbody.html(rows);
   }
 
-  function cargarRecibosPago() {
+  function renderPagosPaginacion(pagination) {
+    const data = pagination || {};
+    const total = Number(data.total || 0);
+    const page = Number(data.page || 1);
+    const totalPages = Number(data.total_pages || 1);
+    const from = Number(data.from || 0);
+    const to = Number(data.to || 0);
+
+    pagosPaginaActual = page;
+    pagosTotalPaginas = totalPages;
+    $("#pagosPorPagina").val(String(data.per_page === 0 ? 0 : (data.effective_per_page || pagosPorPaginaActual || 25)));
+
+    let resumen = "Sin registros para mostrar";
+
+    if (Number(data.per_page || 0) === 0 && total > 0) {
+      resumen = "Total " + total + " registros";
+    } else if (total > 0) {
+      resumen = "Total " + total + " registros | " + from + "-" + to + " | Pagina " + page + " de " + totalPages;
+    }
+
+    $("#pagosResumenPaginacionInferior").text(resumen);
+    const allMode = Number(data.per_page || 0) === 0;
+    $("#btnPagosAnterior").prop("disabled", page <= 1 || total === 0 || allMode);
+    $("#btnPagosSiguiente").prop("disabled", page >= totalPages || total === 0 || allMode);
+  }
+
+  function cargarRecibosPago(page) {
     const usuarioId = $("#selectUsuarioPago").val();
+    const targetPage = page || pagosPaginaActual || 1;
+    const perPage = Number($("#pagosPorPagina").val() || pagosPorPaginaActual || 25);
+    const requestToken = ++pagosRequestToken;
+
+    pagosPorPaginaActual = perPage;
 
     $.ajax({
       url: ajaxUrl,
@@ -2855,18 +2947,37 @@ $(function () {
       dataType: "json",
       data: {
         accion: "pagos.recibos",
-        usuario_id: usuarioId || 0
+        usuario_id: usuarioId || 0,
+        page: targetPage,
+        per_page: perPage
       },
       beforeSend: function () {
+        $("#pagosPorPagina").prop("disabled", true);
+        $("#btnPagosAnterior").prop("disabled", true);
+        $("#btnPagosSiguiente").prop("disabled", true);
         $("#tablaPagosRecibos tbody").html('<tr><td colspan="6" class="text-center text-muted py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando recibos...</td></tr>');
       },
       success: function (response) {
+        if (requestToken !== pagosRequestToken) {
+          return;
+        }
         const recibos = response.data && response.data.recibos ? response.data.recibos : [];
         renderRecibosPago(recibos);
+        renderPagosPaginacion(response.data && response.data.pagination ? response.data.pagination : {});
       },
       error: function (xhr) {
+        if (requestToken !== pagosRequestToken) {
+          return;
+        }
         showPagosFeedback("danger", extractAjaxMessage(xhr, "No se pudieron consultar los recibos."));
         $("#tablaPagosRecibos tbody").html('<tr><td colspan="6" class="text-center text-danger py-4">Error al cargar los recibos.</td></tr>');
+        $("#pagosResumenPaginacionInferior").text("No fue posible cargar la paginacion");
+      },
+      complete: function () {
+        if (requestToken !== pagosRequestToken) {
+          return;
+        }
+        $("#pagosPorPagina").prop("disabled", false);
       }
     });
   }
@@ -3646,7 +3757,7 @@ $(function () {
   });
 
   $("#usuariosPorPagina").on("change", function () {
-    usuariosPorPaginaActual = Number($(this).val() || 30);
+    usuariosPorPaginaActual = Number($(this).val() || 25);
     usuariosPaginaActual = 1;
     cargarUsuarios(1);
   });
@@ -3676,7 +3787,7 @@ $(function () {
   });
 
   $("#medidoresPorPagina").on("change", function () {
-    medidoresPorPaginaActual = Number($(this).val() || 30);
+    medidoresPorPaginaActual = Number($(this).val() || 25);
     medidoresPaginaActual = 1;
     cargarMedidores(1);
   });
@@ -3698,7 +3809,7 @@ $(function () {
   });
 
   $("#rutasPorPagina").on("change", function () {
-    rutasPorPaginaActual = Number($(this).val() || 30);
+    rutasPorPaginaActual = Number($(this).val() || 25);
     rutasPaginaActual = 1;
     cargarRutas(1);
   });
@@ -3720,7 +3831,7 @@ $(function () {
   });
 
   $("#periodosPorPagina").on("change", function () {
-    periodosPorPaginaActual = Number($(this).val() || 30);
+    periodosPorPaginaActual = Number($(this).val() || 25);
     periodosPaginaActual = 1;
     cargarPeriodos(1);
   });
@@ -3738,7 +3849,8 @@ $(function () {
   });
 
   $("#btnRecargarLecturas").on("click", function () {
-    cargarLecturas();
+    lecturasPaginaActual = 1;
+    cargarLecturas(1);
   });
 
   $("#btnAbrirPreviewRecibosPeriodo").on("click", function () {
@@ -3762,17 +3874,54 @@ $(function () {
   });
 
   $("#filtroEstadoRecibo").on("change", function () {
-    cargarLecturas();
+    lecturasPaginaActual = 1;
+    cargarLecturas(1);
   });
 
   $("#filtroPeriodoLectura").on("change", function () {
-    cargarLecturas();
+    lecturasPaginaActual = 1;
+    cargarLecturas(1);
+  });
+
+  $("#lecturasPorPagina").on("change", function () {
+    lecturasPorPaginaActual = Number($(this).val() || 25);
+    lecturasPaginaActual = 1;
+    cargarLecturas(1);
+  });
+
+  $("#btnLecturasAnterior").on("click", function () {
+    if (lecturasPaginaActual > 1) {
+      cargarLecturas(lecturasPaginaActual - 1);
+    }
+  });
+
+  $("#btnLecturasSiguiente").on("click", function () {
+    if (lecturasPaginaActual < lecturasTotalPaginas) {
+      cargarLecturas(lecturasPaginaActual + 1);
+    }
   });
 
   $("#btnBuscarUsuarioPago, #btnRecargarPagos").on("click", function () {
+    pagosPaginaActual = 1;
     cargarUsuariosPago($("#buscarPagoUsuario").val(), $("#selectUsuarioPago").val());
-    if ($("#selectUsuarioPago").val()) {
-      cargarRecibosPago();
+    cargarRecibosPago(1);
+  });
+
+  $("#pagosPorPagina").on("change", function () {
+    pagosPorPaginaActual = Number($(this).val() || 25);
+    pagosPaginaActual = 1;
+    cargarRecibosPago(1);
+  });
+
+  $("#btnPagosAnterior").on("click", function () {
+    if (pagosPaginaActual > 1) {
+      cargarRecibosPago(pagosPaginaActual - 1);
+    }
+  });
+
+  $("#btnPagosSiguiente").on("click", function () {
+    if (pagosPaginaActual < pagosTotalPaginas) {
+      cargarRecibosPago(pagosPaginaActual + 1);
     }
   });
 
@@ -3826,7 +3975,8 @@ $(function () {
   });
 
   $("#selectUsuarioPago").on("change", function () {
-    cargarRecibosPago();
+    pagosPaginaActual = 1;
+    cargarRecibosPago(1);
   });
 
   $("#btnAgregarMedidor").on("click", function () {
@@ -3998,13 +4148,16 @@ $(function () {
 
   $("#buscarLectura").on("keyup", function (event) {
     if (event.key === "Enter") {
-      cargarLecturas();
+      lecturasPaginaActual = 1;
+      cargarLecturas(1);
     }
   });
 
   $("#buscarPagoUsuario").on("keyup", function (event) {
     if (event.key === "Enter") {
+      pagosPaginaActual = 1;
       cargarUsuariosPago($(this).val(), $("#selectUsuarioPago").val());
+      cargarRecibosPago(1);
     }
   });
 
@@ -4580,6 +4733,10 @@ $(function () {
     meta = meta || {};
     sistemaUsuariosPaginaActual = Number(meta.page || 1);
     sistemaUsuariosTotalPaginas = Number(meta.total_pages || 1);
+    sistemaUsuariosPorPaginaActual = Number(meta.per_page || 0) === 0
+      ? 0
+      : Number(meta.effective_per_page || sistemaUsuariosPorPaginaActual || 25);
+    $("#sistemaUsuariosPorPagina").val(String(sistemaUsuariosPorPaginaActual));
 
     const total = Number(meta.total || 0);
     const from = Number(meta.from || 0);
@@ -4615,6 +4772,9 @@ $(function () {
         per_page: sistemaUsuariosPorPaginaActual
       },
       beforeSend: function () {
+        $("#sistemaUsuariosPorPagina").prop("disabled", true);
+        $("#btnSistemaUsuariosAnterior").prop("disabled", true);
+        $("#btnSistemaUsuariosSiguiente").prop("disabled", true);
         $("#tablaSistemaUsuarios tbody").html('<tr><td colspan="8" class="text-center text-muted py-4">Cargando usuarios del sistema...</td></tr>');
       },
       success: function (response) {
@@ -4624,6 +4784,9 @@ $(function () {
       },
       error: function (xhr) {
         showSistemaFeedback("danger", extractAjaxMessage(xhr, "No se pudo consultar el catalogo de usuarios del sistema."));
+      },
+      complete: function () {
+        $("#sistemaUsuariosPorPagina").prop("disabled", false);
       }
     });
   }
@@ -4682,7 +4845,7 @@ $(function () {
 
     bitacoraPaginaActual = page;
     bitacoraTotalPaginas = totalPages;
-    $("#bitacoraPorPagina").val(String(data.per_page || bitacoraPorPaginaActual || 20));
+    $("#bitacoraPorPagina").val(String(data.per_page || bitacoraPorPaginaActual || 25));
 
     let resumen = "Sin movimientos para mostrar";
     if (total > 0) {
@@ -4701,7 +4864,7 @@ $(function () {
     const fechaDesde = $("#filtroFechaDesdeBitacora").val() || "";
     const fechaHasta = $("#filtroFechaHastaBitacora").val() || "";
     const targetPage = page || bitacoraPaginaActual || 1;
-    const perPage = Number($("#bitacoraPorPagina").val() || bitacoraPorPaginaActual || 20);
+    const perPage = Number($("#bitacoraPorPagina").val() || bitacoraPorPaginaActual || 25);
 
     bitacoraPorPaginaActual = perPage;
 
@@ -4787,11 +4950,19 @@ $(function () {
   }
 
   $("#btnBuscarSistemaUsuarios").on("click", function () {
+    sistemaUsuariosPaginaActual = 1;
     cargarUsuariosSistema(1);
   });
 
   $("#btnRecargarSistemaUsuarios").on("click", function () {
     $("#buscarUsuarioSistema").val("");
+    sistemaUsuariosPaginaActual = 1;
+    cargarUsuariosSistema(1);
+  });
+
+  $("#sistemaUsuariosPorPagina").on("change", function () {
+    sistemaUsuariosPorPaginaActual = Number($(this).val() || 25);
+    sistemaUsuariosPaginaActual = 1;
     cargarUsuariosSistema(1);
   });
 
@@ -4836,7 +5007,7 @@ $(function () {
     });
 
     $("#bitacoraPorPagina").on("change", function () {
-      bitacoraPorPaginaActual = Number($(this).val() || 20);
+      bitacoraPorPaginaActual = Number($(this).val() || 25);
       bitacoraPaginaActual = 1;
       cargarBitacora(1);
     });

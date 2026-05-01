@@ -231,7 +231,7 @@ try {
             $usuarios = new Usuarios($db);
             $nombre = Request::cleanString(Request::input('nombre', '')) ?? '';
             $page = (int) Request::input('page', 1);
-            $perPage = (int) Request::input('per_page', 30);
+            $perPage = (int) Request::input('per_page', 25);
             $data = $usuarios->listar($nombre, $page, $perPage);
             JsonResponse::success('Usuarios consultados correctamente.', [
                 'usuarios' => $data['usuarios'],
@@ -266,7 +266,7 @@ try {
         case 'medidores.listar':
             $medidores = new Medidores($db);
             $page = (int) Request::input('page', 1);
-            $perPage = (int) Request::input('per_page', 30);
+            $perPage = (int) Request::input('per_page', 25);
             $data = $medidores->listar($page, $perPage);
             JsonResponse::success('Medidores consultados correctamente.', [
                 'medidores' => $data['medidores'],
@@ -308,7 +308,7 @@ try {
         case 'periodos.listar':
             $periodos = new Periodos($db);
             $page = (int) Request::input('page', 1);
-            $perPage = (int) Request::input('per_page', 30);
+            $perPage = (int) Request::input('per_page', 25);
             $data = $periodos->listar($page, $perPage);
             JsonResponse::success('Periodos consultados correctamente.', [
                 'periodos' => $data['periodos'],
@@ -349,7 +349,7 @@ try {
         case 'rutas.listar':
             $rutas = new Rutas($db);
             $page = (int) Request::input('page', 1);
-            $perPage = (int) Request::input('per_page', 30);
+            $perPage = (int) Request::input('per_page', 25);
             $data = $rutas->listar($page, $perPage);
             JsonResponse::success('Rutas consultadas correctamente.', [
                 'rutas' => $data['rutas'],
@@ -466,25 +466,14 @@ try {
             $termino = Request::cleanString(Request::input('termino', '')) ?? '';
             $estadoCobro = Request::cleanString(Request::input('estado_cobro', '')) ?? '';
             $periodoId = (int) Request::input('periodo_id', 0);
-            $data = $recibos->listarLecturas($termino, $estadoCobro, $periodoId);
-            $summary = [
-                'adeudo' => 0,
-                'pendiente' => 0,
-                'parcial' => 0,
-                'pagado' => 0,
-                'sin_recibo' => 0,
-            ];
-            foreach ($data as $row) {
-                $estado = $row['estado_cobro'] ?? 'sin_recibo';
-                if (!isset($summary[$estado])) {
-                    $summary[$estado] = 0;
-                }
-                $summary[$estado]++;
-            }
+            $page = (int) Request::input('page', 1);
+            $perPage = (int) Request::input('per_page', 25);
+            $data = $recibos->listarLecturas($termino, $estadoCobro, $periodoId, $page, $perPage);
             JsonResponse::success('Lecturas consultadas correctamente.', [
-                'lecturas' => $data,
-                'summary' => $summary,
-                'total' => count($data),
+                'lecturas' => $data['lecturas'],
+                'summary' => $data['summary'],
+                'pagination' => $data['pagination'],
+                'total' => $data['pagination']['total'],
             ]);
             break;
 
@@ -556,10 +545,13 @@ try {
         case 'pagos.recibos':
             $pagos = new Pagos($db);
             $usuarioId = (int) Request::input('usuario_id', 0);
-            $data = $pagos->recibos($usuarioId);
+            $page = (int) Request::input('page', 1);
+            $perPage = (int) Request::input('per_page', 25);
+            $data = $pagos->recibos($usuarioId, $page, $perPage);
             JsonResponse::success('Recibos consultados correctamente.', [
-                'recibos' => $data,
-                'total' => count($data),
+                'recibos' => $data['recibos'],
+                'pagination' => $data['pagination'],
+                'total' => $data['pagination']['total'],
             ]);
             break;
 
@@ -641,7 +633,7 @@ try {
             $usuariosSistema = new UsuariosSistema($db);
             $termino = Request::cleanString(Request::input('termino', '')) ?? '';
             $page = (int) Request::input('page', 1);
-            $perPage = (int) Request::input('per_page', 20);
+            $perPage = (int) Request::input('per_page', 25);
             $data = $usuariosSistema->listar($termino, $page, $perPage);
             JsonResponse::success('Usuarios del sistema consultados correctamente.', [
                 'usuarios' => $data['usuarios'],
@@ -682,7 +674,7 @@ try {
             $bitacora = new BitacoraSistema($db);
             $modulo = Request::cleanString(Request::input('modulo', '')) ?? '';
             $page = (int) Request::input('page', 1);
-            $perPage = (int) Request::input('per_page', 20);
+            $perPage = (int) Request::input('per_page', 25);
             $usuario = Request::cleanString(Request::input('usuario', '')) ?? '';
             $accionFiltro = Request::cleanString(Request::input('accion_filtro', '')) ?? '';
             $fechaDesde = Request::cleanString(Request::input('fecha_desde', '')) ?? '';

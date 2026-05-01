@@ -63,6 +63,30 @@
                     </tbody>
                   </table>
                 </div>
+                <div class="users-pagination-footer">
+                  <div class="users-pagination-left">
+                    <div class="users-pagination-meta" id="pagosResumenPaginacionInferior"></div>
+                    <div class="users-length-control">
+                      <label for="pagosPorPagina" class="mb-0">Mostrar</label>
+                      <select id="pagosPorPagina" class="form-control form-control-sm">
+                        <option value="25" selected>25</option>
+                        <option value="30">30</option>
+                        <option value="50">50</option>
+                        <option value="75">75</option>
+                        <option value="100">100</option>
+                        <option value="0">Todos</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="btn-group btn-group-sm" role="group" aria-label="Paginacion de pagos">
+                    <button type="button" class="btn btn-outline-primary" id="btnPagosAnterior">
+                      <i class="fas fa-chevron-left mr-1"></i> Anterior
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" id="btnPagosSiguiente">
+                      Siguiente <i class="fas fa-chevron-right ml-1"></i>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

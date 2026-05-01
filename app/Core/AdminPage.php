@@ -78,49 +78,37 @@ function mexquiticAdminBootstrapData(PDO $db, array $currentUser, string $view):
         switch ($view) {
             case 'consulta':
                 $usuarios = new Usuarios($db);
-                $bootstrapData['consulta'] = $usuarios->listar('', 1, 30);
+                $bootstrapData['consulta'] = $usuarios->listar('', 1, 25);
                 break;
 
             case 'medidores':
                 $medidores = new Medidores($db);
-                $bootstrapData['medidores'] = $medidores->listar(1, 0);
+                $bootstrapData['medidores'] = $medidores->listar(1, 25);
                 break;
 
             case 'rutas':
                 $rutas = new Rutas($db);
-                $bootstrapData['rutas'] = $rutas->listar(1, 0);
+                $bootstrapData['rutas'] = $rutas->listar(1, 25);
                 break;
 
             case 'periodos':
                 $periodos = new Periodos($db);
-                $bootstrapData['periodos'] = $periodos->listar(1, 0);
+                $bootstrapData['periodos'] = $periodos->listar(1, 25);
                 break;
 
             case 'lecturas':
                 $recibos = new Recibos($db);
-                $lecturas = $recibos->listarLecturas('', '', 0);
-                $summary = $bootstrapData['lecturas']['summary'];
-
-                foreach ($lecturas as $row) {
-                    $estado = (string) ($row['estado_cobro'] ?? 'sin_recibo');
-                    if (!array_key_exists($estado, $summary)) {
-                        $summary[$estado] = 0;
-                    }
-                    $summary[$estado]++;
-                }
-
-                $bootstrapData['lecturas'] = [
-                    'lecturas' => $lecturas,
-                    'summary' => $summary,
-                ];
+                $bootstrapData['lecturas'] = $recibos->listarLecturas('', '', 0, 1, 25);
                 break;
 
             case 'pagos':
                 $pagos = new Pagos($db);
+                $pagosData = $pagos->recibos(0, 1, 25);
                 $bootstrapData['pagos'] = [
                     'usuarios' => $pagos->usuarios(''),
                     'selected_usuario_id' => null,
-                    'recibos' => $pagos->recibos(),
+                    'recibos' => $pagosData['recibos'] ?? [],
+                    'pagination' => $pagosData['pagination'] ?? null,
                 ];
                 break;
 
@@ -130,12 +118,12 @@ function mexquiticAdminBootstrapData(PDO $db, array $currentUser, string $view):
                 }
 
                 $usuariosSistema = new UsuariosSistema($db);
-                $sistemaData = $usuariosSistema->listar('', 1, 0);
+                $sistemaData = $usuariosSistema->listar('', 1, 25);
                 $bootstrapData['sistema']['usuarios'] = $sistemaData['usuarios'] ?? [];
                 $bootstrapData['sistema']['pagination'] = $sistemaData['pagination'] ?? null;
 
                 $bitacora = new BitacoraSistema($db);
-                $bitacoraData = $bitacora->listar([], 1, 20);
+                $bitacoraData = $bitacora->listar([], 1, 25);
                 $bootstrapData['sistema']['bitacora'] = $bitacoraData['logs'] ?? [];
                 $bootstrapData['sistema']['bitacoraPagination'] = $bitacoraData['pagination'] ?? null;
                 $bootstrapData['sistema']['catalogos'] = $bitacora->catalogos();

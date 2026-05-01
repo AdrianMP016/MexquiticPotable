@@ -67,6 +67,17 @@
                 <div class="users-pagination-footer">
                   <div class="users-pagination-left">
                     <div class="users-pagination-meta" id="sistemaUsuariosResumenPaginacion"></div>
+                    <div class="users-length-control">
+                      <label for="sistemaUsuariosPorPagina" class="mb-0">Mostrar</label>
+                      <select id="sistemaUsuariosPorPagina" class="form-control form-control-sm">
+                        <option value="25" selected>25</option>
+                        <option value="30">30</option>
+                        <option value="50">50</option>
+                        <option value="75">75</option>
+                        <option value="100">100</option>
+                        <option value="0">Todos</option>
+                      </select>
+                    </div>
                   </div>
                   <div class="btn-group btn-group-sm" role="group" aria-label="Paginacion de usuarios del sistema">
                     <button type="button" class="btn btn-outline-primary" id="btnSistemaUsuariosAnterior">
@@ -117,7 +128,8 @@
                     <div class="col-md-3 mb-2">
                       <label class="small font-weight-bold mb-1" for="bitacoraPorPagina">Mostrar</label>
                       <select class="form-control form-control-sm" id="bitacoraPorPagina">
-                        <option value="20" selected>20</option>
+                        <option value="25" selected>25</option>
+                        <option value="20">20</option>
                         <option value="50">50</option>
                         <option value="100">100</option>
                       </select>

@@ -99,7 +99,7 @@ class Usuarios
         return $stmt->fetchAll();
     }
 
-    public function listar(string $nombre = '', int $page = 1, int $perPage = 30): array
+    public function listar(string $nombre = '', int $page = 1, int $perPage = 25): array
     {
         $params = [];
         $where = '';
