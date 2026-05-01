@@ -31,4 +31,4 @@ return [
     'charset' => 'utf8mb4',
 ];
 
-/*4
+/*4*/
