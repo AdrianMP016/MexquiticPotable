@@ -9,13 +9,25 @@ class Rutas
         $this->db = $db;
     }
 
-    public function listar(int $page = 1, int $perPage = 25): array
+    public function listar(int $page = 1, int $perPage = 25, string $buscar = '', string $campo = 'todos'): array
     {
         $page = max(1, $page);
         $perPage = (int) $perPage;
         $allowAll = $perPage <= 0;
+        $buscar = trim($buscar);
 
-        $stmtCount = $this->db->query("SELECT COUNT(*) AS total FROM rutas");
+        [$whereSql, $params] = $this->construirFiltroBusqueda($buscar, $campo);
+
+        $stmtCount = $this->db->prepare(
+            "SELECT COUNT(*) AS total
+             FROM rutas r
+             LEFT JOIN comunidades c ON c.id = r.comunidad_id
+             $whereSql"
+        );
+        foreach ($params as $key => $value) {
+            $stmtCount->bindValue(':' . $key, $value, PDO::PARAM_STR);
+        }
+        $stmtCount->execute();
         $total = (int) ($stmtCount->fetch()['total'] ?? 0);
 
         if ($allowAll) {
@@ -40,9 +52,13 @@ class Rutas
                 c.nombre AS comunidad
              FROM rutas r
              LEFT JOIN comunidades c ON c.id = r.comunidad_id
+             $whereSql
              ORDER BY r.activo DESC, r.codigo ASC, r.id DESC
              LIMIT :limit OFFSET :offset"
         );
+        foreach ($params as $key => $value) {
+            $stmt->bindValue(':' . $key, $value, PDO::PARAM_STR);
+        }
         $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
@@ -61,6 +77,51 @@ class Rutas
                 'to' => $total > 0 ? $offset + count($rutas) : 0,
             ],
         ];
+    }
+
+    private function construirFiltroBusqueda(string $buscar, string $campo): array
+    {
+        if ($buscar === '') {
+            return ['', []];
+        }
+
+        $campo = trim(mb_strtolower($campo, 'UTF-8'));
+        $params = [];
+
+        switch ($campo) {
+            case 'id':
+                $where = "WHERE CAST(r.id AS CHAR) LIKE :buscar";
+                break;
+            case 'codigo':
+                $where = "WHERE r.codigo LIKE :buscar";
+                break;
+            case 'nombre':
+                $where = "WHERE r.nombre LIKE :buscar";
+                break;
+            case 'comunidad':
+                $where = "WHERE c.nombre LIKE :buscar";
+                break;
+            case 'descripcion':
+                $where = "WHERE r.descripcion LIKE :buscar";
+                break;
+            case 'estado':
+                $where = "WHERE CASE WHEN r.activo = 1 THEN 'activa' ELSE 'baja' END LIKE :buscar";
+                break;
+            default:
+                $where = "WHERE (
+                    CAST(r.id AS CHAR) LIKE :buscar
+                    OR r.codigo LIKE :buscar
+                    OR r.nombre LIKE :buscar
+                    OR c.nombre LIKE :buscar
+                    OR r.descripcion LIKE :buscar
+                    OR CASE WHEN r.activo = 1 THEN 'activa' ELSE 'baja' END LIKE :buscar
+                )";
+                break;
+        }
+
+        $params['buscar'] = '%' . $buscar . '%';
+
+        return [$where, $params];
     }
 
     public function catalogo(int $comunidadId = 0): array

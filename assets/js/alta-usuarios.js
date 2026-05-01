@@ -2084,6 +2084,8 @@ $(function () {
   function cargarRutas(page) {
     const targetPage = page || rutasPaginaActual || 1;
     const perPage = Number($("#rutasPorPagina").val() || rutasPorPaginaActual || 25);
+    const buscar = $.trim($("#buscarRutaListado").val() || "");
+    const campo = $("#rutasCampoBusqueda").val() || "todos";
     const requestToken = ++rutasRequestToken;
 
     rutasPorPaginaActual = perPage;
@@ -2095,7 +2097,9 @@ $(function () {
       data: {
         accion: "rutas.listar",
         page: targetPage,
-        per_page: perPage
+        per_page: perPage,
+        buscar: buscar,
+        campo: campo
       },
       beforeSend: function () {
         $("#tablaRutas").addClass("is-loading");
@@ -3868,7 +3872,30 @@ $(function () {
   });
 
   $("#btnRecargarRutas").on("click", function () {
-    cargarRutas();
+    $("#buscarRutaListado").val("");
+    $("#rutasCampoBusqueda").val("todos");
+    rutasPaginaActual = 1;
+    cargarRutas(1);
+  });
+
+  $("#btnBuscarRutas").on("click", function () {
+    rutasPaginaActual = 1;
+    cargarRutas(1);
+  });
+
+  $("#btnLimpiarBusquedaRutas").on("click", function () {
+    $("#buscarRutaListado").val("");
+    $("#rutasCampoBusqueda").val("todos");
+    rutasPaginaActual = 1;
+    cargarRutas(1);
+  });
+
+  $(document).on("keydown", "#buscarRutaListado", function (event) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      rutasPaginaActual = 1;
+      cargarRutas(1);
+    }
   });
 
   $("#rutasPorPagina").on("change", function () {

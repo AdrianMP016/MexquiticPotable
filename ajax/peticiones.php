@@ -354,7 +354,9 @@ try {
             $rutas = new Rutas($db);
             $page = (int) Request::input('page', 1);
             $perPage = (int) Request::input('per_page', 25);
-            $data = $rutas->listar($page, $perPage);
+            $buscar = (string) Request::input('buscar', '');
+            $campo = (string) Request::input('campo', 'todos');
+            $data = $rutas->listar($page, $perPage, $buscar, $campo);
             JsonResponse::success('Rutas consultadas correctamente.', [
                 'rutas' => $data['rutas'],
                 'pagination' => $data['pagination'],
