@@ -1,0 +1,62 @@
+<div class="modal fade" id="modalMedidor" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <form id="formMedidor">
+        <input type="hidden" id="medidorAccion" name="accion" value="medidores.guardar">
+        <input type="hidden" id="modalMedidorId" name="medidor_id">
+
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalMedidorTitulo"><i class="fas fa-tachometer-alt text-primary mr-2"></i>Agregar medidor</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="alert alert-dismissible d-none" id="modalMedidorFeedback" role="alert">
+            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+            <span id="modalMedidorFeedbackText"></span>
+          </div>
+
+          <div class="row">
+            <div class="col-md-12" id="grupoUsuarioMedidor">
+              <div class="form-group">
+                <label for="modalMedidorUsuario">Usuario al que pertenece</label>
+                <select id="modalMedidorUsuario" name="usuario_id" class="form-control">
+                  <option value="">Cargando usuarios...</option>
+                </select>
+                <small class="form-text text-muted">El medidor se asignara al domicilio/ruta del usuario seleccionado.</small>
+              </div>
+            </div>
+
+            <div class="col-md-7">
+              <div class="form-group">
+                <label for="modalMedidorNombre">Nombre o numero de medidor</label>
+                <input type="text" id="modalMedidorNombre" name="medidor" class="form-control meter-code" maxlength="60" autocomplete="off" placeholder="SAPMXQ-0001">
+              </div>
+            </div>
+
+            <div class="col-md-5">
+              <div class="form-group">
+                <label for="modalMedidorEstado">Estado</label>
+                <select id="modalMedidorEstado" name="estado" class="form-control">
+                  <option>Activo</option>
+                  <option>Sin medidor</option>
+                  <option>Reemplazado</option>
+                  <option>Inactivo</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Cerrar</button>
+          <button type="submit" class="btn btn-primary" id="btnGuardarMedidor">
+            <i class="fas fa-save mr-1"></i> Guardar medidor
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

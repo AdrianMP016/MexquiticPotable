@@ -1,0 +1,119 @@
+<div class="modal fade" id="modalPreviewRecibosPeriodo" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-print text-primary mr-2"></i>Vista previa e impresion por periodo</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="alert alert-dismissible d-none" id="previewRecibosPeriodoFeedback" role="alert">
+          <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+          <span id="previewRecibosPeriodoFeedbackText"></span>
+        </div>
+
+        <div class="recibo-summary mb-3" id="previewRecibosPeriodoResumen">
+          <div class="text-muted">Selecciona un periodo en el filtro superior para preparar la impresion masiva.</div>
+        </div>
+
+        <div class="card mb-3">
+          <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-sliders-h mr-2"></i>Configuracion de recibos del periodo</h3>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-3">
+                <div class="form-group">
+                  <label for="previewPeriodoId">Periodo</label>
+                  <select id="previewPeriodoId" class="form-control">
+                    <option value="">Selecciona un periodo</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="form-group">
+                  <label for="previewReciboPrecioM3">Precio por m3</label>
+                  <input type="number" id="previewReciboPrecioM3" class="form-control" min="0" step="0.01" value="10.00">
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="form-group">
+                  <label for="previewReciboFechaLimite">Fecha limite de pago</label>
+                  <input type="date" id="previewReciboFechaLimite" class="form-control">
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="form-group">
+                  <label for="previewReciboCooperaciones">Cooperaciones</label>
+                  <input type="number" id="previewReciboCooperaciones" class="form-control" min="0" step="0.01" value="0.00">
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="form-group">
+                  <label for="previewReciboMultas">Multas</label>
+                  <input type="number" id="previewReciboMultas" class="form-control" min="0" step="0.01" value="0.00">
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="form-group">
+                  <label for="previewReciboRecargos">Recargos</label>
+                  <input type="number" id="previewReciboRecargos" class="form-control" min="0" step="0.01" value="0.00">
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="form-group">
+                  <label for="previewReciboMetodoPago">Metodo de pago</label>
+                  <input type="text" id="previewReciboMetodoPago" class="form-control" maxlength="120" value="Caja de cobro del sistema de agua">
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="form-group">
+                  <label for="previewReciboReferenciaPago">Referencia</label>
+                  <input type="text" id="previewReciboReferenciaPago" class="form-control" maxlength="120" value="Presentar este recibo al realizar el pago">
+                </div>
+              </div>
+            </div>
+
+            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center">
+              <div class="text-muted small mb-3 mb-lg-0" id="previewRecibosPeriodoEstado">
+                Prepara la vista previa para generar o actualizar los recibos del periodo seleccionado.
+              </div>
+              <div class="d-flex flex-column flex-md-row">
+                <button type="button" class="btn btn-outline-primary" id="btnPrepararPreviewRecibosPeriodo">
+                  <i class="fas fa-sync-alt mr-1"></i> Preparar vista previa
+                </button>
+                <button type="button" class="btn btn-primary mt-2 mt-md-0 ml-md-2" id="btnImprimirTodosRecibosPeriodo" disabled>
+                  <i class="fas fa-print mr-1"></i> Imprimir todos
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-hover table-striped mb-0" id="tablaPreviewRecibosPeriodo">
+            <thead>
+              <tr>
+                <th>Usuario</th>
+                <th>Folio / Periodo</th>
+                <th>Vista previa</th>
+                <th class="text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td colspan="4" class="text-center text-muted py-4">Aun no hay recibos preparados para imprimir.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>

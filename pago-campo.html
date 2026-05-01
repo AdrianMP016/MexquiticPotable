@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cobro | Sistema de Agua</title>
+  <script>
+    if (window.location.pathname.toLowerCase().endsWith("/pago-campo.html")) {
+      window.location.replace("pago-campo.php" + window.location.search + window.location.hash);
+    }
+  </script>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="assets/css/pago-campo.css?v=20260429b">
+</head>
+<body>
+  <div class="fieldpay-app">
+    <header class="fieldpay-header">
+      <div class="brand-mark">
+        <img src="assets/img/logo-recibo.png" alt="Logo del sistema de agua">
+      </div>
+      <div>
+        <span>Sistema de Agua</span>
+        <h1>Cobro</h1>
+      </div>
+      <div class="header-session d-none" id="sessionPanelCobro">
+        <div class="header-session-text">
+          <strong id="sessionCobroNombre">Cargando...</strong>
+          <small id="sessionCobroRol">Cobro</small>
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-primary" id="btnLogoutCobro">
+          <i class="fas fa-sign-out-alt mr-1"></i> Salir
+        </button>
+      </div>
+    </header>
+
+    <main class="fieldpay-main">
+      <section class="mobile-screen active" id="screenScan">
+        <div class="screen-shell screen-shell--scan">
+          <div class="screen-title">
+            <p>Escaneo</p>
+            <h2>Leer QR del recibo</h2>
+          </div>
+
+          <div class="card-box">
+            <div class="row">
+              <div class="col-md-8">
+                <label>Escaner de camara</label>
+                <div id="qrReader" class="qr-reader-box">
+                  <div class="empty-qr">
+                    <i class="fas fa-camera"></i>
+                    <span>Presiona "Iniciar camara" para escanear el QR impreso.</span>
+                  </div>
+                </div>
+                <div class="btn-row mt-3">
+                  <button type="button" class="btn btn-primary" id="btnIniciarScanner">
+                    <i class="fas fa-play mr-1"></i> Iniciar camara
+                  </button>
+                  <button type="button" class="btn btn-outline-secondary" id="btnDetenerScanner">
+                    <i class="fas fa-stop mr-1"></i> Detener
+                  </button>
+                </div>
+              </div>
+              <div class="col-md-4 mt-3 mt-md-0">
+                <label for="qrManualInput">Captura manual (si no lee camara)</label>
+                <textarea id="qrManualInput" class="form-control" rows="6" placeholder="Pega aqui el token QR del recibo"></textarea>
+                <button type="button" class="btn btn-outline-primary btn-block mt-2" id="btnBuscarQrManual">
+                  <i class="fas fa-search mr-1"></i> Buscar recibo
+                </button>
+                <div class="scan-meta mt-3">
+                  <span>Ultimo token leido</span>
+                  <strong id="scanTokenResume">Sin escaneo</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="status-message d-none" id="pagoCampoFeedback"></div>
+        </div>
+      </section>
+
+      <section class="mobile-screen" id="screenDetalle">
+        <div class="screen-shell">
+          <button type="button" class="btn btn-link back-button" data-target="screenScan">
+            <i class="fas fa-chevron-left mr-1"></i> Volver al escaneo
+          </button>
+
+          <div class="screen-title">
+            <p>Recibo</p>
+            <h2>Detalle localizado</h2>
+          </div>
+
+          <div class="card-box">
+            <div class="detail-heading">
+              <div>
+                <p>Usuario</p>
+                <h3 id="detalleUsuario">Sin recibo</h3>
+              </div>
+              <div id="detalleEstadoCobro" class="status-pill">Pendiente</div>
+            </div>
+
+            <div class="detail-grid">
+              <div><span>Folio</span><strong id="detalleFolio">-</strong></div>
+              <div><span>Periodo</span><strong id="detallePeriodo">-</strong></div>
+              <div><span>Medidor</span><strong id="detalleMedidor">-</strong></div>
+              <div><span>Ruta</span><strong id="detalleRuta">-</strong></div>
+              <div><span>Total</span><strong id="detalleTotal">$0.00</strong></div>
+              <div><span>Pagado</span><strong id="detallePagado">$0.00</strong></div>
+              <div><span>Saldo</span><strong id="detalleSaldo">$0.00</strong></div>
+              <div><span>Recibo entregado</span><strong id="detalleEntrega">No</strong></div>
+            </div>
+
+            <div class="detail-actions mt-3">
+              <button type="button" class="btn btn-outline-primary" id="btnToggleEntrega">
+                <i class="fas fa-check-circle mr-1"></i> Marcar recibo entregado
+              </button>
+              <button type="button" class="btn btn-success" id="btnIrPago">
+                <i class="fas fa-cash-register mr-1"></i> Registrar pago
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="mobile-screen" id="screenPago">
+        <div class="screen-shell">
+          <button type="button" class="btn btn-link back-button" data-target="screenDetalle">
+            <i class="fas fa-chevron-left mr-1"></i> Volver al detalle
+          </button>
+
+          <div class="screen-title">
+            <p>Caja</p>
+            <h2>Registrar pago</h2>
+          </div>
+
+          <form id="formPagoCampo" class="card-box">
+            <input type="hidden" id="pagoQrToken" name="qr_token">
+            <input type="hidden" name="accion" value="pagos.registrarPorQr">
+
+            <div class="row">
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label for="pagoMontoCampo">Monto a registrar</label>
+                  <input type="number" id="pagoMontoCampo" name="monto" class="form-control" min="0.01" step="0.01" required>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label for="pagoMetodoCampo">Metodo de pago</label>
+                  <select id="pagoMetodoCampo" name="metodo" class="form-control">
+                    <option value="efectivo">Efectivo</option>
+                    <option value="tarjeta">Tarjeta</option>
+                    <option value="spei">SPEI (Transferencia)</option>
+                    <option value="otro">Otro</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label for="pagoFechaCampo">Fecha y hora</label>
+                  <input type="datetime-local" id="pagoFechaCampo" name="fecha_pago" class="form-control" required>
+                </div>
+              </div>
+              <div class="col-md-8">
+                <div class="form-group">
+                  <label for="pagoReferenciaCampo">Referencia</label>
+                  <input type="text" id="pagoReferenciaCampo" name="referencia" class="form-control" maxlength="120" placeholder="FOLIO, TERMINAL, SPEI, ULTIMOS 4 DIGITOS">
+                </div>
+              </div>
+              <div class="col-12">
+                <div class="form-group mb-0">
+                  <label for="pagoObservacionesCampo">Observaciones</label>
+                  <textarea id="pagoObservacionesCampo" name="observaciones" class="form-control" rows="3" maxlength="255" placeholder="Notas de caja, aclaraciones o detalle del cobro"></textarea>
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block btn-lg mt-3" id="btnGuardarPagoCampo">
+              <i class="fas fa-save mr-1"></i> Guardar pago
+            </button>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <nav class="bottom-nav">
+      <button type="button" class="active" data-target="screenScan">
+        <i class="fas fa-qrcode"></i>
+        <span>Escanear</span>
+      </button>
+      <button type="button" data-target="screenDetalle">
+        <i class="fas fa-file-invoice-dollar"></i>
+        <span>Detalle</span>
+      </button>
+      <button type="button" data-target="screenPago">
+        <i class="fas fa-cash-register"></i>
+        <span>Pago</span>
+      </button>
+    </nav>
+  </div>
+
+  <div class="modal fade" id="modalPagoCampoOk" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-body text-center p-4">
+          <div class="success-mark"><i class="fas fa-check"></i></div>
+          <h5 id="modalPagoCampoTitulo">Pago registrado</h5>
+          <p class="mb-0" id="textoPagoCampoOk">El pago se guardo correctamente.</p>
+        </div>
+        <div class="modal-footer border-0">
+          <button type="button" class="btn btn-primary btn-block" data-dismiss="modal">Aceptar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="assets/js/session-client.js?v=20260429b"></script>
+  <script src="assets/js/pago-campo.js?v=20260429c"></script>
+</body>
+</html>

@@ -1,0 +1,118 @@
+    <section class="content app-view d-none" id="viewLecturas">
+      <div class="container-fluid">
+        <div class="row">
+          <div class="col-12">
+            <div class="alert alert-dismissible d-none" id="lecturasFeedback" role="alert">
+              <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+              <span id="lecturasFeedbackText"></span>
+            </div>
+
+            <div class="card search-card">
+              <div class="card-body">
+                <div class="d-flex justify-content-end mb-3">
+                  <button type="button" class="btn btn-outline-success" id="btnAbrirNotificacionMasiva" data-toggle="modal" data-target="#modalNotificacionMasiva">
+                    <i class="fas fa-bullhorn mr-1"></i> Notificacion masiva
+                  </button>
+                </div>
+                <div class="row align-items-end">
+                  <div class="col-md-4">
+                    <label for="buscarLectura">Buscar por usuario, medidor, ruta o periodo</label>
+                    <div class="input-group">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                      </div>
+                      <input type="text" id="buscarLectura" class="form-control text-uppercase-field" maxlength="180" placeholder="NOMBRE, SAPMXQ-0001, RUTA O PERIODO">
+                    </div>
+                  </div>
+                  <div class="col-md-3 mt-3 mt-md-0">
+                    <label for="filtroPeriodoLectura">Periodo</label>
+                    <select id="filtroPeriodoLectura" class="form-control">
+                      <option value="">Todos los periodos</option>
+                    </select>
+                  </div>
+                  <div class="col-md-3 mt-3 mt-md-0">
+                    <label for="filtroEstadoRecibo">Estatus de cobro</label>
+                    <select id="filtroEstadoRecibo" class="form-control">
+                      <option value="">Todos</option>
+                      <option value="adeudo">Con adeudo</option>
+                      <option value="pendiente">Pendientes</option>
+                      <option value="parcial">Parciales</option>
+                      <option value="pagado">Pagados</option>
+                      <option value="sin_recibo">Sin recibo</option>
+                    </select>
+                  </div>
+                  <div class="col-md-2 mt-3 mt-md-0">
+                    <button type="button" class="btn btn-primary btn-block" id="btnRecargarLecturas">
+                      <i class="fas fa-sync-alt mr-1"></i> Consultar lecturas
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row recibos-summary-grid">
+              <div class="col-md-3 col-sm-6">
+                <div class="payment-balance-box">
+                  <span>Adeudo</span>
+                  <strong id="countAdeudo">0</strong>
+                </div>
+              </div>
+              <div class="col-md-3 col-sm-6 mt-3 mt-md-0">
+                <div class="payment-balance-box">
+                  <span>Pendiente</span>
+                  <strong id="countPendiente">0</strong>
+                </div>
+              </div>
+              <div class="col-md-3 col-sm-6 mt-3 mt-md-0">
+                <div class="payment-balance-box">
+                  <span>Parcial</span>
+                  <strong id="countParcial">0</strong>
+                </div>
+              </div>
+              <div class="col-md-3 col-sm-6 mt-3 mt-md-0">
+                <div class="payment-balance-box">
+                  <span>Pagado</span>
+                  <strong id="countPagado">0</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header d-flex flex-wrap align-items-center justify-content-between">
+                <h3 class="card-title mb-0"><i class="fas fa-clipboard-check mr-2"></i>Lecturas capturadas</h3>
+                <div class="card-tools mt-2 mt-md-0">
+                  <button type="button" class="btn btn-sm btn-outline-primary" id="btnAbrirPreviewRecibosPeriodo">
+                    <i class="fas fa-print mr-1"></i> Vista previa / impresion
+                  </button>
+                </div>
+              </div>
+              <div class="card-body p-0">
+                <div class="table-responsive">
+                  <table class="table table-hover table-striped mb-0" id="tablaLecturas">
+                    <thead>
+                      <tr>
+                        <th>Usuario</th>
+                        <th>Medidor / Ruta</th>
+                        <th>Periodo</th>
+                        <th>Lecturas</th>
+                        <th>Captura</th>
+                        <th>Recibo</th>
+                        <th>Entrega</th>
+                        <th>Estatus cobro</th>
+                        <th class="text-right">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td colspan="9" class="text-center text-muted py-4">Cargando lecturas...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </section>

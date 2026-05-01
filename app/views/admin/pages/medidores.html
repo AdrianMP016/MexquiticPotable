@@ -1,0 +1,82 @@
+    <section class="content app-view d-none" id="viewMedidores">
+      <div class="container-fluid">
+        <div class="row">
+          <div class="col-12">
+            <div class="alert alert-dismissible d-none" id="medidoresFeedback" role="alert">
+              <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+              <span id="medidoresFeedbackText"></span>
+            </div>
+
+            <div class="card search-card">
+              <div class="card-body">
+                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between">
+                  <div>
+                    <label class="mb-1">Administracion de medidores</label>
+                    <p class="mb-0 text-muted">Consulta, agrega y edita los medidores asignados a usuarios registrados.</p>
+                  </div>
+                  <div class="mt-3 mt-md-0">
+                    <button type="button" class="btn btn-primary" id="btnAgregarMedidor">
+                      <i class="fas fa-plus mr-1"></i> Agregar medidor
+                    </button>
+                    <button type="button" class="btn btn-outline-primary ml-md-2 mt-2 mt-md-0" id="btnRecargarMedidores">
+                      <i class="fas fa-sync-alt mr-1"></i> Recargar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-tachometer-alt mr-2"></i>Medidores registrados</h3>
+              </div>
+              <div class="card-body p-0">
+                <div class="table-responsive">
+                  <table class="table table-hover table-striped mb-0" id="tablaMedidores">
+                    <thead>
+                      <tr>
+                        <th>Medidor</th>
+                        <th>Usuario</th>
+                        <th>Ruta</th>
+                        <th>Comunidad</th>
+                        <th>Estado</th>
+                        <th class="text-right">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td colspan="6" class="text-center text-muted py-4">Cargando medidores...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="users-pagination-footer">
+                  <div class="users-pagination-left">
+                    <div class="users-pagination-meta" id="medidoresResumenPaginacionInferior"></div>
+                    <div class="users-length-control">
+                      <label for="medidoresPorPagina" class="mb-0">Mostrar</label>
+                      <select id="medidoresPorPagina" class="form-control form-control-sm">
+                        <option value="25">25</option>
+                        <option value="30">30</option>
+                        <option value="50">50</option>
+                        <option value="75">75</option>
+                        <option value="100">100</option>
+                        <option value="0" selected>Todos</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="btn-group btn-group-sm" role="group" aria-label="Paginacion de medidores">
+                    <button type="button" class="btn btn-outline-primary" id="btnMedidoresAnterior">
+                      <i class="fas fa-chevron-left mr-1"></i> Anterior
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" id="btnMedidoresSiguiente">
+                      Siguiente <i class="fas fa-chevron-right ml-1"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>

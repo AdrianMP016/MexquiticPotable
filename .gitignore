@@ -1,0 +1,23 @@
+# Local configuration with secrets
+app/Config/database.php
+app/Config/ultramsg.php
+
+# Generated and user-managed files
+fachadas/
+mediciones/
+recibos/generados/
+uploads/
+
+# Temporary local exports
+temp_alta_output.html
+
+# IDE and OS files
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
+__pycache__/
+*.pyc
+
+# Logs
+*.log

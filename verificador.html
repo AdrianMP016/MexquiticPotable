@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Verificador | Lectura de Agua</title>
+  <script>
+    if (window.location.pathname.toLowerCase().endsWith("/verificador.html")) {
+      window.location.replace("verificador.php" + window.location.search + window.location.hash);
+    }
+  </script>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
+  <link rel="stylesheet" href="assets/css/verificador.css?v=20260429b">
+</head>
+<body>
+  <div class="verifier-app">
+    <header class="verifier-header">
+      <div class="brand-mark">
+        <img src="assets/img/logo-recibo.png" alt="Logo del sistema de agua">
+      </div>
+      <div>
+        <span>Sistema de Agua</span>
+        <h1>Lectura en campo</h1>
+      </div>
+      <div class="header-session d-none" id="sessionPanelVerificador">
+        <div class="header-session-text">
+          <strong id="sessionVerificadorNombre">Cargando...</strong>
+          <small id="sessionVerificadorRol">Verificador</small>
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-primary" id="btnLogoutVerificador">
+          <i class="fas fa-sign-out-alt mr-1"></i> Salir
+        </button>
+      </div>
+    </header>
+
+    <main class="verifier-main">
+      <section class="mobile-screen active" id="screenBuscar">
+        <div class="screen-shell screen-shell--search">
+          <div class="screen-title">
+            <p>Verificador</p>
+            <h2>Buscar por ruta</h2>
+          </div>
+
+          <div class="search-box">
+            <label for="selRutaVerificador">Ruta registrada</label>
+            <select id="selRutaVerificador" class="form-control">
+              <option value=""></option>
+            </select>
+            <small class="text-muted d-block mt-2">La consulta del verificador solo se realiza por ruta.</small>
+            <button type="button" class="btn btn-primary btn-block mt-3" id="btnBuscarVerificador">
+              <i class="fas fa-search-location mr-1"></i> Buscar ruta
+            </button>
+          </div>
+
+          <div class="status-message d-none" id="verificadorFeedback"></div>
+
+          <div class="result-list" id="listaResultados">
+            <div class="empty-state">
+              <i class="fas fa-map-marker-alt"></i>
+              <p>Selecciona una ruta para cargar los usuarios disponibles para verificacion.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="mobile-screen" id="screenDetalle">
+        <div class="screen-shell">
+          <button type="button" class="btn btn-link back-button" data-target="screenBuscar">
+            <i class="fas fa-chevron-left mr-1"></i> Volver a resultados
+          </button>
+
+          <div class="detail-layout">
+            <div class="facade-card" id="detalleFachada">
+              <div class="facade-placeholder">
+                <i class="fas fa-home"></i>
+                <span>Sin foto de fachada</span>
+              </div>
+            </div>
+
+            <div class="detail-card">
+              <div class="detail-heading">
+                <div>
+                  <p>Usuario seleccionado</p>
+                  <h2 id="detalleNombre">Sin usuario</h2>
+                </div>
+                <span class="status-pill" id="detalleEstado">Activo</span>
+              </div>
+
+              <div class="detail-grid">
+                <div>
+                  <span>Medidor</span>
+                  <strong id="detalleMedidor">-</strong>
+                </div>
+                <div>
+                  <span>Ruta</span>
+                  <strong id="detalleRuta">-</strong>
+                </div>
+                <div>
+                  <span>Direccion</span>
+                  <strong id="detalleDireccion">-</strong>
+                </div>
+                <div>
+                  <span>Ultima lectura</span>
+                  <strong id="detalleLecturaAnterior">0</strong>
+                </div>
+                <div>
+                  <span>Periodo de cobro</span>
+                  <strong id="detallePeriodo">-</strong>
+                </div>
+                <div>
+                  <span>Rango del periodo</span>
+                  <strong id="detallePeriodoRango">-</strong>
+                </div>
+              </div>
+
+              <button type="button" class="btn btn-primary btn-block mt-3" id="btnIrLectura">
+                <i class="fas fa-clipboard-check mr-1"></i> Registrar lectura
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="mobile-screen" id="screenLectura">
+        <div class="screen-shell">
+          <button type="button" class="btn btn-link back-button" data-target="screenDetalle">
+            <i class="fas fa-chevron-left mr-1"></i> Volver al detalle
+          </button>
+
+          <div class="screen-title">
+            <p>Nueva lectura</p>
+            <h2 id="lecturaTituloUsuario">Usuario</h2>
+          </div>
+
+          <form id="formLecturaDemo">
+            <input type="hidden" id="lecturaPeriodoId" value="">
+
+            <div class="period-card">
+              <span>Periodo vigente para captura</span>
+              <strong id="lecturaPeriodoNombre">Sin periodo</strong>
+              <small id="lecturaPeriodoRango">Sin rango disponible</small>
+            </div>
+
+            <div class="reading-layout">
+              <div class="reading-main-stack">
+                <div class="reading-card">
+                  <label>Lectura anterior</label>
+                  <div class="readonly-reading" id="lecturaAnterior">0</div>
+
+                  <label for="lecturaActual">Lectura actual</label>
+                  <input type="number" id="lecturaActual" class="form-control reading-input" min="0" step="0.01" placeholder="0.00">
+
+                  <div class="consumption-preview">
+                    <span>Consumo calculado</span>
+                    <strong id="consumoCalculado">0 m3</strong>
+                  </div>
+                </div>
+
+                <div class="capture-card">
+                  <label for="observacionesLectura">Observaciones</label>
+                  <textarea id="observacionesLectura" class="form-control" rows="4" placeholder="Ej. Casa cerrada, medidor danado, lectura no visible..."></textarea>
+                </div>
+              </div>
+
+              <div class="reading-side-stack">
+                <div class="capture-card">
+                  <label for="fotoMedidor">Foto del medidor</label>
+                  <input type="file" id="fotoMedidor" class="d-none" accept="image/*" capture="environment">
+                  <button type="button" class="btn btn-outline-primary btn-block" id="btnFotoMedidor">
+                    <i class="fas fa-camera mr-1"></i> Tomar foto
+                  </button>
+                  <div class="photo-preview d-none" id="previewFotoMedidor"></div>
+                </div>
+
+                <div class="capture-card">
+                  <label>Ubicacion de captura</label>
+                  <button type="button" class="btn btn-outline-primary btn-block" id="btnCapturarGps">
+                    <i class="fas fa-location-arrow mr-1"></i> Capturar GPS
+                  </button>
+                  <div class="gps-box" id="gpsBox">
+                    <span>Latitud: <strong id="gpsLat">Pendiente</strong></span>
+                    <span>Longitud: <strong id="gpsLng">Pendiente</strong></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-success btn-block btn-lg">
+              <i class="fas fa-save mr-1"></i> Guardar lectura
+            </button>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <nav class="bottom-nav">
+      <button type="button" class="active" data-target="screenBuscar">
+        <i class="fas fa-search"></i>
+        <span>Buscar</span>
+      </button>
+      <button type="button" data-target="screenDetalle">
+        <i class="fas fa-home"></i>
+        <span>Detalle</span>
+      </button>
+      <button type="button" data-target="screenLectura">
+        <i class="fas fa-camera"></i>
+        <span>Lectura</span>
+      </button>
+    </nav>
+  </div>
+
+  <div class="modal fade" id="modalLecturaGuardada" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-body text-center p-4">
+          <div class="success-mark">
+            <i class="fas fa-check"></i>
+          </div>
+          <h5>Lectura lista</h5>
+          <p class="mb-0">La lectura quedo preparada para enviarse al servidor.</p>
+        </div>
+        <div class="modal-footer border-0">
+          <button type="button" class="btn btn-primary btn-block" data-dismiss="modal">Aceptar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+  <script src="assets/js/session-client.js?v=20260429b"></script>
+  <script src="assets/js/verificador.js?v=20260429d"></script>
+</body>
+</html>

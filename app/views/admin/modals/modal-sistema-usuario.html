@@ -1,0 +1,68 @@
+<div class="modal fade" id="modalSistemaUsuario" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="formSistemaUsuario">
+        <input type="hidden" name="accion" id="sistemaUsuarioAccion" value="usuariosSistema.guardar">
+        <input type="hidden" name="usuario_sistema_id" id="sistemaUsuarioId">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="fas fa-user-shield text-primary mr-2"></i><span id="modalSistemaUsuarioTitle">Nuevo usuario del sistema</span></h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-dismissible d-none" id="modalSistemaUsuarioFeedback" role="alert">
+            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+            <span id="modalSistemaUsuarioFeedbackText"></span>
+          </div>
+          <div class="form-group">
+            <label for="sistemaNombre">Nombre</label>
+            <input type="text" class="form-control" id="sistemaNombre" name="nombre" maxlength="120" required>
+          </div>
+          <div class="form-group">
+            <label for="sistemaUsuario">Usuario de acceso</label>
+            <input type="text" class="form-control" id="sistemaUsuario" name="usuario" maxlength="60" required>
+          </div>
+          <div class="form-row">
+            <div class="form-group col-md-6">
+              <label for="sistemaTelefono">Telefono</label>
+              <input type="tel" class="form-control" id="sistemaTelefono" name="telefono" maxlength="10">
+            </div>
+            <div class="form-group col-md-6">
+              <label for="sistemaCorreo">Correo</label>
+              <input type="email" class="form-control" id="sistemaCorreo" name="correo" maxlength="150">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group col-md-6">
+              <label for="sistemaRol">Rol</label>
+              <select class="form-control" id="sistemaRol" name="rol" required>
+                <option value="admin">Administrador</option>
+                <option value="cobrador">Cobro</option>
+                <option value="verificador">Verificador</option>
+              </select>
+            </div>
+            <div class="form-group col-md-6">
+              <label for="sistemaActivo">Estado</label>
+              <select class="form-control" id="sistemaActivo" name="activo">
+                <option value="1">Activo</option>
+                <option value="0">Inactivo</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group" id="sistemaPasswordWrap">
+            <label for="sistemaPassword">Contrasena inicial</label>
+            <input type="password" class="form-control" id="sistemaPassword" name="password" maxlength="80">
+            <small class="form-text text-muted">Solo se pide al crear. Despues puedes restablecerla sin editar los demas datos.</small>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Cerrar</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save mr-1"></i> Guardar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

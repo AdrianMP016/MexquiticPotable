@@ -1,0 +1,82 @@
+    <section class="content app-view d-none" id="viewRutas">
+      <div class="container-fluid">
+        <div class="row">
+          <div class="col-12">
+            <div class="alert alert-dismissible d-none" id="rutasFeedback" role="alert">
+              <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+              <span id="rutasFeedbackText"></span>
+            </div>
+
+            <div class="card search-card">
+              <div class="card-body">
+                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between">
+                  <div>
+                    <label class="mb-1">Administracion de rutas</label>
+                    <p class="mb-0 text-muted">Consulta, agrega y edita las rutas disponibles para organizar los domicilios del sistema.</p>
+                  </div>
+                  <div class="mt-3 mt-md-0">
+                    <button type="button" class="btn btn-primary" id="btnAgregarRuta">
+                      <i class="fas fa-plus mr-1"></i> Agregar ruta
+                    </button>
+                    <button type="button" class="btn btn-outline-primary ml-md-2 mt-2 mt-md-0" id="btnRecargarRutas">
+                      <i class="fas fa-sync-alt mr-1"></i> Recargar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-route mr-2"></i>Rutas registradas</h3>
+              </div>
+              <div class="card-body p-0">
+                <div class="table-responsive">
+                  <table class="table table-hover table-striped mb-0" id="tablaRutas">
+                    <thead>
+                      <tr>
+                        <th>Codigo</th>
+                        <th>Nombre</th>
+                        <th>Comunidad</th>
+                        <th>Descripcion</th>
+                        <th>Estado</th>
+                        <th class="text-right">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td colspan="6" class="text-center text-muted py-4">Cargando rutas...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="users-pagination-footer">
+                  <div class="users-pagination-left">
+                    <div class="users-pagination-meta" id="rutasResumenPaginacionInferior"></div>
+                    <div class="users-length-control">
+                      <label for="rutasPorPagina" class="mb-0">Mostrar</label>
+                      <select id="rutasPorPagina" class="form-control form-control-sm">
+                        <option value="25">25</option>
+                        <option value="30">30</option>
+                        <option value="50">50</option>
+                        <option value="75">75</option>
+                        <option value="100">100</option>
+                        <option value="0" selected>Todos</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="btn-group btn-group-sm" role="group" aria-label="Paginacion de rutas">
+                    <button type="button" class="btn btn-outline-primary" id="btnRutasAnterior">
+                      <i class="fas fa-chevron-left mr-1"></i> Anterior
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" id="btnRutasSiguiente">
+                      Siguiente <i class="fas fa-chevron-right ml-1"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>

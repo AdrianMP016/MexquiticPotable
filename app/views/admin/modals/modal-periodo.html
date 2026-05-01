@@ -1,0 +1,60 @@
+<div class="modal fade" id="modalPeriodo" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <form id="formPeriodo">
+        <input type="hidden" id="periodoAccion" name="accion" value="periodos.guardar">
+        <input type="hidden" id="modalPeriodoId" name="periodo_id">
+
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalPeriodoTitulo"><i class="fas fa-calendar-plus text-primary mr-2"></i>Agregar periodo</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="alert alert-dismissible d-none" id="modalPeriodoFeedback" role="alert">
+            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+            <span id="modalPeriodoFeedbackText"></span>
+          </div>
+
+          <div class="row">
+            <div class="col-md-12">
+              <div class="form-group">
+                <label for="modalPeriodoNombre">Nombre del periodo</label>
+                <input type="text" id="modalPeriodoNombre" name="nombre" class="form-control text-uppercase-field" maxlength="60" autocomplete="off" placeholder="ENERO-FEBRERO 2026">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="modalPeriodoInicio">Fecha de inicio</label>
+                <input type="date" id="modalPeriodoInicio" name="fecha_inicio" class="form-control">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="modalPeriodoFin">Fecha de fin</label>
+                <input type="date" id="modalPeriodoFin" name="fecha_fin" class="form-control">
+              </div>
+            </div>
+          </div>
+
+          <div class="baja-box d-none" id="boxBajaPeriodo">
+            <h5>Dar de baja periodo</h5>
+            <p>Esta accion cancela el periodo para que ya no se use en nuevos cobros. Los datos existentes se conservan.</p>
+            <button type="button" class="btn btn-danger" id="btnBajaPeriodo">
+              <i class="fas fa-calendar-times mr-1"></i> Dar de baja
+            </button>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Cerrar</button>
+          <button type="submit" class="btn btn-primary" id="btnGuardarPeriodo">
+            <i class="fas fa-save mr-1"></i> Guardar periodo
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

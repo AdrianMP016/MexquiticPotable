@@ -1,0 +1,143 @@
+<div class="modal fade" id="modalRegistrarPago" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <form id="formRegistrarPago">
+        <input type="hidden" name="accion" value="pagos.registrar">
+        <input type="hidden" id="pagoReciboId" name="recibo_id">
+
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="fas fa-cash-register text-primary mr-2"></i>Registrar pago manual</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="alert alert-dismissible d-none" id="modalPagoFeedback" role="alert">
+            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+            <span id="modalPagoFeedbackText"></span>
+          </div>
+
+          <div class="recibo-summary mb-3" id="pagoResumenRecibo">
+            <div class="text-muted">Selecciona un recibo para registrar el pago.</div>
+          </div>
+
+          <ul class="nav nav-tabs" id="tabsPagoModal" role="tablist">
+            <li class="nav-item">
+              <a class="nav-link active" data-toggle="pill" href="#tabRegistrarPago" role="tab">
+                <i class="fas fa-hand-holding-usd mr-1"></i> Registrar pago
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" data-toggle="pill" href="#tabHistorialPagos" role="tab">
+                <i class="fas fa-history mr-1"></i> Pagos realizados
+              </a>
+            </li>
+          </ul>
+
+          <div class="tab-content pt-3">
+            <div class="tab-pane fade show active" id="tabRegistrarPago" role="tabpanel">
+              <div class="row">
+                <div class="col-lg-7">
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        <label for="pagoMonto">Monto a registrar</label>
+                        <input type="number" id="pagoMonto" name="monto" class="form-control" min="0.01" step="0.01" placeholder="0.00">
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        <label for="pagoFecha">Fecha y hora de pago</label>
+                        <input type="datetime-local" id="pagoFecha" name="fecha_pago" class="form-control">
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="form-group">
+                        <label for="pagoMetodo">Metodo</label>
+                        <select id="pagoMetodo" name="metodo" class="form-control">
+                          <option value="efectivo">Efectivo</option>
+                          <option value="spei">SPEI (Transferencia)</option>
+                          <option value="tarjeta">Tarjeta</option>
+                          <option value="otro">Otro</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="col-md-8">
+                      <div class="form-group">
+                        <label for="pagoReferencia">Referencia</label>
+                        <input type="text" id="pagoReferencia" name="referencia" class="form-control text-uppercase-field" maxlength="120" placeholder="FOLIO, ULTIMOS 4 DIGITOS O REFERENCIA INTERNA">
+                      </div>
+                    </div>
+                    <div class="col-12">
+                      <input type="hidden" name="recibo_entregado" value="0">
+                      <div class="custom-control custom-checkbox mb-3">
+                        <input type="checkbox" class="custom-control-input" id="pagoReciboEntregado" name="recibo_entregado" value="1">
+                        <label class="custom-control-label" for="pagoReciboEntregado">Recibo entregado</label>
+                      </div>
+                    </div>
+                    <div class="col-12">
+                      <div class="form-group">
+                        <label for="pagoObservaciones">Observaciones</label>
+                        <textarea id="pagoObservaciones" name="observaciones" class="form-control text-uppercase-field" rows="3" maxlength="255" placeholder="NOTAS DEL COBRO, ACLARACIONES O DETALLE DE LA OPERACION"></textarea>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-lg-5">
+                  <div class="payment-balance-box">
+                    <div>
+                      <span>Total del recibo</span>
+                      <strong id="pagoTotalRecibo">$0.00</strong>
+                    </div>
+                    <div>
+                      <span>Pagado acumulado</span>
+                      <strong id="pagoTotalAcumulado">$0.00</strong>
+                    </div>
+                    <div>
+                      <span>Saldo pendiente</span>
+                      <strong id="pagoSaldoPendiente">$0.00</strong>
+                    </div>
+                    <div>
+                      <span>Estatus actual</span>
+                      <div id="pagoEstadoActual" class="mt-1"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="tab-pane fade" id="tabHistorialPagos" role="tabpanel">
+              <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0" id="tablaHistorialPagos">
+                  <thead>
+                    <tr>
+                      <th>Fecha</th>
+                      <th>Metodo</th>
+                      <th>Monto</th>
+                      <th>Referencia</th>
+                      <th>Observaciones</th>
+                      <th class="text-right">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td colspan="6" class="text-center text-muted py-4">Sin pagos registrados para este recibo.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Cerrar</button>
+          <button type="submit" class="btn btn-primary" id="btnGuardarPago">
+            <i class="fas fa-save mr-1"></i> Registrar pago
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

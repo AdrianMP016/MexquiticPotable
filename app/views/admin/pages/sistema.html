@@ -1,0 +1,176 @@
+    <section class="content app-view d-none" id="viewSistema">
+      <div class="container-fluid">
+        <div class="row">
+          <div class="col-12">
+            <div class="alert alert-dismissible d-none" id="sistemaFeedback" role="alert">
+              <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+              <span id="sistemaFeedbackText"></span>
+            </div>
+
+            <div class="card search-card">
+              <div class="card-body">
+                <div class="row align-items-end">
+                  <div class="col-md-6">
+                    <label for="buscarUsuarioSistema">Buscar usuario del sistema</label>
+                    <div class="input-group">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                      </div>
+                      <input type="text" id="buscarUsuarioSistema" class="form-control" maxlength="120" placeholder="NOMBRE, USUARIO O ROL">
+                    </div>
+                  </div>
+                  <div class="col-md-2 mt-3 mt-md-0">
+                    <button type="button" class="btn btn-primary btn-block" id="btnBuscarSistemaUsuarios">
+                      <i class="fas fa-search mr-1"></i> Buscar
+                    </button>
+                  </div>
+                  <div class="col-md-2 mt-3 mt-md-0">
+                    <button type="button" class="btn btn-outline-primary btn-block" id="btnRecargarSistemaUsuarios">
+                      <i class="fas fa-sync-alt mr-1"></i> Recargar
+                    </button>
+                  </div>
+                  <div class="col-md-2 mt-3 mt-md-0">
+                    <button type="button" class="btn btn-success btn-block" id="btnAgregarSistemaUsuario">
+                      <i class="fas fa-user-plus mr-1"></i> Nuevo
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-user-shield mr-2"></i>Accesos a la plataforma</h3>
+              </div>
+              <div class="card-body p-0">
+                <div class="table-responsive">
+                  <table class="table table-hover table-striped mb-0" id="tablaSistemaUsuarios">
+                    <thead>
+                      <tr>
+                        <th>Usuario</th>
+                        <th>Acceso</th>
+                        <th>Rol</th>
+                        <th>Telefono</th>
+                        <th>Ultimo login</th>
+                        <th>Ultimo acceso</th>
+                        <th>Estado</th>
+                        <th class="text-right">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td colspan="8" class="text-center text-muted py-4">Cargando usuarios del sistema...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="users-pagination-footer">
+                  <div class="users-pagination-left">
+                    <div class="users-pagination-meta" id="sistemaUsuariosResumenPaginacion"></div>
+                  </div>
+                  <div class="btn-group btn-group-sm" role="group" aria-label="Paginacion de usuarios del sistema">
+                    <button type="button" class="btn btn-outline-primary" id="btnSistemaUsuariosAnterior">
+                      <i class="fas fa-chevron-left mr-1"></i> Anterior
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" id="btnSistemaUsuariosSiguiente">
+                      Siguiente <i class="fas fa-chevron-right ml-1"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                  <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between mb-3">
+                    <h3 class="card-title mb-3 mb-lg-0"><i class="fas fa-history mr-2"></i>Bitacora de accesos y movimientos</h3>
+                    <div class="d-flex flex-column flex-md-row align-items-md-center">
+                      <button type="button" class="btn btn-sm btn-outline-primary" id="btnRecargarBitacora">
+                        <i class="fas fa-sync-alt mr-1"></i> Actualizar
+                      </button>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-md-3 mb-2">
+                      <label class="small font-weight-bold mb-1" for="filtroModuloBitacora">Entorno</label>
+                      <select class="form-control form-control-sm" id="filtroModuloBitacora">
+                        <option value="">Todos los entornos</option>
+                        <option value="plataforma">Administrador</option>
+                        <option value="cobro">Cobro</option>
+                        <option value="verificador">Verificador</option>
+                      </select>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                      <label class="small font-weight-bold mb-1" for="filtroUsuarioBitacora">Usuario</label>
+                      <select class="form-control form-control-sm" id="filtroUsuarioBitacora">
+                        <option value="">Todos los usuarios</option>
+                      </select>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                      <label class="small font-weight-bold mb-1" for="filtroAccionBitacora">Accion</label>
+                      <select class="form-control form-control-sm" id="filtroAccionBitacora">
+                        <option value="">Todas las acciones</option>
+                      </select>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                      <label class="small font-weight-bold mb-1" for="bitacoraPorPagina">Mostrar</label>
+                      <select class="form-control form-control-sm" id="bitacoraPorPagina">
+                        <option value="20" selected>20</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                      </select>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                      <label class="small font-weight-bold mb-1" for="filtroFechaDesdeBitacora">Fecha desde</label>
+                      <input type="date" class="form-control form-control-sm" id="filtroFechaDesdeBitacora">
+                    </div>
+                    <div class="col-md-3 mb-2">
+                      <label class="small font-weight-bold mb-1" for="filtroFechaHastaBitacora">Fecha hasta</label>
+                      <input type="date" class="form-control form-control-sm" id="filtroFechaHastaBitacora">
+                    </div>
+                    <div class="col-md-6 mb-2 d-flex align-items-end">
+                      <button type="button" class="btn btn-sm btn-primary mr-2" id="btnAplicarFiltrosBitacora">
+                        <i class="fas fa-filter mr-1"></i> Aplicar filtros
+                      </button>
+                      <button type="button" class="btn btn-sm btn-outline-secondary" id="btnLimpiarFiltrosBitacora">
+                        <i class="fas fa-eraser mr-1"></i> Limpiar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div class="card-body p-0">
+                  <div class="table-responsive">
+                    <table class="table table-hover table-striped mb-0" id="tablaBitacoraSistema">
+                    <thead>
+                      <tr>
+                        <th>Fecha</th>
+                        <th>Usuario</th>
+                        <th>Rol</th>
+                        <th>Modulo</th>
+                        <th>Accion</th>
+                        <th>Descripcion</th>
+                        <th>Referencia</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td colspan="7" class="text-center text-muted py-4">Cargando bitacora...</td>
+                      </tr>
+                    </tbody>
+                    </table>
+                  </div>
+                  <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between px-3 py-3 border-top">
+                    <div class="text-muted small mb-2 mb-md-0" id="bitacoraResumenPaginacion">Cargando bitacora...</div>
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Paginacion de bitacora">
+                      <button type="button" class="btn btn-outline-primary" id="btnBitacoraAnterior">Anterior</button>
+                      <button type="button" class="btn btn-outline-primary" id="btnBitacoraSiguiente">Siguiente</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+        </div>
+      </div>
+    </section>

@@ -1,0 +1,99 @@
+<div class="modal fade" id="modalNotificacionMasiva" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fab fa-whatsapp text-success mr-2"></i>Notificacion masiva por WhatsApp</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-dismissible d-none" id="notificacionesMasivasFeedback" role="alert">
+          <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+          <span id="notificacionesMasivasFeedbackText"></span>
+        </div>
+
+        <div class="row align-items-end">
+          <div class="col-md-3">
+            <label for="tipoNotificacionMasiva">Tipo de aviso</label>
+            <select id="tipoNotificacionMasiva" class="form-control">
+              <option value="recordatorio">Recordatorio de pago</option>
+              <option value="adeudo">Aviso de adeudo</option>
+              <option value="agradecimiento">Agradecimiento de pago</option>
+              <option value="aviso">Aviso general</option>
+            </select>
+          </div>
+          <div class="col-md-2 mt-3 mt-md-0">
+            <label for="estadoNotificacionMasiva">Dirigido a</label>
+            <select id="estadoNotificacionMasiva" class="form-control">
+              <option value="adeudo">Con adeudo</option>
+              <option value="pendiente">Pendientes</option>
+              <option value="parcial">Parciales</option>
+              <option value="pagado">Pagados</option>
+              <option value="todos">Todos con WhatsApp</option>
+            </select>
+          </div>
+          <div class="col-md-2 mt-3 mt-md-0">
+            <label for="filtroPeriodoNotificacionMasiva">Periodo</label>
+            <select id="filtroPeriodoNotificacionMasiva" class="form-control">
+              <option value="">Todos los periodos</option>
+            </select>
+          </div>
+          <div class="col-md-2 mt-3 mt-md-0">
+            <label for="pausaNotificacionMasiva">Pausa por envio</label>
+            <div class="input-group">
+              <input type="number" id="pausaNotificacionMasiva" class="form-control" min="5" max="60" step="1" value="8">
+              <div class="input-group-append">
+                <span class="input-group-text">seg</span>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-1 mt-3 mt-md-0">
+            <label for="limiteNotificacionMasiva">Limite</label>
+            <input type="number" id="limiteNotificacionMasiva" class="form-control" min="1" max="200" step="1" value="30">
+          </div>
+          <div class="col-md-2 mt-3 mt-md-0">
+            <button type="button" class="btn btn-outline-primary btn-block" id="btnPrepararNotificacionMasiva">
+              <i class="fas fa-list mr-1"></i> Preparar lista
+            </button>
+          </div>
+        </div>
+
+        <div class="massive-notify-toolbar mt-3">
+          <div class="text-muted small" id="statusNotificacionMasiva">Prepara una lista antes de iniciar los envios.</div>
+          <div class="massive-notify-actions">
+            <button type="button" class="btn btn-success" id="btnIniciarNotificacionMasiva" disabled>
+              <i class="fas fa-play mr-1"></i> Iniciar envio
+            </button>
+            <button type="button" class="btn btn-outline-danger" id="btnDetenerNotificacionMasiva" disabled>
+              <i class="fas fa-stop mr-1"></i> Detener
+            </button>
+          </div>
+        </div>
+
+        <div class="table-responsive mt-3">
+          <table class="table table-hover table-striped mb-0" id="tablaNotificacionesMasivas">
+            <thead>
+              <tr>
+                <th>Usuario</th>
+                <th>Recibo</th>
+                <th>Estatus</th>
+                <th>WhatsApp</th>
+                <th>Mensaje</th>
+                <th>Resultado</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td colspan="6" class="text-center text-muted py-4">No hay envios preparados.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>

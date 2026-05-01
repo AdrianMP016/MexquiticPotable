@@ -1,0 +1,118 @@
+<div class="modal fade" id="modalGenerarRecibo" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <form id="formGenerarRecibo">
+        <input type="hidden" name="accion" value="recibos.generar">
+        <input type="hidden" id="reciboLecturaId" name="lectura_id">
+
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="fas fa-file-invoice-dollar text-primary mr-2"></i>Generar recibo de pago</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="alert alert-dismissible d-none" id="modalReciboFeedback" role="alert">
+            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+            <span id="modalReciboFeedbackText"></span>
+          </div>
+
+          <div class="row">
+            <div class="col-lg-7">
+              <div class="recibo-summary mb-3" id="reciboResumenLectura">
+                <div class="text-muted">Selecciona una lectura para generar el recibo.</div>
+              </div>
+
+              <div class="card mb-0">
+                <div class="card-header">
+                  <h3 class="card-title"><i class="fas fa-coins mr-2"></i>Importes del recibo</h3>
+                </div>
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        <label for="reciboPrecioM3">Precio por m3</label>
+                        <input type="number" id="reciboPrecioM3" name="precio_m3" class="form-control recibo-money-field" min="0" step="0.01" value="10.00">
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        <label for="reciboFechaLimite">Fecha limite de pago</label>
+                        <input type="date" id="reciboFechaLimite" name="fecha_limite_pago" class="form-control">
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="form-group">
+                        <label for="reciboCooperaciones">Cooperaciones</label>
+                        <input type="number" id="reciboCooperaciones" name="cooperaciones" class="form-control recibo-money-field" min="0" step="0.01" value="0.00">
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="form-group">
+                        <label for="reciboMultas">Multas</label>
+                        <input type="number" id="reciboMultas" name="multas" class="form-control recibo-money-field" min="0" step="0.01" value="0.00">
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="form-group">
+                        <label for="reciboRecargos">Recargos</label>
+                        <input type="number" id="reciboRecargos" name="recargos" class="form-control recibo-money-field" min="0" step="0.01" value="0.00">
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        <label for="reciboMetodoPago">Metodo de pago</label>
+                        <input type="text" id="reciboMetodoPago" name="metodo_pago_caja" class="form-control" maxlength="120" value="Caja de cobro del sistema de agua">
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        <label for="reciboReferenciaPago">Referencia</label>
+                        <input type="text" id="reciboReferenciaPago" name="referencia_pago" class="form-control" maxlength="120" value="Presentar este recibo al realizar el pago">
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="recibo-total-box">
+                    <span>Total estimado</span>
+                    <strong id="reciboTotalEstimado">$0.00</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-lg-5 mt-3 mt-lg-0">
+              <div class="recibo-preview-box" id="reciboPreviewBox">
+                <div class="recibo-preview-empty">
+                  <i class="fas fa-file-image"></i>
+                  <span>La imagen del recibo aparecera aqui despues de generarlo.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer recibo-footer-toolbar">
+          <div class="recibo-footer-actions">
+            <a href="#" target="_blank" class="btn btn-outline-info d-none" id="btnAbrirReciboGenerado">
+              <i class="fas fa-external-link-alt mr-1"></i> Abrir imagen
+            </a>
+            <button type="button" class="btn btn-outline-primary d-none" id="btnImprimirReciboActual">
+              <i class="fas fa-print mr-1"></i> Imprimir
+            </button>
+            <button type="button" class="btn btn-success" id="btnEnviarReciboWhatsapp" disabled>
+              <i class="fab fa-whatsapp mr-1"></i> Enviar por WhatsApp
+            </button>
+          </div>
+          <div class="recibo-footer-submit">
+            <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Cerrar</button>
+            <button type="submit" class="btn btn-primary" id="btnGenerarRecibo">
+              <i class="fas fa-file-invoice-dollar mr-1"></i> Generar recibo
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

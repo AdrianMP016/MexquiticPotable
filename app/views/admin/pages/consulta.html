@@ -1,0 +1,89 @@
+    <section class="content app-view d-none" id="viewConsulta">
+      <div class="container-fluid">
+        <div class="row">
+          <div class="col-12">
+            <div class="alert alert-dismissible d-none" id="consultaFeedback" role="alert">
+              <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+              <span id="consultaFeedbackText"></span>
+            </div>
+
+            <div class="card search-card">
+              <div class="card-body">
+                <div class="row align-items-end">
+                  <div class="col-md-8">
+                    <label for="buscarNombreConsulta">Buscar por nombre</label>
+                    <div class="input-group">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                      </div>
+                      <input type="text" id="buscarNombreConsulta" class="form-control text-uppercase-field" maxlength="180" placeholder="NOMBRE DEL USUARIO">
+                    </div>
+                  </div>
+                  <div class="col-md-2 mt-3 mt-md-0">
+                    <button class="btn btn-info btn-block" id="btnConsultarUsuarios">
+                      <i class="fas fa-search mr-1"></i> Buscar
+                    </button>
+                  </div>
+                  <div class="col-md-2 mt-3 mt-md-0">
+                    <button class="btn btn-outline-primary btn-block" id="btnRecargarUsuarios">
+                      <i class="fas fa-sync-alt mr-1"></i> Recargar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title mb-0"><i class="fas fa-address-book mr-2"></i>Personas dadas de alta</h3>
+              </div>
+              <div class="card-body p-0">
+                <div class="table-responsive">
+                  <table class="table table-hover table-striped mb-0" id="tablaUsuarios">
+                    <thead>
+                      <tr>
+                        <th>Usuario</th>
+                        <th>WhatsApp</th>
+                        <th>Ruta</th>
+                        <th>Comunidad</th>
+                        <th>Medidor</th>
+                        <th>Estado</th>
+                        <th class="text-right">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td colspan="7" class="text-center text-muted py-4">Consulta los usuarios registrados.</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="users-pagination-footer">
+                  <div class="users-pagination-left">
+                    <div class="users-pagination-meta" id="usuariosResumenPaginacionInferior"></div>
+                    <div class="users-length-control">
+                      <label for="usuariosPorPagina" class="mb-0">Mostrar</label>
+                      <select id="usuariosPorPagina" class="form-control form-control-sm">
+                        <option value="25">25</option>
+                        <option value="30" selected>30</option>
+                        <option value="50">50</option>
+                        <option value="75">75</option>
+                        <option value="100">100</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="btn-group btn-group-sm" role="group" aria-label="Paginacion de usuarios">
+                    <button type="button" class="btn btn-outline-primary" id="btnUsuariosAnterior">
+                      <i class="fas fa-chevron-left mr-1"></i> Anterior
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" id="btnUsuariosSiguiente">
+                      Siguiente <i class="fas fa-chevron-right ml-1"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>

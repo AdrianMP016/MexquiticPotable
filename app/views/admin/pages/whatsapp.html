@@ -1,0 +1,117 @@
+    <section class="content app-view d-none" id="viewWhatsapp">
+      <div class="container-fluid">
+        <div class="row">
+          <div class="col-12">
+            <div class="alert alert-dismissible d-none" id="whatsappFeedback" role="alert">
+              <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+              <span id="whatsappFeedbackText"></span>
+            </div>
+          </div>
+
+          <div class="col-lg-5">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title"><i class="fab fa-whatsapp mr-2"></i>Enlace de WhatsApp</h3>
+              </div>
+              <div class="card-body">
+                <div class="whatsapp-status-box">
+                  <div>
+                    <span>Instancia</span>
+                    <strong id="whatsappInstanceId">instance157789</strong>
+                  </div>
+                  <div>
+                    <span>Estatus de cuenta</span>
+                    <div id="whatsappStatusBadge" class="mt-1"></div>
+                  </div>
+                  <div>
+                    <span>Subestatus</span>
+                    <strong class="payment-strong-sm" id="whatsappSubstatus">-</strong>
+                  </div>
+                  <div>
+                    <span>Celular enlazado</span>
+                    <strong class="payment-strong-sm" id="whatsappLinkedText">Revisando...</strong>
+                  </div>
+                  <div>
+                    <span>Ultima revision</span>
+                    <strong class="payment-strong-sm" id="whatsappCheckedAt">-</strong>
+                  </div>
+                </div>
+                <div class="mt-3 d-flex flex-column flex-md-row">
+                  <button type="button" class="btn btn-primary" id="btnRefreshWhatsapp">
+                    <i class="fas fa-sync-alt mr-1"></i> Actualizar estado
+                  </button>
+                  <button type="button" class="btn btn-outline-danger mt-2 mt-md-0 ml-md-2" id="btnLogoutWhatsapp">
+                    <i class="fas fa-sign-out-alt mr-1"></i> Nuevo QR
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-qrcode mr-2"></i>QR para enlazar</h3>
+              </div>
+              <div class="card-body">
+                <div class="whatsapp-qr-box" id="whatsappQrBox">
+                  <div class="recibo-preview-empty">
+                    <i class="fas fa-qrcode"></i>
+                    <span>Cargando QR...</span>
+                  </div>
+                </div>
+                <div class="map-helper-text">Escanea este QR desde WhatsApp para enlazar la instancia con el celular.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-7">
+            <div class="card search-card">
+              <div class="card-body">
+                <div class="row align-items-end">
+                  <div class="col-md-8">
+                    <label for="whatsappMessageStatus">Ultimos mensajes</label>
+                    <select id="whatsappMessageStatus" class="form-control">
+                      <option value="sent">Enviados</option>
+                      <option value="queue">En cola</option>
+                      <option value="unsent">No enviados</option>
+                      <option value="invalid">Invalidos</option>
+                      <option value="all">Todos</option>
+                    </select>
+                  </div>
+                  <div class="col-md-4 mt-3 mt-md-0">
+                    <button type="button" class="btn btn-outline-primary btn-block" id="btnRefreshWhatsappMessages">
+                      <i class="fas fa-comments mr-1"></i> Refrescar mensajes
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-paper-plane mr-2"></i>Mensajes de la instancia</h3>
+              </div>
+              <div class="card-body p-0">
+                <div class="table-responsive">
+                  <table class="table table-hover table-striped mb-0" id="tablaWhatsappMensajes">
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>Destino</th>
+                        <th>Contenido</th>
+                        <th>Estatus</th>
+                        <th>Fecha</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td colspan="5" class="text-center text-muted py-4">Sin mensajes para mostrar.</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>

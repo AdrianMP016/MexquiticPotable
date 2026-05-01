@@ -1,0 +1,281 @@
+    <section class="content app-view d-none" id="viewAlta">
+      <div class="container-fluid">
+        <div class="row">
+          <div class="col-xl-9 col-lg-8">
+            <div class="alert alert-dismissible d-none" id="statusFeedback" role="alert">
+              <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+              <span id="statusFeedbackText"></span>
+            </div>
+
+            <div class="card search-card">
+              <div class="card-body">
+                <div class="row align-items-end">
+                  <div class="col-md-8">
+                    <label for="buscarDuplicado">Buscar por nombre, ruta o medidor</label>
+                    <div class="input-group">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                      </div>
+                      <input type="text" id="buscarDuplicado" class="form-control" placeholder="Ej. Cent1-034, SAPMXQ-0001, Juan Perez">
+                    </div>
+                  </div>
+                  <div class="col-md-4 mt-3 mt-md-0">
+                    <button type="button" class="btn btn-info btn-block" id="btnBuscar">
+                      <i class="fas fa-shield-alt mr-1"></i> Revisar duplicados
+                    </button>
+                  </div>
+                </div>
+                <div class="duplicate-result mt-3 d-none" id="resultadoDuplicado">
+                  <i class="fas fa-info-circle mr-2"></i>
+                  <span>No se encontraron coincidencias exactas.</span>
+                </div>
+              </div>
+            </div>
+
+            <form id="formAltaUsuario" enctype="multipart/form-data">
+              <input type="hidden" name="accion" value="usuarios.guardar">
+              <div class="card">
+                <div class="card-header">
+                  <h3 class="card-title"><i class="fas fa-user mr-2"></i>Datos del usuario</h3>
+                </div>
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-md-8">
+                      <div class="form-group">
+                        <label for="nombre">Nombre completo</label>
+                        <input type="text" id="nombre" name="nombre" class="form-control sync-summary text-uppercase-field" data-summary="summaryNombre" maxlength="180" autocomplete="off" placeholder="NOMBRE DEL USUARIO">
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="form-group">
+                        <label for="estadoUsuario">Estado</label>
+                        <select id="estadoUsuario" name="estado_usuario" class="form-control sync-summary" data-summary="summaryEstado">
+                          <option>Activo</option>
+                          <option>Adeudo</option>
+                          <option>Suspendido</option>
+                          <option>Inactivo</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="form-group">
+                        <label for="telefono">Telefono alternativo</label>
+                        <input type="tel" id="telefono" name="telefono" class="form-control only-numbers" inputmode="numeric" maxlength="10" placeholder="4920000000">
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="form-group">
+                        <label for="whatsapp">WhatsApp para recibos</label>
+                        <input type="tel" id="whatsapp" name="whatsapp" class="form-control only-numbers" inputmode="numeric" maxlength="10" placeholder="4920000000">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-header">
+                  <h3 class="card-title"><i class="fas fa-map-marker-alt mr-2"></i>Direccion y ruta</h3>
+                </div>
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-md-7">
+                      <div class="form-group">
+                        <label for="calle">Calle</label>
+                        <input type="text" id="calle" name="calle" class="form-control text-uppercase-field" maxlength="180" autocomplete="off" placeholder="CALLE PRINCIPAL, CAMINO O REFERENCIA">
+                      </div>
+                    </div>
+                    <div class="col-md-5">
+                      <div class="form-group">
+                        <label for="numero">Numero</label>
+                        <input type="text" id="numero" name="numero_domicilio" class="form-control text-uppercase-field" maxlength="60" autocomplete="off" placeholder="S/N, INTERIOR, LOTE">
+                      </div>
+                    </div>
+                    <div class="col-md-5">
+                      <div class="form-group">
+                        <label for="colonia">Colonia</label>
+                        <input type="text" id="colonia" name="colonia" class="form-control text-uppercase-field" maxlength="180" autocomplete="off" placeholder="COLONIA O LOCALIDAD">
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="form-group">
+                        <label for="comunidad">Comunidad</label>
+                        <select id="comunidad" name="comunidad" class="form-control sync-summary" data-summary="summaryComunidad">
+                          <option>Centro 1</option>
+                          <option>Pedregal</option>
+                          <option>Llano</option>
+                          <option>Bella Vista</option>
+                          <option>Playa</option>
+                          <option>Ejidal</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-group">
+                        <label for="ruta">Ruta</label>
+                        <select id="ruta" name="ruta_id" class="form-control sync-summary" data-summary="summaryRuta">
+                          <option value="">Cargando rutas...</option>
+                        </select>
+                        <div class="field-inline-actions">
+                          <button type="button" class="btn btn-sm btn-outline-primary" id="btnRutaNuevaAlta">
+                            <i class="fas fa-plus mr-1"></i> Nueva
+                          </button>
+                          <button type="button" class="btn btn-sm btn-outline-secondary" id="btnRutaEditarAlta">
+                            <i class="fas fa-edit mr-1"></i> Editar
+                          </button>
+                        </div>
+                        <small class="form-text text-muted" id="rutaHelp">Selecciona la ruta del usuario.</small>
+                      </div>
+                    </div>
+                    <div class="col-12">
+                      <input type="hidden" id="googlePlaceId" name="google_place_id">
+                      <div class="form-group">
+                        <label for="searchDireccionMapa">Buscar direccion con Google Maps</label>
+                        <input type="text" id="searchDireccionMapa" class="form-control" autocomplete="off" placeholder="Escribe la calle, colonia o referencia">
+                        <small class="form-text text-muted">Si Google no encuentra bien la zona, puedes ubicar el pin manualmente y guardar una referencia clara del domicilio.</small>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="form-group">
+                        <label for="modoUbicacion">Modo de ubicacion</label>
+                        <select id="modoUbicacion" name="modo_ubicacion" class="form-control">
+                          <option value="manual">Pin manual en mapa</option>
+                          <option value="google_maps">Confirmada por Google Maps</option>
+                          <option value="aproximada">Zona aproximada</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="form-group">
+                        <label for="latitud">Latitud</label>
+                        <input type="text" id="latitud" name="latitud" class="form-control coordinate-field" inputmode="decimal" maxlength="100" placeholder="22.246000">
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="form-group">
+                        <label for="longitud">Longitud</label>
+                        <input type="text" id="longitud" name="longitud" class="form-control coordinate-field" inputmode="decimal" maxlength="100" placeholder="-101.305000">
+                      </div>
+                    </div>
+                    <div class="col-12">
+                      <div class="location-mode-panel" id="locationModePanel">
+                        <div class="location-mode-title"><i class="fas fa-crosshairs mr-2"></i>Ubicacion manual permitida</div>
+                        <div class="location-mode-text" id="locationModeText">Mueve el pin hasta el domicilio correcto y agrega una referencia corta para que el verificador lo identifique sin depender solo de Google.</div>
+                      </div>
+                    </div>
+                    <div class="col-12">
+                      <div class="form-group">
+                        <label for="referenciaUbicacion">Referencia para localizar el domicilio</label>
+                        <textarea id="referenciaUbicacion" name="referencia_ubicacion" class="form-control text-uppercase-field" rows="2" maxlength="255" placeholder="FRENTE A LA TIENDA, JUNTO A LA CANCHA, CASA CON PORTON AZUL, ENTRADA POR CAMINO DE TERRACERIA"></textarea>
+                        <small class="form-text text-muted">Esta referencia se guarda aunque Google no reconozca la direccion exacta.</small>
+                      </div>
+                    </div>
+                    <div class="col-md-5">
+                      <div class="form-group">
+                        <label for="fachada">Foto de fachada</label>
+                        <input type="file" id="fachada" name="fachada" class="form-control-file" accept="image/jpeg,image/png,image/webp">
+                        <small class="form-text text-muted">Sube una foto clara del frente del domicilio para ayudar al verificador.</small>
+                      </div>
+                    </div>
+                    <div class="col-12">
+                      <div class="fachada-preview" id="fachadaAltaPreview">
+                        <i class="fas fa-home mr-2"></i>
+                        <span>Sin foto de fachada cargada.</span>
+                      </div>
+                    </div>
+                    <div class="col-12">
+                      <div class="map-canvas" id="mapAlta"></div>
+                      <div class="map-helper-text">El marcador se puede arrastrar para corregir la ubicacion del domicilio.</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-header">
+                  <h3 class="card-title"><i class="fas fa-tachometer-alt mr-2"></i>Medidor asignado</h3>
+                </div>
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-md-4">
+                      <div class="form-group">
+                        <label for="medidor">Numero de medidor</label>
+                        <select id="medidor" name="medidor" class="form-control sync-summary" data-summary="summaryMedidor" data-placeholder="Selecciona o escribe un medidor">
+                          <option value=""></option>
+                        </select>
+                        <small class="form-text text-muted">Busca un medidor ya registrado o escribe uno nuevo para darlo de alta.</small>
+                        <div class="small text-muted mt-2 d-none" id="medidorAltaInfo"></div>
+                        <div class="medidor-picker-list d-none" id="medidorAltaLista"></div>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="form-group">
+                        <label for="lecturaInicial">Lectura inicial</label>
+                        <input type="number" id="lecturaInicial" name="lectura_inicial" class="form-control" min="0" step="0.01" placeholder="0.00">
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="form-group">
+                        <label for="estadoMedidor">Estado del medidor</label>
+                        <select id="estadoMedidor" name="estado_medidor" class="form-control">
+                          <option>Activo</option>
+                          <option>Sin medidor</option>
+                          <option>Reemplazado</option>
+                          <option>Inactivo</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <div class="col-xl-3 col-lg-4">
+            <div class="card summary-card sticky-summary-card">
+              <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-id-card mr-2"></i>Resumen</h3>
+              </div>
+              <div class="card-body">
+                <div class="summary-user">
+                  <div class="summary-icon">
+                    <i class="fas fa-user"></i>
+                  </div>
+                  <div>
+                    <h4 id="summaryNombre">Sin nombre</h4>
+                    <span class="badge badge-success" id="summaryEstado">Activo</span>
+                  </div>
+                </div>
+
+                <div class="summary-grid">
+                  <div>
+                    <span>Ruta</span>
+                    <strong id="summaryRuta">Sin ruta</strong>
+                  </div>
+                  <div>
+                    <span>Medidor</span>
+                    <strong id="summaryMedidor">Sin medidor</strong>
+                  </div>
+                  <div>
+                    <span>Comunidad</span>
+                    <strong id="summaryComunidad">Centro 1</strong>
+                  </div>
+                  <div>
+                    <span>Periodo</span>
+                    <strong>Mar-Abr 2026</strong>
+                  </div>
+                </div>
+                <div class="summary-actions">
+                  <button type="button" class="btn btn-primary" id="btnGuardarPanel">
+                    <i class="fas fa-save mr-1"></i> Guardar usuario
+                  </button>
+                  <button type="button" class="btn btn-outline-primary" id="btnLimpiarPanel">
+                    <i class="fas fa-eraser mr-1"></i> Limpiar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>

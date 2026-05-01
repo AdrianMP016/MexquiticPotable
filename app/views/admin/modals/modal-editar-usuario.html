@@ -1,0 +1,236 @@
+<div class="modal fade" id="modalEditarUsuario" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <form id="formEditarUsuario" enctype="multipart/form-data">
+        <input type="hidden" name="accion" value="usuarios.actualizar">
+        <input type="hidden" id="editUsuarioId" name="usuario_id">
+        <input type="hidden" id="editDomicilioId" name="domicilio_id">
+        <input type="hidden" id="editMedidorId" name="medidor_id">
+
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="fas fa-user-edit text-primary mr-2"></i>Editar usuario</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="alert alert-dismissible d-none" id="modalFeedback" role="alert">
+            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+            <span id="modalFeedbackText"></span>
+          </div>
+
+          <ul class="nav nav-tabs" id="tabsEditarUsuario" role="tablist">
+            <li class="nav-item">
+              <a class="nav-link active" data-toggle="pill" href="#tabDatosUsuario" role="tab">
+                <i class="fas fa-user mr-1"></i> Datos de usuario
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" data-toggle="pill" href="#tabDireccionRuta" role="tab">
+                <i class="fas fa-map-marker-alt mr-1"></i> Direccion y ruta
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" data-toggle="pill" href="#tabMedidorAsignado" role="tab">
+                <i class="fas fa-tachometer-alt mr-1"></i> Medidor asignado
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" data-toggle="pill" href="#tabBajaUsuario" role="tab">
+                <i class="fas fa-user-slash mr-1"></i> Baja
+              </a>
+            </li>
+          </ul>
+
+          <div class="tab-content pt-3">
+            <div class="tab-pane fade show active" id="tabDatosUsuario" role="tabpanel">
+              <div class="row">
+                <div class="col-md-8">
+                  <div class="form-group">
+                    <label for="editNombre">Nombre completo</label>
+                    <input type="text" id="editNombre" name="nombre" class="form-control text-uppercase-field" maxlength="180" autocomplete="off">
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="form-group">
+                    <label for="editEstadoUsuario">Estado</label>
+                    <select id="editEstadoUsuario" name="estado_usuario" class="form-control">
+                      <option>Activo</option>
+                      <option>Inactivo</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label for="editWhatsapp">WhatsApp para recibos</label>
+                    <input type="tel" id="editWhatsapp" name="whatsapp" class="form-control only-numbers" inputmode="numeric" maxlength="10">
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label for="editTelefono">Telefono alternativo</label>
+                    <input type="tel" id="editTelefono" name="telefono" class="form-control only-numbers" inputmode="numeric" maxlength="10">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="tab-pane fade" id="tabDireccionRuta" role="tabpanel">
+              <div class="row">
+                <div class="col-md-7">
+                  <div class="form-group">
+                    <label for="editCalle">Calle</label>
+                    <input type="text" id="editCalle" name="calle" class="form-control text-uppercase-field" maxlength="180">
+                  </div>
+                </div>
+                <div class="col-md-5">
+                  <div class="form-group">
+                    <label for="editNumero">Numero</label>
+                    <input type="text" id="editNumero" name="numero_domicilio" class="form-control text-uppercase-field" maxlength="60">
+                  </div>
+                </div>
+                <div class="col-md-5">
+                  <div class="form-group">
+                    <label for="editColonia">Colonia</label>
+                    <input type="text" id="editColonia" name="colonia" class="form-control text-uppercase-field" maxlength="180">
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="form-group">
+                    <label for="editComunidad">Comunidad</label>
+                    <select id="editComunidad" name="comunidad" class="form-control">
+                      <option>Centro 1</option>
+                      <option>Pedregal</option>
+                      <option>Llano</option>
+                      <option>Bella Vista</option>
+                      <option>Playa</option>
+                      <option>Ejidal</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="form-group">
+                    <label for="editRuta">Ruta</label>
+                    <select id="editRuta" name="ruta_id" class="form-control">
+                      <option value="">Cargando rutas...</option>
+                    </select>
+                    <div class="field-inline-actions">
+                      <button type="button" class="btn btn-sm btn-outline-primary" id="btnRutaNuevaEditar">
+                        <i class="fas fa-plus mr-1"></i> Nueva
+                      </button>
+                      <button type="button" class="btn btn-sm btn-outline-secondary" id="btnRutaEditarUsuario">
+                        <i class="fas fa-edit mr-1"></i> Editar
+                      </button>
+                    </div>
+                    <small class="form-text text-muted" id="editRutaHelp">Selecciona la ruta del usuario.</small>
+                  </div>
+                </div>
+                <div class="col-12">
+                  <input type="hidden" id="editGooglePlaceId" name="google_place_id">
+                  <div class="form-group">
+                    <label for="editSearchDireccionMapa">Buscar direccion con Google Maps</label>
+                    <input type="text" id="editSearchDireccionMapa" class="form-control" autocomplete="off" placeholder="Escribe la direccion o referencia">
+                    <small class="form-text text-muted">Si la zona no aparece bien en Google, ajusta el pin manualmente y guarda una referencia del domicilio.</small>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="form-group">
+                    <label for="editModoUbicacion">Modo de ubicacion</label>
+                    <select id="editModoUbicacion" name="modo_ubicacion" class="form-control">
+                      <option value="manual">Pin manual en mapa</option>
+                      <option value="google_maps">Confirmada por Google Maps</option>
+                      <option value="aproximada">Zona aproximada</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="form-group">
+                    <label for="editLatitud">Latitud</label>
+                    <input type="text" id="editLatitud" name="latitud" class="form-control coordinate-field" maxlength="100" inputmode="decimal">
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="form-group">
+                    <label for="editLongitud">Longitud</label>
+                    <input type="text" id="editLongitud" name="longitud" class="form-control coordinate-field" maxlength="100" inputmode="decimal">
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="form-group">
+                    <label for="editFachada">Foto de fachada</label>
+                    <input type="file" id="editFachada" name="fachada" class="form-control-file" accept="image/jpeg,image/png,image/webp">
+                  </div>
+                </div>
+                <div class="col-12">
+                  <div class="location-mode-panel" id="editLocationModePanel">
+                    <div class="location-mode-title"><i class="fas fa-crosshairs mr-2"></i>Ubicacion manual permitida</div>
+                    <div class="location-mode-text" id="editLocationModeText">Puedes dejar el punto exacto o solo la zona aproximada y respaldarlo con una referencia del domicilio.</div>
+                  </div>
+                </div>
+                <div class="col-12">
+                  <div class="form-group">
+                    <label for="editReferenciaUbicacion">Referencia para localizar el domicilio</label>
+                    <textarea id="editReferenciaUbicacion" name="referencia_ubicacion" class="form-control text-uppercase-field" rows="2" maxlength="255" placeholder="FRENTE A LA ESCUELA, CASA DE ESQUINA, PORTON NEGRO, SEGUNDA CALLE A LA DERECHA"></textarea>
+                  </div>
+                </div>
+                <div class="col-12">
+                  <div class="map-canvas map-canvas-modal" id="mapEdit"></div>
+                  <div class="map-helper-text">Tambien puedes arrastrar el marcador dentro del mapa para ajustar el domicilio.</div>
+                </div>
+                <div class="col-12">
+                  <div class="fachada-preview" id="fachadaPreview">
+                    <i class="fas fa-home mr-2"></i>
+                    <span>Sin foto de fachada registrada.</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="tab-pane fade" id="tabMedidorAsignado" role="tabpanel">
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label for="editMedidor">Medidor asignado</label>
+                    <select id="editMedidor" name="medidor_id_asignado" class="form-control">
+                      <option value="">Cargando medidores...</option>
+                    </select>
+                    <small class="form-text text-muted">Selecciona un medidor ya cargado en el sistema.</small>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label for="editEstadoMedidor">Estado del medidor</label>
+                    <select id="editEstadoMedidor" name="estado_medidor" class="form-control">
+                      <option>Activo</option>
+                      <option>Sin medidor</option>
+                      <option>Reemplazado</option>
+                      <option>Inactivo</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="tab-pane fade" id="tabBajaUsuario" role="tabpanel">
+              <div class="baja-box">
+                <h5>Dar de baja registro</h5>
+                <p>Usa esta accion para desactivar registros de prueba o usuarios que ya no deben aparecer como activos. El historial queda conservado en la base.</p>
+                <button type="button" class="btn btn-danger" id="btnBajaUsuario">
+                  <i class="fas fa-user-slash mr-1"></i> Dar de baja
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Cerrar</button>
+          <button type="submit" class="btn btn-primary" id="btnActualizarUsuario">
+            <i class="fas fa-save mr-1"></i> Guardar cambios
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

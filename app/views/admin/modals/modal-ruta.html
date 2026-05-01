@@ -1,0 +1,74 @@
+<div class="modal fade" id="modalRuta" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <form id="formRuta">
+        <input type="hidden" id="rutaAccion" name="accion" value="rutas.guardar">
+        <input type="hidden" id="modalRutaId" name="ruta_id">
+
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalRutaTitulo"><i class="fas fa-route text-primary mr-2"></i>Agregar ruta</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="alert alert-dismissible d-none" id="modalRutaFeedback" role="alert">
+            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+            <span id="modalRutaFeedbackText"></span>
+          </div>
+
+          <div class="row">
+            <div class="col-md-4">
+              <div class="form-group">
+                <label for="modalRutaCodigo">Codigo de ruta</label>
+                <input type="text" id="modalRutaCodigo" name="codigo" class="form-control route-code" maxlength="25" autocomplete="off" placeholder="PLAYA-010">
+              </div>
+            </div>
+            <div class="col-md-8">
+              <div class="form-group">
+                <label for="modalRutaNombre">Nombre de la ruta</label>
+                <input type="text" id="modalRutaNombre" name="nombre" class="form-control text-uppercase-field" maxlength="120" autocomplete="off" placeholder="RUTA PLAYA NORTE">
+              </div>
+            </div>
+            <div class="col-md-5">
+              <div class="form-group">
+                <label for="modalRutaComunidad">Comunidad</label>
+                <select id="modalRutaComunidad" name="comunidad_id" class="form-control">
+                  <option value="">Selecciona comunidad</option>
+                  <option value="1">Bella Vista</option>
+                  <option value="2">Centro 1</option>
+                  <option value="3">Playa</option>
+                  <option value="4">Ejidal</option>
+                  <option value="5">Llano</option>
+                  <option value="6">Pedregal</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-md-7">
+              <div class="form-group">
+                <label for="modalRutaDescripcion">Descripcion</label>
+                <input type="text" id="modalRutaDescripcion" name="descripcion" class="form-control text-uppercase-field" maxlength="180" autocomplete="off" placeholder="SECTOR NORTE O REFERENCIA DE COBRO">
+              </div>
+            </div>
+          </div>
+
+          <div class="baja-box d-none" id="boxBajaRuta">
+            <h5>Dar de baja ruta</h5>
+            <p>La ruta se marcara como inactiva para que no aparezca como catalogo disponible. Los domicilios existentes se conservan.</p>
+            <button type="button" class="btn btn-danger" id="btnBajaRuta">
+              <i class="fas fa-route mr-1"></i> Dar de baja
+            </button>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Cerrar</button>
+          <button type="submit" class="btn btn-primary" id="btnGuardarRuta">
+            <i class="fas fa-save mr-1"></i> Guardar ruta
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
