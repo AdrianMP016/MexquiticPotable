@@ -15,3 +15,4 @@ mexquiticRenderAdminPage([
     'bootstrap_view' => 'consulta',
     'needs_maps' => true,
 ]);
+//Prueba
