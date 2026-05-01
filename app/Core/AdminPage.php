@@ -9,6 +9,7 @@ require_once dirname(__DIR__) . '/Clases/UsuariosSistema.php';
 require_once dirname(__DIR__) . '/Clases/BitacoraSistema.php';
 require_once dirname(__DIR__) . '/Clases/Recibos.php';
 require_once dirname(__DIR__) . '/Clases/Pagos.php';
+require_once dirname(__DIR__) . '/Clases/CobroAgua.php';
 
 function mexquiticAdminBaseBootstrap(): array
 {
@@ -61,12 +62,17 @@ function mexquiticAdminBaseBootstrap(): array
                 'fecha_hasta' => '',
             ],
         ],
+        'cobro_agua' => [],
     ];
 }
 
 function mexquiticAdminBootstrapData(PDO $db, array $currentUser, string $view): array
 {
     $bootstrapData = mexquiticAdminBaseBootstrap();
+    try {
+        $bootstrapData['cobro_agua'] = (new CobroAgua($db))->parametrosFrontend();
+    } catch (Throwable $exception) {
+    }
 
     try {
         switch ($view) {

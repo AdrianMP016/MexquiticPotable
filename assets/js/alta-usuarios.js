@@ -33,6 +33,17 @@ $(function () {
   let bitacoraTotalPaginas = 1;
   let sessionDataActual = null;
   const bootstrapAdminData = window.__mexquiticBootstrapData || {};
+  const defaultCobroAguaConfig = {
+    nombre: "DOMESTICA",
+    limite_tramo_base_m3: 15,
+    precio_tramo_base_m3: 10,
+    precio_excedente_m3: 15,
+    cooperacion_default: 0,
+    multa_default: 0,
+    recargo_default: 0,
+    descripcion: "Primeros 15 m3 a $10.00 y excedente a $15.00 por m3.",
+    descripcion_corta: "DOMESTICA 15m3 x $10 | Exc. $15"
+  };
   const bootstrapAdminConsumido = {
     consulta: false,
     medidores: false,
@@ -3045,13 +3056,40 @@ $(function () {
     });
   }
 
+  function obtenerConfiguracionCobroAgua() {
+    return $.extend({}, defaultCobroAguaConfig, bootstrapAdminData.cobro_agua || {});
+  }
+
+  function calcularSubtotalAgua(consumo) {
+    const config = obtenerConfiguracionCobroAgua();
+    const limite = Math.max(Number(config.limite_tramo_base_m3 || 0), 0);
+    const precioBase = Math.max(Number(config.precio_tramo_base_m3 || 0), 0);
+    const precioExcedente = Math.max(Number(config.precio_excedente_m3 || 0), 0);
+    const consumoSeguro = Math.max(Number(consumo || 0), 0);
+    const consumoBase = Math.min(consumoSeguro, limite);
+    const consumoExcedente = Math.max(consumoSeguro - limite, 0);
+
+    return (consumoBase * precioBase) + (consumoExcedente * precioExcedente);
+  }
+
+  function aplicarTarifaCobroAguaEnUI() {
+    const config = obtenerConfiguracionCobroAgua();
+    const nombre = config.nombre || defaultCobroAguaConfig.nombre;
+    const descripcion = config.descripcion || defaultCobroAguaConfig.descripcion;
+
+    $("#reciboTarifaNombre").text(nombre);
+    $("#reciboTarifaResumen").text(descripcion);
+    $("#previewReciboTarifaNombre").text(nombre);
+    $("#previewReciboTarifaResumen").text(descripcion);
+  }
+
   function calcularTotalRecibo() {
     const consumo = lecturaReciboActual ? Number(lecturaReciboActual.consumo_m3 || 0) : 0;
-    const precioM3 = Number($("#reciboPrecioM3").val() || 0);
+    const subtotalAgua = calcularSubtotalAgua(consumo);
     const cooperaciones = Number($("#reciboCooperaciones").val() || 0);
     const multas = Number($("#reciboMultas").val() || 0);
     const recargos = Number($("#reciboRecargos").val() || 0);
-    const total = (consumo * precioM3) + cooperaciones + multas + recargos;
+    const total = subtotalAgua + cooperaciones + multas + recargos;
 
     $("#reciboTotalEstimado").text(money(total));
   }
@@ -3237,7 +3275,6 @@ $(function () {
 
   function obtenerConfiguracionReciboActual() {
     return {
-      precio_m3: $("#reciboPrecioM3").val(),
       fecha_limite_pago: $("#reciboFechaLimite").val(),
       cooperaciones: $("#reciboCooperaciones").val(),
       multas: $("#reciboMultas").val(),
@@ -3300,7 +3337,6 @@ $(function () {
     return {
       accion: "recibos.previsualizarPeriodo",
       periodo_id: $("#previewPeriodoId").val(),
-      precio_m3: $("#previewReciboPrecioM3").val(),
       fecha_limite_pago: $("#previewReciboFechaLimite").val(),
       cooperaciones: $("#previewReciboCooperaciones").val(),
       multas: $("#previewReciboMultas").val(),
@@ -3312,7 +3348,6 @@ $(function () {
 
   function sincronizarConfiguracionPreviewRecibos() {
     $("#previewPeriodoId").val($("#filtroPeriodoLectura").val() || "");
-    $("#previewReciboPrecioM3").val($("#reciboPrecioM3").val() || "10.00");
     $("#previewReciboFechaLimite").val($("#reciboFechaLimite").val() || dateInputValue(addDays(new Date(), 7)));
     $("#previewReciboCooperaciones").val($("#reciboCooperaciones").val() || "0.00");
     $("#previewReciboMultas").val($("#reciboMultas").val() || "0.00");
@@ -3359,6 +3394,7 @@ $(function () {
   }
 
   function abrirPreviewRecibosPeriodo() {
+    aplicarTarifaCobroAguaEnUI();
     sincronizarConfiguracionPreviewRecibos();
     cargarCatalogoPeriodos($("#previewPeriodoId"), $("#filtroPeriodoLectura").val() || $("#previewPeriodoId").val());
     reiniciarPreviewRecibosPeriodo();
@@ -3436,6 +3472,7 @@ $(function () {
   }
 
   function llenarModalRecibo(lectura) {
+    const cobroConfig = obtenerConfiguracionCobroAgua();
     lecturaReciboActual = lectura;
     $("#formGenerarRecibo")[0].reset();
     $("#modalReciboFeedback").addClass("d-none");
@@ -3443,13 +3480,13 @@ $(function () {
     $("#btnImprimirReciboActual").addClass("d-none").prop("disabled", true).removeAttr("data-lectura-id data-folio data-usuario");
     $("#btnEnviarReciboWhatsapp").prop("disabled", true).removeAttr("data-recibo-id").attr("title", "Primero genera la imagen del recibo");
     $("#reciboLecturaId").val(lectura.lectura_id);
-    $("#reciboPrecioM3").val("10.00");
-    $("#reciboCooperaciones").val(lectura.cooperaciones || "0.00");
-    $("#reciboMultas").val(lectura.multas || "0.00");
-    $("#reciboRecargos").val(lectura.recargos || "0.00");
+    $("#reciboCooperaciones").val(numberFormat(Number(lectura.cooperaciones || cobroConfig.cooperacion_default || 0), 2));
+    $("#reciboMultas").val(numberFormat(Number(lectura.multas || cobroConfig.multa_default || 0), 2));
+    $("#reciboRecargos").val(numberFormat(Number(lectura.recargos || cobroConfig.recargo_default || 0), 2));
     $("#reciboMetodoPago").val("Caja de cobro del sistema de agua");
     $("#reciboReferenciaPago").val("Presentar este recibo al realizar el pago");
     $("#reciboFechaLimite").val(lectura.fecha_vencimiento || dateInputValue(addDays(new Date(), 7)));
+    aplicarTarifaCobroAguaEnUI();
 
     $("#reciboResumenLectura").html([
       '<div class="recibo-summary-title">' + escapeHtml(lectura.usuario) + '</div>',

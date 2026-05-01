@@ -43,11 +43,13 @@ class ImportadorPadronExcel
                 'padron_id_agregado' => $this->padronIdAgregado,
             ],
         ];
+        $filasHistoricas = [];
 
         foreach ($rows as $row) {
             try {
                 $fila = $this->normalizarFila($row);
                 $this->validarFila($fila);
+                $filasHistoricas[] = $fila;
 
                 $this->db->beginTransaction();
                 $accion = $this->upsertFila($fila);
@@ -73,6 +75,11 @@ class ImportadorPadronExcel
                 ];
             }
         }
+
+        $resultado['historico_2026'] = $this->sincronizarHistorico2026(
+            $filasHistoricas,
+            basename($excelPath)
+        );
 
         return $resultado;
     }
@@ -155,9 +162,9 @@ class ImportadorPadronExcel
     {
         $stmt = $this->db->prepare(
             "INSERT INTO staging_padron_excel
-                (id_excel, usuario, medidor, ruta, calle, numero, colonia, observaciones)
+                (id_excel, usuario, medidor, ruta, lect_ene26, lect_mar26, calle, numero, colonia, observaciones)
              VALUES
-                (:id_excel, :usuario, :medidor, :ruta, :calle, :numero, :colonia, :observaciones)"
+                (:id_excel, :usuario, :medidor, :ruta, :lect_ene26, :lect_mar26, :calle, :numero, :colonia, :observaciones)"
         );
 
         $this->db->beginTransaction();
@@ -174,6 +181,8 @@ class ImportadorPadronExcel
                     'usuario' => $this->normalizarTexto($row['usuario'] ?? null, 180, true),
                     'medidor' => $this->normalizarCodigo($row['medidor'] ?? null, 60),
                     'ruta' => $this->normalizarCodigo($row['ruta'] ?? null, 25),
+                    'lect_ene26' => $this->stringOrNull($row['lect_ene26'] ?? null),
+                    'lect_mar26' => $this->stringOrNull($row['lect_mar26'] ?? null),
                     'calle' => $calle,
                     'numero' => $numero,
                     'colonia' => $this->normalizarTexto($row['colonia'] ?? null, 180, true),
@@ -232,6 +241,8 @@ class ImportadorPadronExcel
             'numero' => $numero,
             'colonia' => $colonia,
             'observaciones' => $observaciones,
+            'lect_ene26' => $this->normalizarLecturaHistorica($row['lect_ene26'] ?? null),
+            'lect_mar26' => $this->normalizarLecturaHistorica($row['lect_mar26'] ?? null),
             'source_sheet' => $row['source_sheet'] ?? null,
             'source_row' => $row['source_row'] ?? null,
         ];
@@ -505,6 +516,174 @@ class ImportadorPadronExcel
         throw new RuntimeException('El medidor ya pertenece a otro usuario del sistema.');
     }
 
+    private function sincronizarHistorico2026(array $filas, string $fuente): array
+    {
+        $periodo = $this->obtenerPeriodo(2026, 1);
+        if (!$periodo) {
+            return [
+                'periodo' => '',
+                'insertados' => 0,
+                'actualizados' => 0,
+                'omitidos' => count($filas),
+                'protegidos' => 0,
+                'detalle' => 'No se encontro el periodo Enero-Febrero 2026 para conectar el historico.',
+            ];
+        }
+
+        $resultado = [
+            'periodo' => (string) ($periodo['nombre'] ?? ''),
+            'insertados' => 0,
+            'actualizados' => 0,
+            'omitidos' => 0,
+            'protegidos' => 0,
+            'detalle' => 'Historico conectado con el periodo actual de 2026.',
+        ];
+
+        foreach ($filas as $fila) {
+            $lecturaAnterior = $fila['lect_ene26'] ?? null;
+            $lecturaActual = $fila['lect_mar26'] ?? null;
+
+            if ($lecturaAnterior === null || $lecturaActual === null) {
+                $resultado['omitidos']++;
+                continue;
+            }
+
+            $medidorId = $this->buscarMedidorId((string) ($fila['medidor'] ?? ''));
+            if ($medidorId <= 0) {
+                $resultado['omitidos']++;
+                continue;
+            }
+
+            $lecturaExistente = $this->buscarLecturaPorPeriodo($medidorId, (int) $periodo['id']);
+            if ($lecturaExistente && $this->lecturaProtegida($lecturaExistente)) {
+                $resultado['protegidos']++;
+                continue;
+            }
+
+            $payload = [
+                'lectura_anterior' => round((float) $lecturaAnterior, 2),
+                'lectura_actual' => round((float) $lecturaActual, 2),
+                'fecha_captura' => (string) $periodo['fecha_fin'] . ' 23:59:59',
+                'observaciones' => 'Historico 2026 importado desde padron de Excel.',
+                'origen' => 'historico_excel',
+                'fuente_historica' => $fuente,
+            ];
+
+            if ($lecturaExistente) {
+                $stmt = $this->db->prepare(
+                    "UPDATE lecturas
+                     SET lectura_anterior = :lectura_anterior,
+                         lectura_actual = :lectura_actual,
+                         fecha_captura = :fecha_captura,
+                         observaciones = :observaciones,
+                         origen = :origen,
+                         fuente_historica = :fuente_historica
+                     WHERE id = :lectura_id"
+                );
+                $stmt->execute($payload + [
+                    'lectura_id' => (int) $lecturaExistente['id'],
+                ]);
+                $resultado['actualizados']++;
+                continue;
+            }
+
+            $stmt = $this->db->prepare(
+                "INSERT INTO lecturas
+                    (medidor_id, periodo_id, lectura_anterior, lectura_actual, capturado_por_id, fecha_captura,
+                     latitud, longitud, observaciones, foto_medicion_path, origen, fuente_historica)
+                 VALUES
+                    (:medidor_id, :periodo_id, :lectura_anterior, :lectura_actual, NULL, :fecha_captura,
+                     NULL, NULL, :observaciones, NULL, :origen, :fuente_historica)"
+            );
+            $stmt->execute($payload + [
+                'medidor_id' => $medidorId,
+                'periodo_id' => (int) $periodo['id'],
+            ]);
+            $resultado['insertados']++;
+        }
+
+        return $resultado;
+    }
+
+    private function obtenerPeriodo(int $anio, int $bimestre): ?array
+    {
+        $stmt = $this->db->prepare(
+            "SELECT id, nombre, fecha_fin
+             FROM periodos_bimestrales
+             WHERE anio = :anio
+               AND bimestre = :bimestre
+             LIMIT 1"
+        );
+        $stmt->execute([
+            'anio' => $anio,
+            'bimestre' => $bimestre,
+        ]);
+
+        $row = $stmt->fetch();
+        return $row ?: null;
+    }
+
+    private function buscarMedidorId(string $numero): int
+    {
+        if ($numero === '') {
+            return 0;
+        }
+
+        $stmt = $this->db->prepare(
+            "SELECT id
+             FROM medidores
+             WHERE numero = :numero
+             LIMIT 1"
+        );
+        $stmt->execute(['numero' => $numero]);
+        $row = $stmt->fetch();
+
+        return (int) ($row['id'] ?? 0);
+    }
+
+    private function buscarLecturaPorPeriodo(int $medidorId, int $periodoId): ?array
+    {
+        $stmt = $this->db->prepare(
+            "SELECT
+                id,
+                capturado_por_id,
+                latitud,
+                longitud,
+                foto_medicion_path,
+                origen
+             FROM lecturas
+             WHERE medidor_id = :medidor_id
+               AND periodo_id = :periodo_id
+             ORDER BY id DESC
+             LIMIT 1"
+        );
+        $stmt->execute([
+            'medidor_id' => $medidorId,
+            'periodo_id' => $periodoId,
+        ]);
+
+        $row = $stmt->fetch();
+        return $row ?: null;
+    }
+
+    private function lecturaProtegida(array $lectura): bool
+    {
+        if (($lectura['origen'] ?? '') === 'historico_excel') {
+            return false;
+        }
+
+        if ((int) ($lectura['capturado_por_id'] ?? 0) > 0) {
+            return true;
+        }
+
+        if (trim((string) ($lectura['foto_medicion_path'] ?? '')) !== '') {
+            return true;
+        }
+
+        return trim((string) ($lectura['latitud'] ?? '')) !== ''
+            || trim((string) ($lectura['longitud'] ?? '')) !== '';
+    }
+
     private function asegurarComunidad(string $nombre, string $prefijo): int
     {
         $stmt = $this->db->prepare(
@@ -748,6 +927,29 @@ class ImportadorPadronExcel
         }
 
         return (int) $text;
+    }
+
+    private function normalizarLecturaHistorica($value): ?float
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        if (is_numeric($value)) {
+            return round((float) $value, 2);
+        }
+
+        $text = trim((string) $value);
+        if ($text === '') {
+            return null;
+        }
+
+        $text = str_replace([',', ' '], ['', ''], $text);
+        if (!is_numeric($text)) {
+            return null;
+        }
+
+        return round((float) $text, 2);
     }
 
     private function stringOrNull($value): ?string

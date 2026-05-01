@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../Core/ReciboQr.php';
+require_once __DIR__ . '/CobroAgua.php';
 
 class Recibos
 {
@@ -9,6 +10,7 @@ class Recibos
     private string $coordsPath;
     private string $outputDir;
     private string $qrSecret;
+    private ?CobroAgua $cobroAgua = null;
 
     public function __construct(PDO $db)
     {
@@ -140,6 +142,8 @@ class Recibos
                 r.cooperaciones,
                 r.recargos,
                 r.total,
+                r.tarifa_nombre,
+                r.tarifa_parametros_json,
                 r.recibo_entregado,
                 r.fecha_entrega,
                 r.imagen_path
@@ -174,15 +178,16 @@ class Recibos
         }
 
         $lectura = $this->obtenerLectura($data['lectura_id']);
-        $subtotal = round((float) $lectura['consumo_m3'] * $data['precio_m3'], 2);
-        $total = round($subtotal + $data['cooperaciones'] + $data['multas'] + $data['recargos'], 2);
+        $cobro = $this->calcularCobroRecibo($lectura, $data);
+        $subtotal = $cobro['subtotal'];
+        $total = $cobro['total'];
 
         $this->db->beginTransaction();
 
         try {
-            $recibo = $this->guardarRecibo($lectura, $data, $subtotal, $total);
+            $recibo = $this->guardarRecibo($lectura, $data, $subtotal, $total, $cobro['parametros']);
             $qrToken = $this->generarTokenQr($lectura);
-            $imagenPath = $this->generarImagen($lectura, $recibo, $data, $subtotal, $total, $qrToken);
+            $imagenPath = $this->generarImagen($lectura, $recibo, $data, $subtotal, $total, $qrToken, $cobro);
 
             $stmt = $this->db->prepare('UPDATE recibos SET imagen_path = :imagen_path WHERE id = :recibo_id');
             $stmt->execute([
@@ -190,7 +195,7 @@ class Recibos
                 'recibo_id' => $recibo['recibo_id'],
             ]);
 
-            $this->guardarDetalles($recibo['recibo_id'], $lectura, $data, $subtotal);
+            $this->guardarDetalles($recibo['recibo_id'], $lectura, $data, $cobro);
             $this->db->commit();
 
             return [
@@ -199,7 +204,7 @@ class Recibos
                 'imagen_path' => $imagenPath,
                 'total' => $total,
                 'qr_token' => $qrToken,
-                'impresion' => $this->crearPayloadImpresion($lectura, $recibo, $data, $subtotal, $total, $qrToken),
+                'impresion' => $this->crearPayloadImpresion($lectura, $recibo, $data, $subtotal, $total, $qrToken, $cobro),
             ];
         } catch (Throwable $exception) {
             $this->db->rollBack();
@@ -256,17 +261,7 @@ class Recibos
                 $lecturaActualizada['total'] = $resultado['total'];
                 $recibos[] = $this->formatearReciboPreview(
                     $lecturaActualizada,
-                    $resultado['impresion'] ?? $this->crearPayloadImpresion(
-                        $lecturaActualizada,
-                        [
-                            'recibo_id' => (int) $resultado['recibo_id'],
-                            'folio' => (string) $resultado['folio'],
-                        ],
-                        $payload,
-                        round((float) $lecturaActualizada['consumo_m3'] * (float) $payload['precio_m3'], 2),
-                        (float) $resultado['total'],
-                        $resultado['qr_token'] ?? $this->generarTokenQr($lecturaActualizada)
-                    )
+                    $resultado['impresion'] ?? null
                 );
 
                 if ($teniaRecibo) {
@@ -312,8 +307,9 @@ class Recibos
 
         $lectura = $this->obtenerLectura($lecturaId);
         $data = $this->resolverConfiguracionImpresion($lectura, $input);
-        $subtotal = round((float) $lectura['consumo_m3'] * $data['precio_m3'], 2);
-        $total = round($subtotal + $data['cooperaciones'] + $data['multas'] + $data['recargos'], 2);
+        $cobro = $this->calcularCobroRecibo($lectura, $data, $this->resolverTarifaSnapshotRecibo($lectura));
+        $subtotal = $cobro['subtotal'];
+        $total = $cobro['total'];
         $recibo = [
             'recibo_id' => (int) ($lectura['recibo_id'] ?? 0),
             'folio' => (string) (($lectura['folio'] ?? '') ?: $this->generarFolio()),
@@ -324,7 +320,8 @@ class Recibos
             $data,
             $subtotal,
             $total,
-            $this->generarTokenQr($lectura)
+            $this->generarTokenQr($lectura),
+            $cobro
         );
 
         return $this->formatearReciboPreview([
@@ -638,12 +635,14 @@ class Recibos
 
     private function normalizarRecibo(array $input): array
     {
+        $parametros = $this->obtenerCobroAgua()->parametros();
+
         return [
             'lectura_id' => (int) ($input['lectura_id'] ?? 0),
             'precio_m3' => $this->numero($input['precio_m3'] ?? 0),
-            'cooperaciones' => $this->numero($input['cooperaciones'] ?? 0),
-            'multas' => $this->numero($input['multas'] ?? 0),
-            'recargos' => $this->numero($input['recargos'] ?? 0),
+            'cooperaciones' => $this->numero($input['cooperaciones'] ?? $parametros['cooperacion_default']),
+            'multas' => $this->numero($input['multas'] ?? $parametros['multa_default']),
+            'recargos' => $this->numero($input['recargos'] ?? $parametros['recargo_default']),
             'fecha_limite_pago' => Request::cleanString($input['fecha_limite_pago'] ?? null),
             'metodo_pago_caja' => Request::cleanString($input['metodo_pago_caja'] ?? 'Caja de cobro del sistema de agua'),
             'referencia_pago' => Request::cleanString($input['referencia_pago'] ?? 'Presentar este recibo al realizar el pago'),
@@ -656,10 +655,6 @@ class Recibos
 
         if ($requiereLectura && $data['lectura_id'] <= 0) {
             $errors['lectura_id'] = 'Selecciona una lectura para generar el recibo.';
-        }
-
-        if ($data['precio_m3'] < 0) {
-            $errors['precio_m3'] = 'El precio por m3 no puede ser negativo.';
         }
 
         foreach (['cooperaciones', 'multas', 'recargos'] as $field) {
@@ -732,9 +727,11 @@ class Recibos
         ];
     }
 
-    private function guardarRecibo(array $lectura, array $data, float $subtotal, float $total): array
+    private function guardarRecibo(array $lectura, array $data, float $subtotal, float $total, array $tarifaParametros): array
     {
         $folio = $lectura['folio'] ?: $this->generarFolio();
+        $tarifaNombre = (string) ($tarifaParametros['nombre'] ?? 'DOMESTICA');
+        $tarifaJson = json_encode($tarifaParametros, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
         if ($lectura['recibo_id']) {
             $stmt = $this->db->prepare(
@@ -745,7 +742,9 @@ class Recibos
                      multas = :multas,
                      cooperaciones = :cooperaciones,
                      recargos = :recargos,
-                     total = :total
+                     total = :total,
+                     tarifa_nombre = :tarifa_nombre,
+                     tarifa_parametros_json = :tarifa_parametros_json
                  WHERE id = :recibo_id"
             );
             $stmt->execute([
@@ -756,6 +755,8 @@ class Recibos
                 'cooperaciones' => $data['cooperaciones'],
                 'recargos' => $data['recargos'],
                 'total' => $total,
+                'tarifa_nombre' => $tarifaNombre,
+                'tarifa_parametros_json' => $tarifaJson,
                 'recibo_id' => $lectura['recibo_id'],
             ]);
 
@@ -768,10 +769,10 @@ class Recibos
         $stmt = $this->db->prepare(
             "INSERT INTO recibos
                 (folio, usuario_id, domicilio_id, medidor_id, periodo_id, lectura_id,
-                 consumo_m3, subtotal, multas, cooperaciones, recargos, total, estado)
+                 consumo_m3, subtotal, multas, cooperaciones, recargos, total, tarifa_nombre, tarifa_parametros_json, estado)
              VALUES
                 (:folio, :usuario_id, :domicilio_id, :medidor_id, :periodo_id, :lectura_id,
-                 :consumo_m3, :subtotal, :multas, :cooperaciones, :recargos, :total, 'generado')"
+                 :consumo_m3, :subtotal, :multas, :cooperaciones, :recargos, :total, :tarifa_nombre, :tarifa_parametros_json, 'generado')"
         );
         $stmt->execute([
             'folio' => $folio,
@@ -786,6 +787,8 @@ class Recibos
             'cooperaciones' => $data['cooperaciones'],
             'recargos' => $data['recargos'],
             'total' => $total,
+            'tarifa_nombre' => $tarifaNombre,
+            'tarifa_parametros_json' => $tarifaJson,
         ]);
 
         return [
@@ -794,14 +797,19 @@ class Recibos
         ];
     }
 
-    private function guardarDetalles(int $reciboId, array $lectura, array $data, float $subtotal): void
+    private function guardarDetalles(int $reciboId, array $lectura, array $data, array $cobro): void
     {
         $stmt = $this->db->prepare('DELETE FROM recibo_detalles WHERE recibo_id = :recibo_id');
         $stmt->execute(['recibo_id' => $reciboId]);
 
-        $detalles = [
-            ['Consumo de agua', (float) $lectura['consumo_m3'], $data['precio_m3']],
-        ];
+        $detalles = [];
+        foreach ((array) ($cobro['detalle'] ?? []) as $detalle) {
+            $detalles[] = [
+                (string) ($detalle['descripcion'] ?? 'Consumo de agua'),
+                (float) ($detalle['cantidad'] ?? 0),
+                (float) ($detalle['precio_unitario'] ?? 0),
+            ];
+        }
 
         if ($data['cooperaciones'] > 0) {
             $detalles[] = ['Cooperaciones', 1, $data['cooperaciones']];
@@ -830,7 +838,7 @@ class Recibos
         }
     }
 
-    private function generarImagen(array $lectura, array $recibo, array $data, float $subtotal, float $total, string $qrToken): string
+    private function generarImagen(array $lectura, array $recibo, array $data, float $subtotal, float $total, string $qrToken, array $cobro): string
     {
         if (!extension_loaded('gd')) {
             throw new RuntimeException('La extension GD de PHP no esta habilitada.');
@@ -856,7 +864,7 @@ class Recibos
         imagesavealpha($image, true);
 
         $font = $this->obtenerFuente();
-        $valores = $this->construirValoresRecibo($lectura, $recibo, $data, $subtotal, $total);
+        $valores = $this->construirValoresRecibo($lectura, $recibo, $data, $subtotal, $total, $cobro);
 
         foreach ($valores as $field => $value) {
             if (isset($fields[$field])) {
@@ -885,7 +893,8 @@ class Recibos
         array $data,
         float $subtotal,
         float $total,
-        string $qrToken
+        string $qrToken,
+        array $cobro
     ): array {
         if (!is_file($this->coordsPath)) {
             throw new RuntimeException('No se encontro la configuracion de coordenadas del recibo.');
@@ -895,7 +904,7 @@ class Recibos
         $fields = $coords['fields'] ?? [];
         $printConfig = (array) ($coords['print'] ?? []);
         $printFieldOverrides = (array) ($printConfig['fields'] ?? []);
-        $valores = $this->construirValoresRecibo($lectura, $recibo, $data, $subtotal, $total);
+        $valores = $this->construirValoresRecibo($lectura, $recibo, $data, $subtotal, $total, $cobro);
         $variables = $this->camposVariablesImpresion();
         $camposImpresion = [];
         $valoresImpresion = [];
@@ -931,7 +940,7 @@ class Recibos
         ];
     }
 
-    private function construirValoresRecibo(array $lectura, array $recibo, array $data, float $subtotal, float $total): array
+    private function construirValoresRecibo(array $lectura, array $recibo, array $data, float $subtotal, float $total, array $cobro): array
     {
         $direccionLineas = $this->construirDireccionRecibo($lectura);
         $extras = $data['cooperaciones'] + $data['multas'] + $data['recargos'];
@@ -955,6 +964,7 @@ class Recibos
         $movimientoPagoAnterior = $periodoPagoAnterior !== ''
             ? '(-) Su pago en ' . $this->periodoMovimiento($periodoPagoAnterior)
             : '(-) Su pago en periodo anterior';
+        $tarifaDescripcion = (string) ($cobro['descripcion_corta'] ?? '');
         $movimientoMultaRecargo = '(+) COP. ENSOLVACION';
         if ((float) $data['multas'] > 0 && (float) $data['recargos'] <= 0) {
             $movimientoMultaRecargo = '(+) Multa pago tardio';
@@ -969,7 +979,7 @@ class Recibos
             'label_total_top' => 'TOTAL A PAGAR',
             'total_top' => $this->moneda($total),
             'periodo_consumo' => $periodoConsumo,
-            'tarifa' => 'DOMESTICA',
+            'tarifa' => $tarifaDescripcion !== '' ? $tarifaDescripcion : 'DOMESTICA',
             'usuario' => $lectura['usuario'],
             'direccion_1' => $direccionLineas[0] ?? 'Sin direccion',
             'direccion_2' => $direccionLineas[1] ?? '',
@@ -1050,19 +1060,15 @@ class Recibos
     private function resolverConfiguracionImpresion(array $lectura, array $input): array
     {
         $data = $this->normalizarRecibo($input);
-        $consumo = (float) ($lectura['consumo_m3'] ?? 0);
-        $subtotal = (float) ($lectura['subtotal'] ?? 0);
-        $precioPorDefecto = $subtotal > 0 && $consumo > 0
-            ? round($subtotal / $consumo, 2)
-            : 10.0;
-
-        if (!array_key_exists('precio_m3', $input) || trim((string) ($input['precio_m3'] ?? '')) === '') {
-            $data['precio_m3'] = $precioPorDefecto;
-        }
+        $parametros = $this->obtenerCobroAgua()->parametros();
 
         foreach (['cooperaciones', 'multas', 'recargos'] as $field) {
             if (!array_key_exists($field, $input) || trim((string) ($input[$field] ?? '')) === '') {
-                $data[$field] = (float) ($lectura[$field] ?? 0);
+                $valorLectura = (float) ($lectura[$field] ?? 0);
+                $default = (float) ($parametros[$field === 'cooperaciones'
+                    ? 'cooperacion_default'
+                    : ($field === 'multas' ? 'multa_default' : 'recargo_default')] ?? 0);
+                $data[$field] = $valorLectura > 0 ? $valorLectura : $default;
             }
         }
 
@@ -1082,6 +1088,37 @@ class Recibos
         }
 
         return $data;
+    }
+
+    private function calcularCobroRecibo(array $lectura, array $data, ?array $tarifaSnapshot = null): array
+    {
+        $calculo = $this->obtenerCobroAgua()->calcular((float) ($lectura['consumo_m3'] ?? 0), $tarifaSnapshot);
+        $subtotal = (float) ($calculo['subtotal'] ?? 0);
+        $extras = (float) $data['cooperaciones'] + (float) $data['multas'] + (float) $data['recargos'];
+
+        return [
+            'parametros' => $calculo['parametros'],
+            'detalle' => $calculo['detalle'],
+            'descripcion' => $calculo['descripcion'],
+            'descripcion_corta' => $calculo['descripcion_corta'],
+            'subtotal' => round($subtotal, 2),
+            'total' => round($subtotal + $extras, 2),
+        ];
+    }
+
+    private function resolverTarifaSnapshotRecibo(array $lectura): ?array
+    {
+        return $this->obtenerCobroAgua()->desdeSnapshot((string) ($lectura['tarifa_parametros_json'] ?? ''));
+    }
+
+    private function obtenerCobroAgua(): CobroAgua
+    {
+        if ($this->cobroAgua instanceof CobroAgua) {
+            return $this->cobroAgua;
+        }
+
+        $this->cobroAgua = new CobroAgua($this->db);
+        return $this->cobroAgua;
     }
 
     private function camposVariablesImpresion(): array

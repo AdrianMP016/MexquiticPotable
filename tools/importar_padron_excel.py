@@ -10,8 +10,12 @@ from openpyxl import load_workbook
 
 REQUIRED = {"id", "usuario", "medidor", "ruta", "colonia"}
 ALIASES = {
-    "direccion": {"direccion", "dirección", "domicilio"},
+    "direccion": {"direccion", "direccion completa", "domicilio"},
     "observaciones": {"observaciones", "observacion", "obs"},
+}
+HISTORICAL_PATTERNS = {
+    "lect_ene26": [r"^lect\s+ene\s+26$", r"^lectura?\s+ene\s+26$"],
+    "lect_mar26": [r"^lect\s+mar(?:zo)?\s+26$", r"^lectura?\s+mar(?:zo)?\s+26$"],
 }
 
 
@@ -48,6 +52,14 @@ def pick_index(index, *names):
     return None
 
 
+def pick_index_regex(index, patterns):
+    for header, idx in index.items():
+        for pattern in patterns:
+            if re.match(pattern, header):
+                return idx
+    return None
+
+
 def row_key(record):
     if record.get("id_excel"):
         return f"ID:{record['id_excel']}"
@@ -72,6 +84,8 @@ def get_valid_sheet_records(sheet):
     direccion_idx = pick_index(index, *ALIASES["direccion"])
     colonia_idx = pick_index(index, "colonia")
     observaciones_idx = pick_index(index, *ALIASES["observaciones"])
+    lect_ene26_idx = pick_index_regex(index, HISTORICAL_PATTERNS["lect_ene26"])
+    lect_mar26_idx = pick_index_regex(index, HISTORICAL_PATTERNS["lect_mar26"])
 
     if not has_required or direccion_idx is None or colonia_idx is None:
         return None
@@ -90,6 +104,8 @@ def get_valid_sheet_records(sheet):
             "domicilio": clean_value(row[direccion_idx]) if direccion_idx < len(row) else None,
             "colonia": clean_value(row[colonia_idx]) if colonia_idx < len(row) else None,
             "observaciones": clean_value(row[observaciones_idx]) if observaciones_idx is not None and observaciones_idx < len(row) else None,
+            "lect_ene26": clean_value(row[lect_ene26_idx]) if lect_ene26_idx is not None and lect_ene26_idx < len(row) else None,
+            "lect_mar26": clean_value(row[lect_mar26_idx]) if lect_mar26_idx is not None and lect_mar26_idx < len(row) else None,
             "source_sheet": sheet.title,
             "source_row": row_number,
         }

@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/../Clases/BitacoraSistema.php';
+require_once __DIR__ . '/../Clases/CobroAgua.php';
 
 class SystemBootstrap
 {
@@ -15,6 +16,9 @@ class SystemBootstrap
         self::$bootstrapped = true;
         self::ensureUsuariosSistema($db);
         self::ensureBitacora($db);
+        self::ensureLecturasHistoricas($db);
+        self::ensureRecibosTarifa($db);
+        self::ensureCobroAguaConfig($db);
         self::ensureDefaultAdmin($db);
         self::ensureDefaultAccessUsers($db);
     }
@@ -131,6 +135,111 @@ class SystemBootstrap
                     ON DELETE SET NULL
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
         );
+    }
+
+    private static function ensureLecturasHistoricas(PDO $db): void
+    {
+        if (!self::columnExists($db, 'lecturas', 'origen')) {
+            $db->exec(
+                "ALTER TABLE lecturas
+                 ADD COLUMN origen ENUM('verificador','historico_excel') NOT NULL DEFAULT 'verificador' AFTER foto_medicion_path"
+            );
+        }
+
+        if (!self::columnExists($db, 'lecturas', 'fuente_historica')) {
+            $db->exec(
+                "ALTER TABLE lecturas
+                 ADD COLUMN fuente_historica VARCHAR(160) NULL AFTER origen"
+            );
+        }
+    }
+
+    private static function ensureRecibosTarifa(PDO $db): void
+    {
+        if (!self::columnExists($db, 'recibos', 'tarifa_nombre')) {
+            $db->exec(
+                "ALTER TABLE recibos
+                 ADD COLUMN tarifa_nombre VARCHAR(120) NULL AFTER total"
+            );
+        }
+
+        if (!self::columnExists($db, 'recibos', 'tarifa_parametros_json')) {
+            $db->exec(
+                "ALTER TABLE recibos
+                 ADD COLUMN tarifa_parametros_json LONGTEXT NULL AFTER tarifa_nombre"
+            );
+        }
+    }
+
+    private static function ensureCobroAguaConfig(PDO $db): void
+    {
+        $db->exec(
+            "CREATE TABLE IF NOT EXISTS configuracion_cobro_agua (
+                clave VARCHAR(80) NOT NULL,
+                valor VARCHAR(255) NOT NULL,
+                tipo ENUM('string','number','bool','json') NOT NULL DEFAULT 'string',
+                descripcion VARCHAR(255) NULL,
+                updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (clave)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+        );
+
+        $seeds = [
+            [
+                'clave' => 'tarifa_agua_nombre',
+                'valor' => 'DOMESTICA',
+                'tipo' => 'string',
+                'descripcion' => 'Nombre comercial de la tarifa usada en los recibos.',
+            ],
+            [
+                'clave' => 'tarifa_agua_limite_base_m3',
+                'valor' => '15',
+                'tipo' => 'number',
+                'descripcion' => 'Metros cubicos del primer tramo de cobro.',
+            ],
+            [
+                'clave' => 'tarifa_agua_precio_base_m3',
+                'valor' => '10',
+                'tipo' => 'number',
+                'descripcion' => 'Precio por metro cubico dentro del primer tramo.',
+            ],
+            [
+                'clave' => 'tarifa_agua_precio_excedente_m3',
+                'valor' => '15',
+                'tipo' => 'number',
+                'descripcion' => 'Precio por metro cubico cuando se supera el primer tramo.',
+            ],
+            [
+                'clave' => 'tarifa_agua_cooperacion_default',
+                'valor' => '0',
+                'tipo' => 'number',
+                'descripcion' => 'Cooperacion predeterminada para nuevos recibos.',
+            ],
+            [
+                'clave' => 'tarifa_agua_multa_default',
+                'valor' => '0',
+                'tipo' => 'number',
+                'descripcion' => 'Multa predeterminada para nuevos recibos.',
+            ],
+            [
+                'clave' => 'tarifa_agua_recargo_default',
+                'valor' => '0',
+                'tipo' => 'number',
+                'descripcion' => 'Recargo predeterminado para nuevos recibos.',
+            ],
+        ];
+
+        $stmt = $db->prepare(
+            "INSERT INTO configuracion_cobro_agua (clave, valor, tipo, descripcion)
+             VALUES (:clave, :valor, :tipo, :descripcion)
+             ON DUPLICATE KEY UPDATE
+                tipo = VALUES(tipo),
+                descripcion = VALUES(descripcion)"
+        );
+
+        foreach ($seeds as $seed) {
+            $stmt->execute($seed);
+        }
     }
 
     private static function ensureDefaultAdmin(PDO $db): void
