@@ -2613,17 +2613,23 @@ $(function () {
       const resultado = item.resultado || "pendiente";
       const resultadoBadge = {
         pendiente: '<span class="badge badge-secondary">Pendiente</span>',
+        bloqueado: '<span class="badge badge-warning">Bloqueado</span>',
+        omitido: '<span class="badge badge-dark">Omitido</span>',
         enviando: '<span class="badge badge-info">Enviando</span>',
         enviado: '<span class="badge badge-success">Enviado</span>',
         error: '<span class="badge badge-danger">Error</span>'
       };
+      const contacto = item.whatsapp || item.destino_contacto || "";
+      const contactoTexto = item.whatsapp
+        ? item.whatsapp
+        : (contacto ? contacto + " (sin confirmar como WhatsApp)" : "Sin WhatsApp");
 
       return [
         '<tr>',
         '<td><strong>' + escapeHtml(item.usuario || "") + '</strong><br><small class="text-muted">' + escapeHtml(item.medidor || "Sin medidor") + ' | ' + escapeHtml(item.ruta || "Sin ruta") + '</small></td>',
         '<td><strong>' + escapeHtml(item.folio || "Sin folio") + '</strong><br><small class="text-muted">' + escapeHtml(item.periodo || "Sin periodo") + '</small></td>',
         '<td>' + estadoCobroBadge(item.estado_cobro) + '<br><small class="text-muted">Saldo ' + money(item.saldo || 0) + '</small></td>',
-        '<td>' + escapeHtml(item.whatsapp || "Sin WhatsApp") + '</td>',
+        '<td>' + escapeHtml(contactoTexto) + '</td>',
         '<td><small>' + escapeHtml(item.mensaje_sugerido || "") + '</small></td>',
         '<td>' + (resultadoBadge[resultado] || resultadoBadge.pendiente) + '<br><small class="text-muted">' + escapeHtml(item.detalle || "") + '</small></td>',
         '</tr>'
@@ -2644,7 +2650,7 @@ $(function () {
       recordatorio: [
         { value: "pendiente", label: "Pendientes" },
         { value: "adeudo", label: "Con adeudo" },
-        { value: "todos", label: "Todos con WhatsApp" }
+        { value: "todos", label: "Todos coincidentes" }
       ],
       adeudo: [
         { value: "adeudo", label: "Con adeudo" }
@@ -2653,7 +2659,7 @@ $(function () {
         { value: "pagado", label: "Pagados" }
       ],
       aviso: [
-        { value: "todos", label: "Todos con WhatsApp" },
+        { value: "todos", label: "Todos coincidentes" },
         { value: "pendiente", label: "Pendientes" },
         { value: "adeudo", label: "Con adeudo" },
         { value: "pagado", label: "Pagados" }
@@ -2683,9 +2689,15 @@ $(function () {
     $("#statusNotificacionMasiva").text(texto);
   }
 
+  function totalNotificacionesEnviables() {
+    return colaNotificacionesMasivas.filter(function (item) {
+      return Boolean(item.puede_enviar);
+    }).length;
+  }
+
   function actualizarBotonesEnvioMasivo() {
-    const hayCola = colaNotificacionesMasivas.length > 0;
-    $("#btnIniciarNotificacionMasiva").prop("disabled", !hayCola || envioMasivoActivo);
+    const enviables = totalNotificacionesEnviables();
+    $("#btnIniciarNotificacionMasiva").prop("disabled", enviables <= 0 || envioMasivoActivo);
     $("#btnDetenerNotificacionMasiva").prop("disabled", !envioMasivoActivo);
     $("#btnPrepararNotificacionMasiva").prop("disabled", envioMasivoActivo);
   }
@@ -2708,13 +2720,13 @@ $(function () {
       },
       success: function (response) {
         colaNotificacionesMasivas = ((response.data && response.data.notificaciones) || []).map(function (item) {
-          item.resultado = "pendiente";
-          item.detalle = "";
+          item.resultado = item.puede_enviar ? "pendiente" : "bloqueado";
+          item.detalle = item.detalle_preparacion || (item.puede_enviar ? "" : "No se puede enviar.");
           return item;
         });
         indiceNotificacionMasiva = 0;
         renderNotificacionesMasivas(colaNotificacionesMasivas);
-        actualizarEstadoEnvioMasivo("Lista preparada con " + colaNotificacionesMasivas.length + " notificaciones.");
+        actualizarEstadoEnvioMasivo("Lista preparada con " + colaNotificacionesMasivas.length + " registros. " + totalNotificacionesEnviables() + " listos para envio.");
         actualizarBotonesEnvioMasivo();
         showNotificacionesMasivasFeedback("success", response.message || "Lista preparada correctamente.");
       },
@@ -2754,6 +2766,15 @@ $(function () {
     }
 
     const item = colaNotificacionesMasivas[indiceNotificacionMasiva];
+    if (!item.puede_enviar) {
+      item.resultado = item.resultado === "enviado" ? "enviado" : "omitido";
+      item.detalle = item.detalle || "No se puede enviar sin WhatsApp registrado.";
+      renderNotificacionesMasivas(colaNotificacionesMasivas);
+      indiceNotificacionMasiva += 1;
+      procesarSiguienteNotificacionMasiva();
+      return;
+    }
+
     item.resultado = "enviando";
     item.detalle = "En cola";
     renderNotificacionesMasivas(colaNotificacionesMasivas);
@@ -3943,8 +3964,15 @@ $(function () {
   });
 
   $("#btnIniciarNotificacionMasiva").on("click", function () {
+    const enviables = totalNotificacionesEnviables();
+
     if (!colaNotificacionesMasivas.length) {
       showNotificacionesMasivasFeedback("warning", "Primero prepara una lista de notificaciones.");
+      return;
+    }
+
+    if (enviables <= 0) {
+      showNotificacionesMasivasFeedback("warning", "La lista actual no tiene registros listos para envio por WhatsApp.");
       return;
     }
 
@@ -3955,8 +3983,8 @@ $(function () {
     envioMasivoActivo = true;
     indiceNotificacionMasiva = 0;
     colaNotificacionesMasivas = colaNotificacionesMasivas.map(function (item) {
-      item.resultado = "pendiente";
-      item.detalle = "";
+      item.resultado = item.puede_enviar ? "pendiente" : "bloqueado";
+      item.detalle = item.detalle_preparacion || (item.puede_enviar ? "" : "No se puede enviar.");
       return item;
     });
     renderNotificacionesMasivas(colaNotificacionesMasivas);

@@ -443,6 +443,7 @@ class Recibos
                 r.periodo_id,
                 u.id AS usuario_id,
                 u.nombre AS usuario,
+                u.telefono,
                 u.whatsapp,
                 d.ruta,
                 m.numero AS medidor,
@@ -477,9 +478,20 @@ class Recibos
                 continue;
             }
 
-            if (trim((string) ($row['whatsapp'] ?? '')) === '') {
-                continue;
-            }
+            $whatsApp = trim((string) ($row['whatsapp'] ?? ''));
+            $telefono = trim((string) ($row['telefono'] ?? ''));
+            $destino = $whatsApp !== '' ? $whatsApp : $telefono;
+            $puedeEnviar = $whatsApp !== '';
+
+            $row['telefono'] = $telefono;
+            $row['whatsapp'] = $whatsApp;
+            $row['destino_contacto'] = $destino;
+            $row['puede_enviar'] = $puedeEnviar;
+            $row['detalle_preparacion'] = $puedeEnviar
+                ? 'Listo para enviar.'
+                : ($telefono !== ''
+                    ? 'Tiene telefono alterno, pero falta confirmar el WhatsApp.'
+                    : 'Falta capturar WhatsApp para este usuario.');
 
             $row['mensaje_sugerido'] = $this->construirMensajeNotificacion($row, $tipoMensaje);
             $recibos[] = $row;
