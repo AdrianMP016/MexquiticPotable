@@ -1,6 +1,5 @@
 # Local configuration with secrets
 app/Config/database.php
-app/Config/database.example.php
 app/Config/ultramsg.php
 
 # Generated and user-managed files
