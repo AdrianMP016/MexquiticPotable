@@ -3,6 +3,7 @@
 class WhatsApp
 {
  private array $config;
+ private string $configSource;
 
  public function __construct()
   {
@@ -12,6 +13,8 @@ class WhatsApp
     }
 
     $this->config = require $configPath;
+    $this->configSource = basename($configPath);
+    $this->validateConfig();
   }
 
   public function panel(string $messageStatus = 'sent', int $limit = 15): array
@@ -222,7 +225,12 @@ class WhatsApp
     }
 
     if ($httpCode >= 400) {
-      throw new RuntimeException('UltraMsg devolvio un error HTTP ' . $httpCode . '.');
+      throw new RuntimeException(
+        'UltraMsg devolvio un error HTTP ' . $httpCode
+        . ' al consultar ' . $path
+        . ' para la instancia ' . $this->config['instance_id']
+        . ' usando ' . $this->configSource . '.'
+      );
     }
 
     if ($raw) {
@@ -241,5 +249,18 @@ class WhatsApp
     }
 
     return $decoded;
+  }
+
+  private function validateConfig(): void
+  {
+    $baseUrl = trim((string) ($this->config['base_url'] ?? ''));
+    $instanceId = trim((string) ($this->config['instance_id'] ?? ''));
+    $token = trim((string) ($this->config['token'] ?? ''));
+
+    if ($baseUrl === '' || $instanceId === '' || $token === '') {
+      throw new RuntimeException(
+        'La configuracion de UltraMsg esta incompleta en ' . $this->configSource . '.'
+      );
+    }
   }
 }
