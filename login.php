@@ -225,9 +225,6 @@ $loginRoutes = [
                   <button type="submit" class="btn btn-primary btn-block">
                     <i class="fas fa-sign-in-alt mr-1"></i> Entrar
                   </button>
-                  <div class="login-mini-help mt-3">
-                    Usuario inicial: <strong>admin</strong> | Contraseña inicial: <strong>admin</strong>
-                  </div>
                 </form>
               </div>
 
