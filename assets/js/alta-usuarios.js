@@ -2931,7 +2931,7 @@ $(function () {
     const $tbody = $("#tablaPagosRecibos tbody");
 
     if (!recibos.length) {
-      $tbody.html('<tr><td colspan="6" class="text-center text-muted py-4">No se encontraron recibos para los filtros actuales.</td></tr>');
+      $tbody.html('<tr><td colspan="5" class="text-center text-muted py-4">No se encontraron recibos para los filtros actuales.</td></tr>');
       return;
     }
 
@@ -2940,7 +2940,6 @@ $(function () {
         '<tr>',
         '<td><strong>' + escapeHtml(recibo.folio || "Sin folio") + '</strong><br><small class="text-muted">' + escapeHtml(recibo.usuario || "") + '</small><br><small class="text-muted">' + escapeHtml(recibo.medidor || "Sin medidor") + ' | ' + escapeHtml(recibo.ruta || "Sin ruta") + '</small></td>',
         '<td>' + escapeHtml(recibo.periodo || "Sin periodo") + '<br><small class="text-muted">Vence ' + escapeHtml(recibo.fecha_vencimiento || "Sin fecha") + '</small></td>',
-        '<td><small>Total</small> <strong>' + money(recibo.total) + '</strong><br><small>Pagado</small> <strong>' + money(recibo.total_pagado) + '</strong><br><small>Saldo</small> <strong>' + money(recibo.saldo) + '</strong></td>',
         '<td>' + estadoEntregaBadge(recibo.recibo_entregado, recibo.fecha_entrega) + '</td>',
         '<td>' + estadoPagoBadge(recibo.estado_pago) + '<br><small class="text-muted text-uppercase">' + escapeHtml(recibo.estado_recibo || "generado") + '</small></td>',
         '<td><div class="table-actions"><button class="btn btn-sm btn-primary btn-registrar-pago" data-id="' + recibo.recibo_id + '"><i class="fas fa-hand-holding-usd mr-1"></i> Registrar</button></div></td>',
@@ -2999,7 +2998,7 @@ $(function () {
         $("#pagosPorPagina").prop("disabled", true);
         $("#btnPagosAnterior").prop("disabled", true);
         $("#btnPagosSiguiente").prop("disabled", true);
-        $("#tablaPagosRecibos tbody").html('<tr><td colspan="6" class="text-center text-muted py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando recibos...</td></tr>');
+        $("#tablaPagosRecibos tbody").html('<tr><td colspan="5" class="text-center text-muted py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando recibos...</td></tr>');
       },
       success: function (response) {
         if (requestToken !== pagosRequestToken) {
@@ -3014,7 +3013,7 @@ $(function () {
           return;
         }
         showPagosFeedback("danger", extractAjaxMessage(xhr, "No se pudieron consultar los recibos."));
-        $("#tablaPagosRecibos tbody").html('<tr><td colspan="6" class="text-center text-danger py-4">Error al cargar los recibos.</td></tr>');
+        $("#tablaPagosRecibos tbody").html('<tr><td colspan="5" class="text-center text-danger py-4">Error al cargar los recibos.</td></tr>');
         $("#pagosResumenPaginacionInferior").text("No fue posible cargar la paginacion");
       },
       complete: function () {
