@@ -425,39 +425,4 @@ SET @saved_cs_client     = @@character_set_client;
  1 AS `imagen_path`*/;
 SET character_set_client = @saved_cs_client;
 
---
--- Dumping events for database 'mezquitic_agua'
---
 
---
--- Dumping routines for database 'mezquitic_agua'
---
-
---
--- Final view structure for view `vw_recibos_pendientes_telegram`
---
-
-/*!50001 DROP VIEW IF EXISTS `vw_recibos_pendientes_telegram`*/;
-/*!50001 SET @saved_cs_client          = @@character_set_client */;
-/*!50001 SET @saved_cs_results         = @@character_set_results */;
-/*!50001 SET @saved_col_connection     = @@collation_connection */;
-/*!50001 SET character_set_client      = cp850 */;
-/*!50001 SET character_set_results     = cp850 */;
-/*!50001 SET collation_connection      = cp850_general_ci */;
-/*!50001 CREATE ALGORITHM=UNDEFINED */
-/*!50013 DEFINER=`root`@`localhost` SQL SECURITY DEFINER */
-/*!50001 VIEW `vw_recibos_pendientes_telegram` AS select `r`.`id` AS `recibo_id`,`r`.`folio` AS `folio`,`u`.`nombre` AS `usuario`,`u`.`telegram_chat_id` AS `telegram_chat_id`,`d`.`ruta` AS `ruta`,`c`.`nombre` AS `comunidad`,`p`.`nombre` AS `periodo`,`r`.`total` AS `total`,`r`.`imagen_path` AS `imagen_path` from (((((`recibos` `r` join `usuarios_servicio` `u` on((`u`.`id` = `r`.`usuario_id`))) join `domicilios` `d` on((`d`.`id` = `r`.`domicilio_id`))) join `comunidades` `c` on((`c`.`id` = `d`.`comunidad_id`))) join `periodos_bimestrales` `p` on((`p`.`id` = `r`.`periodo_id`))) left join `telegram_envios` `te` on(((`te`.`recibo_id` = `r`.`id`) and (`te`.`estado` = 'enviado')))) where ((`r`.`estado` = 'generado') and (`u`.`telegram_chat_id` is not null) and (`te`.`id` is null)) */;
-/*!50001 SET character_set_client      = @saved_cs_client */;
-/*!50001 SET character_set_results     = @saved_cs_results */;
-/*!50001 SET collation_connection      = @saved_col_connection */;
-/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
-
-/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
-/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
-/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
-/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
-
--- Dump completed on 2026-04-30 20:03:06

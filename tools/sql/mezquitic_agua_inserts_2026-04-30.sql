@@ -163,14 +163,3 @@ LOCK TABLES `usuarios_sistema` WRITE;
 INSERT INTO `usuarios_sistema` (`id`, `nombre`, `usuario`, `telefono`, `correo`, `password_hash`, `ultimo_login_at`, `ultimo_login_ip`, `ultimo_acceso_at`, `ultimo_acceso_modulo`, `ultimo_password_change_at`, `rol`, `telegram_user_id`, `activo`, `created_at`, `updated_at`) VALUES (1,'Administrador del sistema','admin',NULL,NULL,'$2y$10$i7pBXbaaJ7jk7uRt1jAoHuxPk.Zs20vy3YcrCbccqt13clYrLGjVm','2026-04-30 14:41:59','::1','2026-04-30 19:43:47','plataforma','2026-04-29 14:09:39','admin',NULL,1,'2026-04-29 20:09:39','2026-05-01 01:43:47'),(2,'JUAN','perezjuan','4444710869','martinez.adrian.1hv@gmail.com','$2y$10$RUznQsDg3if7KQ/7cXTQ4.xXxZXkwtOC8EqKCXiFkek6Vq3o6oiBe','2026-04-29 17:26:00','::1','2026-04-30 17:33:00','cobro','2026-04-29 17:03:46','cobrador',NULL,1,'2026-04-29 23:02:06','2026-04-30 23:33:00'),(3,'VERIFICADOR','verificador',NULL,NULL,'$2y$10$ClAQQNKYiKKyJ2JK6I.xru5jCikmFMwKX5oE8uhM1Br5VyjaAz4r6','2026-04-29 19:56:15','::1','2026-04-29 19:56:15','verificador','2026-04-29 19:46:08','verificador',NULL,1,'2026-04-30 01:46:08','2026-04-30 01:56:15'),(4,'COBRO','cobro',NULL,NULL,'$2y$10$kqSH87lerxJegeFGtSbvDeturtRKmXVgmOvAW/m7Q6b6jWvHRcSzW','2026-04-29 19:57:16','::1','2026-04-29 19:57:16','cobro','2026-04-29 19:56:59','cobrador',NULL,1,'2026-04-30 01:56:59','2026-04-30 01:57:16');
 /*!40000 ALTER TABLE `usuarios_sistema` ENABLE KEYS */;
 UNLOCK TABLES;
-/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
-
-/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
-/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
-/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
-/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
-
--- Dump completed on 2026-04-30 20:09:48
