@@ -1750,6 +1750,10 @@ $(function () {
       beforeSend: function () {
         if (source === "modal") {
           showModalFeedback("info", "Dando de baja usuario...");
+        } else if (source === "duplicados") {
+          $("#resultadoDuplicado")
+            .removeClass("d-none warning")
+            .html('<i class="fas fa-spinner fa-spin mr-2"></i><span>Dando de baja usuario...</span>');
         } else {
           showConsultaFeedback("info", "Dando de baja usuario...");
         }
@@ -1758,6 +1762,12 @@ $(function () {
         if (source === "modal") {
           showModalFeedback("success", response.message || "Usuario dado de baja.");
           $("#editEstadoUsuario").val("Inactivo");
+        } else if (source === "duplicados") {
+          $("#resultadoDuplicado")
+            .removeClass("d-none")
+            .addClass("warning")
+            .html('<i class="fas fa-check-circle mr-2"></i><span>' + escapeHtml(response.message || "Usuario dado de baja.") + '</span>');
+          revisarDuplicadosAlta();
         } else {
           showConsultaFeedback("success", response.message || "Usuario dado de baja.");
         }
@@ -1767,6 +1777,11 @@ $(function () {
         const message = extractAjaxMessage(xhr, "No se pudo dar de baja el usuario.");
         if (source === "modal") {
           showModalFeedback("danger", message);
+        } else if (source === "duplicados") {
+          $("#resultadoDuplicado")
+            .removeClass("d-none")
+            .addClass("warning")
+            .html('<i class="fas fa-exclamation-circle mr-2"></i><span>' + escapeHtml(message) + '</span>');
         } else {
           showConsultaFeedback("danger", message);
         }
@@ -4203,7 +4218,7 @@ $(function () {
   });
 
   $(document).on("click", ".btn-baja-tabla", function () {
-    bajaUsuario($(this).data("id"), "tabla");
+    bajaUsuario($(this).data("id"), $(this).data("source") || "tabla");
   });
 
   function buildDuplicateSearchTerm() {
@@ -4266,7 +4281,10 @@ $(function () {
 
         if (coincidencias.length) {
           const items = coincidencias.map(function (item) {
-            return '<li><strong>' + item.nombre + '</strong> | Ruta: ' + (item.ruta || 'Sin ruta') + ' | Medidor: ' + (item.medidor || 'Sin medidor') + ' | WhatsApp: ' + (item.whatsapp || 'Sin WhatsApp') + '</li>';
+            return '<li class="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-2">' +
+              '<div class="pr-md-3"><strong>' + escapeHtml(item.nombre || "") + '</strong> | Ruta: ' + escapeHtml(item.ruta || 'Sin ruta') + ' | Medidor: ' + escapeHtml(item.medidor || 'Sin medidor') + ' | WhatsApp: ' + escapeHtml(item.whatsapp || 'Sin WhatsApp') + '</div>' +
+              '<button type="button" class="btn btn-sm btn-outline-danger btn-baja-tabla mt-2 mt-md-0" data-id="' + escapeHtml(item.usuario_id) + '" data-source="duplicados"><i class="fas fa-user-slash mr-1"></i> Dar de baja</button>' +
+              '</li>';
           }).join("");
 
           $result
