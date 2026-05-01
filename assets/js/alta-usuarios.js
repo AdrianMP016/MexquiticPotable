@@ -38,7 +38,7 @@ $(function () {
     limite_tramo_base_m3: 15,
     precio_tramo_base_m3: 10,
     precio_excedente_m3: 15,
-    cooperacion_default: 0,
+    cooperacion_default: 10,
     multa_default: 0,
     recargo_default: 0,
     descripcion: "Primeros 15 m3 a $10.00 y excedente a $15.00 por m3.",

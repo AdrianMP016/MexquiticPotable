@@ -211,7 +211,7 @@ class SystemBootstrap
             ],
             [
                 'clave' => 'tarifa_agua_cooperacion_default',
-                'valor' => '0',
+                'valor' => '10',
                 'tipo' => 'number',
                 'descripcion' => 'Cooperacion predeterminada para nuevos recibos.',
             ],
@@ -240,6 +240,18 @@ class SystemBootstrap
         foreach ($seeds as $seed) {
             $stmt->execute($seed);
         }
+
+        // Migra instalaciones existentes del valor historico 0 al nuevo default 10
+        // solo cuando la cooperacion aun conserva el valor anterior.
+        $updateLegacyDefault = $db->prepare(
+            "UPDATE configuracion_cobro_agua
+             SET valor = :nuevo_valor
+             WHERE clave = 'tarifa_agua_cooperacion_default' AND valor = :valor_anterior"
+        );
+        $updateLegacyDefault->execute([
+            'nuevo_valor' => '10',
+            'valor_anterior' => '0',
+        ]);
     }
 
     private static function ensureDefaultAdmin(PDO $db): void

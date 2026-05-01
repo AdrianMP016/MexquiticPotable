@@ -10,7 +10,7 @@ class CobroAgua
         'tarifa_agua_limite_base_m3' => '15',
         'tarifa_agua_precio_base_m3' => '10',
         'tarifa_agua_precio_excedente_m3' => '15',
-        'tarifa_agua_cooperacion_default' => '0',
+        'tarifa_agua_cooperacion_default' => '10',
         'tarifa_agua_multa_default' => '0',
         'tarifa_agua_recargo_default' => '0',
     ];
