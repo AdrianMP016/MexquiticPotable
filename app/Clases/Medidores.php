@@ -9,18 +9,27 @@ class Medidores
         $this->db = $db;
     }
 
-    public function listar(int $page = 1, int $perPage = 25): array
+    public function listar(int $page = 1, int $perPage = 25, string $buscar = '', string $campo = 'todos'): array
     {
         $page = max(1, $page);
         $perPage = (int) $perPage;
         $allowAll = $perPage <= 0;
+        $buscar = trim($buscar);
 
-        $stmtCount = $this->db->query(
+        [$whereSql, $params] = $this->construirFiltroBusqueda($buscar, $campo);
+
+        $stmtCount = $this->db->prepare(
             "SELECT COUNT(*) AS total
              FROM medidores m
              INNER JOIN usuarios_servicio u ON u.id = m.usuario_id
-             INNER JOIN domicilios d ON d.id = m.domicilio_id"
+             INNER JOIN domicilios d ON d.id = m.domicilio_id
+             LEFT JOIN comunidades c ON c.id = d.comunidad_id
+             $whereSql"
         );
+        foreach ($params as $key => $value) {
+            $stmtCount->bindValue(':' . $key, $value, PDO::PARAM_STR);
+        }
+        $stmtCount->execute();
         $total = (int) ($stmtCount->fetch()['total'] ?? 0);
 
         if ($allowAll) {
@@ -48,9 +57,13 @@ class Medidores
              INNER JOIN usuarios_servicio u ON u.id = m.usuario_id
              INNER JOIN domicilios d ON d.id = m.domicilio_id
              LEFT JOIN comunidades c ON c.id = d.comunidad_id
-             ORDER BY m.id DESC
+             $whereSql
+             ORDER BY m.id ASC
              LIMIT :limit OFFSET :offset"
         );
+        foreach ($params as $key => $value) {
+            $stmt->bindValue(':' . $key, $value, PDO::PARAM_STR);
+        }
         $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
@@ -69,6 +82,51 @@ class Medidores
                 'to' => $total > 0 ? $offset + count($medidores) : 0,
             ],
         ];
+    }
+
+    private function construirFiltroBusqueda(string $buscar, string $campo): array
+    {
+        if ($buscar === '') {
+            return ['', []];
+        }
+
+        $campo = trim(mb_strtolower($campo, 'UTF-8'));
+        $params = [];
+
+        switch ($campo) {
+            case 'id':
+                $where = "WHERE CAST(m.id AS CHAR) LIKE :buscar";
+                break;
+            case 'medidor':
+                $where = "WHERE m.numero LIKE :buscar";
+                break;
+            case 'usuario':
+                $where = "WHERE u.nombre LIKE :buscar";
+                break;
+            case 'ruta':
+                $where = "WHERE d.ruta LIKE :buscar";
+                break;
+            case 'comunidad':
+                $where = "WHERE c.nombre LIKE :buscar";
+                break;
+            case 'estado':
+                $where = "WHERE REPLACE(m.estado, '_', ' ') LIKE :buscar";
+                break;
+            default:
+                $where = "WHERE (
+                    CAST(m.id AS CHAR) LIKE :buscar
+                    OR m.numero LIKE :buscar
+                    OR u.nombre LIKE :buscar
+                    OR d.ruta LIKE :buscar
+                    OR c.nombre LIKE :buscar
+                    OR REPLACE(m.estado, '_', ' ') LIKE :buscar
+                )";
+                break;
+        }
+
+        $params['buscar'] = '%' . $buscar . '%';
+
+        return [$where, $params];
     }
 
     public function usuariosDisponibles(): array

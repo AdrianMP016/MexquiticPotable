@@ -1843,6 +1843,8 @@ $(function () {
   function cargarMedidores(page) {
     const targetPage = page || medidoresPaginaActual || 1;
     const perPage = Number($("#medidoresPorPagina").val() || medidoresPorPaginaActual || 25);
+    const buscar = $.trim($("#buscarMedidorListado").val() || "");
+    const campo = $("#medidoresCampoBusqueda").val() || "todos";
     const requestToken = ++medidoresRequestToken;
 
     medidoresPorPaginaActual = perPage;
@@ -1854,7 +1856,9 @@ $(function () {
       data: {
         accion: "medidores.listar",
         page: targetPage,
-        per_page: perPage
+        per_page: perPage,
+        buscar: buscar,
+        campo: campo
       },
       beforeSend: function () {
         $("#tablaMedidores").addClass("is-loading");
@@ -3819,7 +3823,30 @@ $(function () {
   });
 
   $("#btnRecargarMedidores").on("click", function () {
-    cargarMedidores();
+    $("#buscarMedidorListado").val("");
+    $("#medidoresCampoBusqueda").val("todos");
+    medidoresPaginaActual = 1;
+    cargarMedidores(1);
+  });
+
+  $("#btnBuscarMedidores").on("click", function () {
+    medidoresPaginaActual = 1;
+    cargarMedidores(1);
+  });
+
+  $("#btnLimpiarBusquedaMedidores").on("click", function () {
+    $("#buscarMedidorListado").val("");
+    $("#medidoresCampoBusqueda").val("todos");
+    medidoresPaginaActual = 1;
+    cargarMedidores(1);
+  });
+
+  $(document).on("keydown", "#buscarMedidorListado", function (event) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      medidoresPaginaActual = 1;
+      cargarMedidores(1);
+    }
   });
 
   $("#medidoresPorPagina").on("change", function () {

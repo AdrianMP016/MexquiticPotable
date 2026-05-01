@@ -31,6 +31,34 @@
                 <h3 class="card-title"><i class="fas fa-tachometer-alt mr-2"></i>Medidores registrados</h3>
               </div>
               <div class="card-body p-0">
+                <div class="p-3 border-bottom">
+                  <div class="form-row align-items-end">
+                    <div class="col-md-3 mb-2 mb-md-0">
+                      <label for="medidoresCampoBusqueda" class="mb-1">Filtrar por</label>
+                      <select id="medidoresCampoBusqueda" class="form-control">
+                        <option value="todos" selected>Todos los campos</option>
+                        <option value="id">ID</option>
+                        <option value="medidor">Medidor</option>
+                        <option value="usuario">Usuario</option>
+                        <option value="ruta">Ruta</option>
+                        <option value="comunidad">Comunidad</option>
+                        <option value="estado">Estado</option>
+                      </select>
+                    </div>
+                    <div class="col-md-5 mb-2 mb-md-0">
+                      <label for="buscarMedidorListado" class="mb-1">Buscar</label>
+                      <input type="text" id="buscarMedidorListado" class="form-control" placeholder="Escribe un valor para filtrar">
+                    </div>
+                    <div class="col-md-4 d-flex">
+                      <button type="button" class="btn btn-primary flex-fill mr-2" id="btnBuscarMedidores">
+                        <i class="fas fa-search mr-1"></i> Buscar
+                      </button>
+                      <button type="button" class="btn btn-outline-secondary flex-fill" id="btnLimpiarBusquedaMedidores">
+                        <i class="fas fa-eraser mr-1"></i> Limpiar
+                      </button>
+                    </div>
+                  </div>
+                </div>
                 <div class="table-responsive">
                   <table class="table table-hover table-striped mb-0" id="tablaMedidores">
                     <thead>

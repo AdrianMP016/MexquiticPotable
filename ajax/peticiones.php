@@ -269,7 +269,9 @@ try {
             $medidores = new Medidores($db);
             $page = (int) Request::input('page', 1);
             $perPage = (int) Request::input('per_page', 25);
-            $data = $medidores->listar($page, $perPage);
+            $buscar = (string) Request::input('buscar', '');
+            $campo = (string) Request::input('campo', 'todos');
+            $data = $medidores->listar($page, $perPage, $buscar, $campo);
             JsonResponse::success('Medidores consultados correctamente.', [
                 'medidores' => $data['medidores'],
                 'pagination' => $data['pagination'],
