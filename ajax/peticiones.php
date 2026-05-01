@@ -63,6 +63,7 @@ function mexquiticAllowedModules(string $accion): array
         'usuariosSistema.obtener' => ['plataforma'],
         'usuariosSistema.guardar' => ['plataforma'],
         'usuariosSistema.actualizar' => ['plataforma'],
+        'usuariosSistema.baja' => ['plataforma'],
         'usuariosSistema.resetPassword' => ['plataforma'],
         'bitacora.listar' => ['plataforma'],
         'auth.session' => ['plataforma', 'cobro', 'verificador'],
@@ -118,6 +119,7 @@ function mexquiticRegistrarBitacora(Auth $auth, PDO $db, string $accion, $data =
         'pagos.eliminar' => ['modulo' => 'plataforma', 'descripcion' => 'Eliminación de pago registrado.'],
         'usuariosSistema.guardar' => ['modulo' => 'plataforma', 'descripcion' => 'Alta de usuario del sistema.'],
         'usuariosSistema.actualizar' => ['modulo' => 'plataforma', 'descripcion' => 'Actualización de usuario del sistema.'],
+        'usuariosSistema.baja' => ['modulo' => 'plataforma', 'descripcion' => 'Baja de usuario del sistema.'],
         'usuariosSistema.resetPassword' => ['modulo' => 'plataforma', 'descripcion' => 'Restablecimiento de contraseña de usuario del sistema.'],
     ];
 
@@ -661,6 +663,14 @@ try {
             $data = $usuariosSistema->actualizar(Request::post());
             mexquiticRegistrarBitacora($auth, $db, $accion, $data);
             JsonResponse::success('Usuario del sistema actualizado correctamente.', $data);
+            break;
+
+        case 'usuariosSistema.baja':
+            $usuariosSistema = new UsuariosSistema($db);
+            $usuarioSistemaId = (int) Request::input('usuario_sistema_id', 0);
+            $data = $usuariosSistema->darDeBaja($usuarioSistemaId, (int) ($auth->userId() ?? 0));
+            mexquiticRegistrarBitacora($auth, $db, $accion, $data);
+            JsonResponse::success('Usuario del sistema dado de baja correctamente.', $data);
             break;
 
         case 'usuariosSistema.resetPassword':

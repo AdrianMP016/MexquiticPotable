@@ -200,6 +200,44 @@ class UsuariosSistema
         return $this->obtener($id);
     }
 
+    public function darDeBaja(int $id, int $currentUserId = 0): array
+    {
+        if ($id <= 0) {
+            throw new RuntimeException('No se recibió el usuario del sistema a dar de baja.');
+        }
+
+        if ($currentUserId > 0 && $id === $currentUserId) {
+            throw new RuntimeException('No puedes darte de baja a ti mismo desde esta acción.');
+        }
+
+        $actual = $this->obtener($id);
+
+        if ((string) ($actual['rol'] ?? '') === 'admin' && (int) ($actual['activo'] ?? 0) === 1) {
+            $stmt = $this->db->prepare(
+                "SELECT COUNT(*) AS total
+                 FROM usuarios_sistema
+                 WHERE rol = 'admin'
+                   AND activo = 1
+                   AND id <> :id"
+            );
+            $stmt->execute(['id' => $id]);
+            $adminsRestantes = (int) ($stmt->fetch()['total'] ?? 0);
+
+            if ($adminsRestantes <= 0) {
+                throw new RuntimeException('Debe quedar al menos un administrador activo en el sistema.');
+            }
+        }
+
+        $stmt = $this->db->prepare(
+            "UPDATE usuarios_sistema
+             SET activo = 0
+             WHERE id = :id"
+        );
+        $stmt->execute(['id' => $id]);
+
+        return $this->obtener($id);
+    }
+
     private function normalizar(array $input, bool $requirePassword): array
     {
         $telefono = preg_replace('/\D+/', '', (string) ($input['telefono'] ?? '')) ?? '';

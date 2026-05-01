@@ -4759,6 +4759,17 @@ $(function () {
       const login = formatDateTimeDisplay(usuario.ultimo_login_at);
       const acceso = formatDateTimeDisplay(usuario.ultimo_acceso_at);
       const modulo = usuario.ultimo_acceso_modulo ? '<div class="text-muted small">' + escapeHtml(usuario.ultimo_acceso_modulo) + '</div>' : '';
+      const acciones = [
+        '<button type="button" class="btn btn-sm btn-outline-primary btn-editar-sistema mr-1" data-id="' + escapeHtml(usuario.id) + '"><i class="fas fa-edit mr-1"></i>Editar</button>',
+        '<button type="button" class="btn btn-sm btn-outline-secondary btn-reset-sistema mr-1" data-id="' + escapeHtml(usuario.id) + '" data-nombre="' + escapeHtml(usuario.nombre || "") + '"><i class="fas fa-key mr-1"></i>Clave</button>'
+      ];
+
+      if (Number(usuario.activo) === 1) {
+        acciones.push(
+          '<button type="button" class="btn btn-sm btn-outline-danger btn-baja-sistema" data-id="' + escapeHtml(usuario.id) + '" data-nombre="' + escapeHtml(usuario.nombre || "") + '"><i class="fas fa-user-slash mr-1"></i>Baja</button>'
+        );
+      }
+
       return '<tr>' +
         '<td><strong>' + escapeHtml(usuario.nombre || "") + '</strong></td>' +
         '<td><div class="font-weight-bold">@' + escapeHtml(usuario.usuario || "") + '</div><div class="text-muted small">' + escapeHtml(usuario.correo || "Sin correo") + '</div></td>' +
@@ -4767,10 +4778,7 @@ $(function () {
         '<td>' + escapeHtml(login) + '<div class="text-muted small">' + escapeHtml(usuario.ultimo_login_ip || "") + '</div></td>' +
         '<td>' + escapeHtml(acceso) + modulo + '</td>' +
         '<td>' + estadoSistemaBadge(usuario.activo) + '</td>' +
-        '<td class="text-right">' +
-          '<button type="button" class="btn btn-sm btn-outline-primary btn-editar-sistema mr-1" data-id="' + escapeHtml(usuario.id) + '"><i class="fas fa-edit mr-1"></i>Editar</button>' +
-          '<button type="button" class="btn btn-sm btn-outline-secondary btn-reset-sistema" data-id="' + escapeHtml(usuario.id) + '" data-nombre="' + escapeHtml(usuario.nombre || "") + '"><i class="fas fa-key mr-1"></i>Clave</button>' +
-        '</td>' +
+        '<td class="text-right">' + acciones.join("") + '</td>' +
       '</tr>';
     }).join(""));
   }
@@ -4995,6 +5003,38 @@ $(function () {
     });
   }
 
+  function bajaUsuarioSistema(id, nombre) {
+    if (!id) {
+      showSistemaFeedback("warning", "No se identifico el usuario del sistema a dar de baja.");
+      return;
+    }
+
+    if (!confirm("Deseas dar de baja al usuario del sistema " + (nombre || "seleccionado") + "?")) {
+      return;
+    }
+
+    $.ajax({
+      url: ajaxUrl,
+      method: "POST",
+      dataType: "json",
+      data: {
+        accion: "usuariosSistema.baja",
+        usuario_sistema_id: id
+      },
+      beforeSend: function () {
+        showSistemaFeedback("info", "Dando de baja usuario del sistema...");
+      },
+      success: function (response) {
+        showSistemaFeedback("success", response.message || "Usuario del sistema dado de baja correctamente.");
+        cargarUsuariosSistema(sistemaUsuariosPaginaActual);
+        cargarBitacora();
+      },
+      error: function (xhr) {
+        showSistemaFeedback("danger", extractAjaxMessage(xhr, "No se pudo dar de baja el usuario del sistema."));
+      }
+    });
+  }
+
   $("#btnBuscarSistemaUsuarios").on("click", function () {
     sistemaUsuariosPaginaActual = 1;
     cargarUsuariosSistema(1);
@@ -5080,6 +5120,10 @@ $(function () {
     $("#resetSistemaUsuarioNombre").text($(this).data("nombre") || "esta cuenta");
     $("#modalResetSistemaFeedback").addClass("d-none").removeClass("alert-success alert-info alert-warning alert-danger");
     $("#modalResetSistemaPassword").modal("show");
+  });
+
+  $(document).on("click", ".btn-baja-sistema", function () {
+    bajaUsuarioSistema($(this).data("id"), $(this).data("nombre"));
   });
 
   $("#formSistemaUsuario").on("submit", function (event) {
