@@ -165,6 +165,18 @@ function mexquiticAdminFragment(string $relativePath): string
     return $content;
 }
 
+function mexquiticAssetVersion(string $relativePath): string
+{
+    $path = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $relativePath);
+
+    if (!is_file($path)) {
+        return (string) time();
+    }
+
+    $mtime = @filemtime($path);
+    return $mtime ? (string) $mtime : (string) time();
+}
+
 function mexquiticRenderAdminPage(array $config): void
 {
     mexquiticRequirePageAccess('plataforma', (string) ($config['page_access_log'] ?? 'Ingreso a la plataforma administrativa.'));
@@ -217,6 +229,10 @@ function mexquiticRenderAdminPage(array $config): void
 HTML;
     }
 
+    $stylesVersion = mexquiticAssetVersion('assets/css/styles.css');
+    $sessionClientVersion = mexquiticAssetVersion('assets/js/session-client.js');
+    $altaUsuariosVersion = mexquiticAssetVersion('assets/js/alta-usuarios.js');
+
     $navHtml = '';
     foreach ($navItems as $item) {
         $classes = ['nav-link'];
@@ -254,7 +270,7 @@ HTML;
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
-  <link rel="stylesheet" href="assets/css/styles.css?v=20260429c">
+  <link rel="stylesheet" href="assets/css/styles.css?v={$stylesVersion}">
 </head>
 <body class="hold-transition sidebar-mini layout-fixed sidebar-overlay-open app-loading" data-admin-view="{$view}">
 <div class="wrapper">
@@ -334,9 +350,9 @@ HTML;
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-<script src="assets/js/session-client.js?v=20260429b"></script>
+<script src="assets/js/session-client.js?v={$sessionClientVersion}"></script>
 {$bootstrapScript}
-<script src="assets/js/alta-usuarios.js?v=20260429m"></script>
+<script src="assets/js/alta-usuarios.js?v={$altaUsuariosVersion}"></script>
 {$mapsScript}
 </body>
 </html>
