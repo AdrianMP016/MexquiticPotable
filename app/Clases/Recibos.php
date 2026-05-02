@@ -348,7 +348,7 @@ class Recibos
             ], JSON_UNESCAPED_UNICODE));
         }
 
-        $lectura = $this->obtenerLectura($lecturaId);
+        $lectura = $this->asegurarImagenRecibo($lecturaId);
         $data = $this->resolverConfiguracionImpresion($lectura, $input);
         $cobro = $this->calcularCobroRecibo($lectura, $data, $this->resolverTarifaSnapshotRecibo($lectura));
         $subtotal = $cobro['subtotal'];
@@ -378,6 +378,27 @@ class Recibos
             'total' => $total,
             'imagen_path' => $lectura['imagen_path'] ?? '',
         ], $payload);
+    }
+
+    public function obtenerImagen(array $input): array
+    {
+        $lecturaId = (int) ($input['lectura_id'] ?? 0);
+
+        if ($lecturaId <= 0) {
+            throw new InvalidArgumentException(json_encode([
+                'lectura_id' => 'Selecciona una lectura para localizar el recibo.',
+            ], JSON_UNESCAPED_UNICODE));
+        }
+
+        $lectura = $this->asegurarImagenRecibo($lecturaId);
+
+        return [
+            'lectura_id' => (int) ($lectura['lectura_id'] ?? 0),
+            'recibo_id' => (int) ($lectura['recibo_id'] ?? 0),
+            'folio' => (string) ($lectura['folio'] ?? ''),
+            'usuario' => (string) ($lectura['usuario'] ?? ''),
+            'imagen_path' => (string) ($lectura['imagen_path'] ?? ''),
+        ];
     }
 
     public function enviarWhatsApp(int $reciboId, WhatsApp $whatsApp): array
@@ -903,8 +924,8 @@ class Recibos
             throw new RuntimeException('No se encontro la plantilla del recibo.');
         }
 
-        if (!is_dir($this->outputDir)) {
-            mkdir($this->outputDir, 0775, true);
+        if (!is_dir($this->outputDir) && !mkdir($this->outputDir, 0775, true) && !is_dir($this->outputDir)) {
+            throw new RuntimeException('No se pudo crear la carpeta de recibos generados.');
         }
 
         $coords = json_decode(file_get_contents($this->coordsPath), true);
@@ -936,10 +957,77 @@ class Recibos
 
         $filename = 'recibo_' . $recibo['recibo_id'] . '.png';
         $destination = $this->outputDir . '/' . $filename;
-        imagepng($image, $destination);
+        $saved = imagepng($image, $destination);
         imagedestroy($image);
 
+        if (!$saved || !is_file($destination) || filesize($destination) <= 0) {
+            throw new RuntimeException('No se pudo guardar la imagen generada del recibo.');
+        }
+
         return 'recibos/generados/' . $filename;
+    }
+
+    private function asegurarImagenRecibo(int $lecturaId): array
+    {
+        $lectura = $this->obtenerLectura($lecturaId);
+
+        if ($this->imagenReciboDisponible($lectura)) {
+            return $lectura;
+        }
+
+        if (empty($lectura['recibo_id'])) {
+            throw new RuntimeException('Primero genera el recibo antes de intentar verlo o imprimirlo.');
+        }
+
+        $data = $this->resolverConfiguracionImpresion($lectura, [
+            'lectura_id' => $lecturaId,
+            'cooperaciones' => (float) ($lectura['cooperaciones'] ?? 0),
+            'multas' => (float) ($lectura['multas'] ?? 0),
+            'recargos' => (float) ($lectura['recargos'] ?? 0),
+            'fecha_limite_pago' => (string) ($lectura['fecha_vencimiento'] ?? ''),
+        ]);
+        $cobro = $this->calcularCobroRecibo($lectura, $data, $this->resolverTarifaSnapshotRecibo($lectura));
+        $recibo = [
+            'recibo_id' => (int) ($lectura['recibo_id'] ?? 0),
+            'folio' => (string) (($lectura['folio'] ?? '') ?: $this->generarFolio()),
+        ];
+        $imagenPath = $this->generarImagen(
+            $lectura,
+            $recibo,
+            $data,
+            $cobro['subtotal'],
+            $cobro['total'],
+            $this->generarTokenQr($lectura),
+            $cobro
+        );
+
+        $stmt = $this->db->prepare('UPDATE recibos SET imagen_path = :imagen_path WHERE id = :recibo_id');
+        $stmt->execute([
+            'imagen_path' => $imagenPath,
+            'recibo_id' => $recibo['recibo_id'],
+        ]);
+
+        $lectura['imagen_path'] = $imagenPath;
+        $lectura['folio'] = $recibo['folio'];
+        $lectura['total'] = $cobro['total'];
+
+        return $lectura;
+    }
+
+    private function imagenReciboDisponible(array $lectura): bool
+    {
+        $relativePath = trim((string) ($lectura['imagen_path'] ?? ''));
+
+        if ($relativePath === '') {
+            return false;
+        }
+
+        return is_file($this->rutaAbsolutaRecibo($relativePath));
+    }
+
+    private function rutaAbsolutaRecibo(string $relativePath): string
+    {
+        return $this->rootDir . '/' . ltrim(str_replace('\\', '/', $relativePath), '/');
     }
 
     private function crearPayloadImpresion(
@@ -1357,11 +1445,19 @@ class Recibos
                 'C:/Windows/Fonts/calibrib.ttf',
                 'C:/Windows/Fonts/segoeuib.ttf',
                 'C:/Windows/Fonts/arial.ttf',
+                '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
+                '/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf',
+                '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf',
+                '/usr/share/fonts/TTF/DejaVuSans-Bold.ttf',
             ]
             : [
                 'C:/Windows/Fonts/arial.ttf',
                 'C:/Windows/Fonts/calibri.ttf',
                 'C:/Windows/Fonts/segoeui.ttf',
+                '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+                '/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf',
+                '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf',
+                '/usr/share/fonts/TTF/DejaVuSans.ttf',
             ];
 
         foreach ($fonts as $font) {

@@ -2481,9 +2481,9 @@ $(function () {
       const entregaBadge = lectura.recibo_id
         ? estadoEntregaBadge(lectura.recibo_entregado, lectura.fecha_entrega)
         : '<span class="badge badge-secondary">Sin recibo</span>';
-      const imageButton = lectura.imagen_path
-        ? '<a class="btn btn-sm btn-outline-info" target="_blank" href="' + escapeHtml(lectura.imagen_path) + '"><i class="fas fa-image mr-1"></i> Ver</a>'
-        : "";
+        const imageButton = lectura.recibo_id
+          ? '<button type="button" class="btn btn-sm btn-outline-info btn-ver-recibo" data-lectura-id="' + lectura.lectura_id + '"><i class="fas fa-image mr-1"></i> Ver</button>'
+          : "";
       const printButton = lectura.recibo_id
         ? '<button class="btn btn-sm btn-outline-primary btn-imprimir-recibo" data-lectura-id="' + lectura.lectura_id + '" data-folio="' + escapeHtml(lectura.folio || "") + '" data-usuario="' + escapeHtml(lectura.usuario || "") + '"><i class="fas fa-print mr-1"></i> Imprimir</button>'
         : "";
@@ -3502,6 +3502,46 @@ $(function () {
     });
   }
 
+  function abrirVistaRecibo(lecturaId) {
+    if (!lecturaId) {
+      showLecturasFeedback("warning", "No se encontro la lectura para abrir el recibo.");
+      return;
+    }
+
+    $.ajax({
+      url: ajaxUrl,
+      method: "POST",
+      dataType: "json",
+      data: {
+        accion: "recibos.obtenerImagen",
+        lectura_id: lecturaId
+      },
+      beforeSend: function () {
+        showLecturasFeedback("info", "Localizando imagen del recibo...");
+      },
+      success: function (response) {
+        const data = response.data || {};
+        const imageUrl = data.imagen_path ? rutaAbsolutaArchivo(data.imagen_path) + "?t=" + Date.now() : "";
+
+        if (!imageUrl) {
+          showLecturasFeedback("warning", "No se encontro la imagen del recibo.");
+          return;
+        }
+
+        const ventana = window.open(imageUrl, "_blank");
+        if (!ventana) {
+          showLecturasFeedback("warning", "El navegador bloqueo la ventana para abrir el recibo.");
+          return;
+        }
+
+        showLecturasFeedback("success", response.message || "Recibo abierto correctamente.");
+      },
+      error: function (xhr) {
+        showLecturasFeedback("danger", extractAjaxMessage(xhr, "No se pudo abrir la imagen del recibo."));
+      }
+    });
+  }
+
   function obtenerConfiguracionPreviewRecibos() {
     return {
       accion: "recibos.previsualizarPeriodo",
@@ -4171,6 +4211,10 @@ $(function () {
 
   $(document).on("click", ".btn-generar-recibo", function () {
     abrirGenerarRecibo($(this).data("id"));
+  });
+
+  $(document).on("click", ".btn-ver-recibo", function () {
+    abrirVistaRecibo($(this).data("lectura-id"));
   });
 
   $(document).on("click", ".btn-imprimir-recibo", function () {

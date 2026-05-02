@@ -46,6 +46,7 @@ function mexquiticAllowedModules(string $accion): array
         'recibos.generar' => ['plataforma'],
         'recibos.previsualizarPeriodo' => ['plataforma'],
         'recibos.prepararImpresion' => ['plataforma'],
+        'recibos.obtenerImagen' => ['plataforma'],
         'recibos.enviarWhatsApp' => ['plataforma'],
         'recibos.notificaciones' => ['plataforma'],
         'recibos.notificarWhatsApp' => ['plataforma'],
@@ -508,6 +509,12 @@ try {
             $recibos = new Recibos($db);
             $data = $recibos->prepararImpresion(Request::post());
             JsonResponse::success('Datos de impresion preparados correctamente.', $data);
+            break;
+
+        case 'recibos.obtenerImagen':
+            $recibos = new Recibos($db);
+            $data = $recibos->obtenerImagen(Request::post());
+            JsonResponse::success('Imagen del recibo localizada correctamente.', $data);
             break;
 
         case 'recibos.enviarWhatsApp':
