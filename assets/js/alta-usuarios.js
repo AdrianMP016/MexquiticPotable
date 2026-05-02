@@ -3352,6 +3352,19 @@ $(function () {
   }
 
   function construirHojaImpresionRecibo(item) {
+    const imageUrlBase = item && item.imagen_path ? rutaAbsolutaArchivo(item.imagen_path) : "";
+    const imageUrl = imageUrlBase ? imageUrlBase + (imageUrlBase.indexOf("?") >= 0 ? "&" : "?") + "t=" + Date.now() : "";
+
+    if (imageUrl) {
+      return [
+        '<div class="print-sheet">',
+        '<div class="print-image-receipt">',
+        '<img src="' + escapeHtml(imageUrl) + '" alt="Recibo ' + escapeHtml((item && item.folio) || "") + '">',
+        '</div>',
+        '</div>'
+      ].join("");
+    }
+
     const impresion = item && item.impresion ? item.impresion : null;
 
     if (!impresion || !impresion.canvas || !impresion.fields || !impresion.values) {
@@ -3411,12 +3424,14 @@ $(function () {
       '<style>',
       '@page { size: 5.5in 8.5in; margin: 0; }',
       'html,body{margin:0;padding:0;background:#fff;height:auto;overflow:visible;}',
-      'body{font-family:Arial,sans-serif;}',
-      '.print-sheet{width:5.5in;height:8.5in;page-break-after:always;break-after:page;page-break-inside:avoid;break-inside:avoid;overflow:hidden;}',
-      '.print-sheet:last-child{page-break-after:auto;break-after:auto;}',
-      '.print-blank-receipt{position:relative;width:100%;height:100%;background:#fff;overflow:hidden;}',
-      '.print-field{position:absolute;box-sizing:border-box;font-family:Arial,sans-serif;}',
-      '.print-qr{position:absolute;box-sizing:border-box;}',
+        'body{font-family:Arial,sans-serif;}',
+        '.print-sheet{width:5.5in;height:8.5in;page-break-after:always;break-after:page;page-break-inside:avoid;break-inside:avoid;overflow:hidden;}',
+        '.print-sheet:last-child{page-break-after:auto;break-after:auto;}',
+        '.print-image-receipt{width:100%;height:100%;overflow:hidden;background:#fff;}',
+        '.print-image-receipt img{display:block;width:100%;height:100%;object-fit:contain;}',
+        '.print-blank-receipt{position:relative;width:100%;height:100%;background:#fff;overflow:hidden;}',
+        '.print-field{position:absolute;box-sizing:border-box;font-family:Arial,sans-serif;}',
+        '.print-qr{position:absolute;box-sizing:border-box;}',
       '.print-qr img{display:block;width:100%;height:100%;object-fit:contain;}',
       '</style>',
       '</head><body>',
