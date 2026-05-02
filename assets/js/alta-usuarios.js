@@ -3322,6 +3322,8 @@ $(function () {
     const fontScale = Math.max(1, Number((printConfig && printConfig.fontScale) || 1));
     const lineHeightScale = Math.max(1, Number((printConfig && printConfig.lineHeightScale) || fontScale));
     const fontFamily = String((printConfig && printConfig.fontFamily) || "Arial, sans-serif");
+    const offsetX = Number((printConfig && printConfig.offsetX) || 0);
+    const offsetY = Number((printConfig && printConfig.offsetY) || 0);
 
     if (!text) {
       return "";
@@ -3331,8 +3333,8 @@ $(function () {
     const lineHeightBase = Number(config.lineHeight || ((config.fontSize || 18) + 8));
     const lineHeight = lineHeightBase * lineHeightScale;
     const styles = [
-      "left:" + porcentajePlantilla(config.x || 0, canvas.width),
-      "top:" + porcentajePlantilla(config.y || 0, canvas.height),
+      "left:" + porcentajePlantilla((config.x || 0) + offsetX, canvas.width),
+      "top:" + porcentajePlantilla((config.y || 0) + offsetY, canvas.height),
       "width:" + porcentajePlantilla(config.width || 0, canvas.width),
       "font-size:" + pxPlantillaAPt(fontSize) + "pt",
       "line-height:" + pxPlantillaAPt(lineHeight) + "pt",
@@ -3364,11 +3366,13 @@ $(function () {
     const qr = impresion.qr || {};
     const qrToken = impresion.qr_token || "";
     const printConfig = impresion.print || {};
+    const offsetX = Number(printConfig.offsetX || 0);
+    const offsetY = Number(printConfig.offsetY || 0);
     const htmlCampos = Object.keys(fields).map(function (fieldName) {
       return construirCampoImpresionHtml(canvas, fieldName, fields[fieldName] || {}, values[fieldName] || "", printConfig);
     }).join("");
     const htmlQr = qrToken && Number(qr.size || 0) > 0
-      ? '<div class="print-qr" style="left:' + porcentajePlantilla(qr.x || 0, canvas.width) + ";top:" + porcentajePlantilla(qr.y || 0, canvas.height) + ";width:" + porcentajePlantilla(qr.size || 0, canvas.width) + ";height:" + porcentajePlantilla(qr.size || 0, canvas.height) + ';">' +
+      ? '<div class="print-qr" style="left:' + porcentajePlantilla((qr.x || 0) + offsetX, canvas.width) + ";top:" + porcentajePlantilla((qr.y || 0) + offsetY, canvas.height) + ";width:" + porcentajePlantilla(qr.size || 0, canvas.width) + ";height:" + porcentajePlantilla(qr.size || 0, canvas.height) + ';">' +
         '<img src="' + escapeHtml(qrPublicUrl(qrToken, qr.size, false)) + '" alt="QR del recibo" onerror="this.onerror=null;this.src=\'' + escapeHtml(qrPublicUrl(qrToken, qr.size, true)) + '\'">' +
         "</div>"
       : "";

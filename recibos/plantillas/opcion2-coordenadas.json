@@ -17,7 +17,9 @@
     "fontScale": 2.08,
     "lineHeightScale": 2.0,
     "fontFamily": "Arial, sans-serif",
-    "qr": { "x": 1398, "y": 2262, "size": 178 },
+    "offsetX": 20,
+    "offsetY": 36,
+    "qr": { "x": 1432, "y": 2298, "size": 170 },
     "fields": {
       "aviso_recibo": { "x": 1366, "y": 182, "width": 140 },
       "fecha_limite_pago": { "x": 866, "y": 284, "width": 326 },

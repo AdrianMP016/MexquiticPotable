@@ -1091,6 +1091,8 @@ class Recibos
                 'fontScale' => (float) ($printConfig['fontScale'] ?? 2.1),
                 'lineHeightScale' => (float) ($printConfig['lineHeightScale'] ?? 2.0),
                 'fontFamily' => (string) ($printConfig['fontFamily'] ?? 'Arial, sans-serif'),
+                'offsetX' => (float) ($printConfig['offsetX'] ?? 0),
+                'offsetY' => (float) ($printConfig['offsetY'] ?? 0),
             ],
         ];
     }
