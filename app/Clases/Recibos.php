@@ -99,7 +99,14 @@ class Recibos
         $stmt->execute($params);
 
         $estadoCobro = $this->normalizarFiltroEstadoCobro($estadoCobro);
-        $rows = array_map(fn (array $row): array => $this->enriquecerEstadoCobro($row), $stmt->fetchAll());
+        $rows = array_map(function (array $row): array {
+            $row = $this->enriquecerEstadoCobro($row);
+            $row['imagen_disponible'] = $this->imagenReciboDisponible($row);
+            if (!$row['imagen_disponible']) {
+                $row['imagen_path'] = '';
+            }
+            return $row;
+        }, $stmt->fetchAll());
 
         if ($estadoCobro !== '') {
             $rows = array_values(array_filter($rows, function (array $row) use ($estadoCobro): bool {
@@ -206,6 +213,11 @@ class Recibos
 
         if (!$lectura) {
             throw new RuntimeException('No se encontro la lectura solicitada.');
+        }
+
+        $lectura['imagen_disponible'] = $this->imagenReciboDisponible($lectura);
+        if (!$lectura['imagen_disponible']) {
+            $lectura['imagen_path'] = '';
         }
 
         return $lectura;
@@ -1441,6 +1453,8 @@ class Recibos
     {
         $fonts = $bold
             ? [
+                $this->rootDir . '/assets/fonts/arialbd.ttf',
+                $this->rootDir . '/assets/fonts/arial.ttf',
                 'C:/Windows/Fonts/arialbd.ttf',
                 'C:/Windows/Fonts/calibrib.ttf',
                 'C:/Windows/Fonts/segoeuib.ttf',
@@ -1451,6 +1465,8 @@ class Recibos
                 '/usr/share/fonts/TTF/DejaVuSans-Bold.ttf',
             ]
             : [
+                $this->rootDir . '/assets/fonts/arial.ttf',
+                $this->rootDir . '/assets/fonts/arialbd.ttf',
                 'C:/Windows/Fonts/arial.ttf',
                 'C:/Windows/Fonts/calibri.ttf',
                 'C:/Windows/Fonts/segoeui.ttf',

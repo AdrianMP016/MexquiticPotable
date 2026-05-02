@@ -3707,12 +3707,13 @@ $(function () {
       '</div>'
     ].join(""));
 
-    if (lectura.imagen_path) {
-      $("#reciboPreviewBox").html('<img src="' + escapeHtml(lectura.imagen_path) + '?t=' + Date.now() + '" alt="Recibo generado">');
-      $("#btnAbrirReciboGenerado").removeClass("d-none").attr("href", lectura.imagen_path + "?t=" + Date.now());
-    } else {
-      $("#reciboPreviewBox").html('<div class="recibo-preview-empty"><i class="fas fa-file-image"></i><span>La imagen del recibo aparecera aqui despues de generarlo.</span></div>');
-    }
+      if (lectura.imagen_path) {
+        const imageUrl = rutaAbsolutaArchivo(lectura.imagen_path) + "?t=" + Date.now();
+        $("#reciboPreviewBox").html('<img src="' + escapeHtml(imageUrl) + '" alt="Recibo generado">');
+        $("#btnAbrirReciboGenerado").removeClass("d-none").attr("href", imageUrl);
+      } else {
+        $("#reciboPreviewBox").html('<div class="recibo-preview-empty"><i class="fas fa-file-image"></i><span>La imagen del recibo aparecera aqui despues de generarlo.</span></div>');
+      }
 
     calcularTotalRecibo();
     actualizarBotonEnvioRecibo();
