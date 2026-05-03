@@ -194,22 +194,22 @@ $(function () {
     if (!rutas || !rutas.length) { return; }
 
     _preparando = true;
-    var total   = rutas.length;
-    var hechas  = 0;
+    var $btn = $("#btnPreparar");
 
-    $("#btnPreparar")
-      .prop("disabled", true)
-      .html('<i class="fas fa-spinner fa-spin mr-1"></i> Preparando 0/' + total + '...');
+    // Fase 1: descargar lista de usuarios por ruta
+    var totalRutas     = rutas.length;
+    var todosUsuarios  = [];
 
     function cargarRuta(i) {
-      if (i >= total) {
-        _preparando = false;
-        $("#btnPreparar")
-          .prop("disabled", false)
-          .html('<i class="fas fa-download mr-1"></i> Preparar para campo');
-        showFeedback("info", "Datos listos para trabajar sin conexión.");
+      if (i >= totalRutas) {
+        // Fase 2: descargar detalle individual de cada usuario
+        cargarDetalles(todosUsuarios, 0);
         return;
       }
+
+      $btn.prop("disabled", true).html(
+        '<i class="fas fa-spinner fa-spin mr-1"></i> Rutas ' + (i + 1) + "/" + totalRutas + "..."
+      );
 
       var ruta = rutas[i];
       $.ajax({
@@ -218,15 +218,40 @@ $(function () {
         success: function (response) {
           var usuarios = response.data && response.data.coincidencias
             ? response.data.coincidencias : [];
+          todosUsuarios = todosUsuarios.concat(usuarios);
           cacheGuardar("ruta:" + ruta.codigo, usuarios).then(function () {
-            hechas++;
-            $("#btnPreparar").html(
-              '<i class="fas fa-spinner fa-spin mr-1"></i> Preparando ' + hechas + "/" + total + "..."
-            );
             cargarRuta(i + 1);
           });
         },
         error: function () { cargarRuta(i + 1); }
+      });
+    }
+
+    // Fase 2: detalle por usuario (periodo, lectura anterior, etc.)
+    function cargarDetalles(usuarios, i) {
+      var total = usuarios.length;
+
+      if (i >= total) {
+        _preparando = false;
+        $btn.prop("disabled", false).html('<i class="fas fa-download mr-1"></i> Preparar para campo');
+        showFeedback("info", "Listo. " + total + " usuario(s) disponibles sin conexión.");
+        return;
+      }
+
+      $btn.prop("disabled", true).html(
+        '<i class="fas fa-spinner fa-spin mr-1"></i> Usuarios ' + (i + 1) + "/" + total + "..."
+      );
+
+      var uid = usuarios[i].usuario_id;
+      $.ajax({
+        url: ajaxUrl, method: "POST", cache: false, dataType: "json",
+        data: { accion: "verificador.obtenerUsuario", usuario_id: uid },
+        success: function (response) {
+          cacheGuardar("usuario:" + uid, response.data || {}).then(function () {
+            cargarDetalles(usuarios, i + 1);
+          });
+        },
+        error: function () { cargarDetalles(usuarios, i + 1); }
       });
     }
 
