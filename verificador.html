@@ -251,5 +251,10 @@
   <script src="assets/js/session-client.js?v=20260429b"></script>
   <script src="assets/js/verificador-queue.js?v=20260503a"></script>
   <script src="assets/js/verificador.js?v=20260503a"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw-verificador.js').catch(function () {});
+    }
+  </script>
 </body>
 </html>
