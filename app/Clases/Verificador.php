@@ -134,13 +134,13 @@ class Verificador
         try {
             $this->validarMedidorAsignado($data);
             $lecturaId = $this->guardarLectura($data, $periodoId);
-            $fotoPath = $this->guardarFotoMedidor($foto, $lecturaId);
+            $fotoPath = null;
 
-            $stmt = $this->db->prepare('UPDATE lecturas SET foto_medicion_path = :foto WHERE id = :id');
-            $stmt->execute([
-                'foto' => $fotoPath,
-                'id' => $lecturaId,
-            ]);
+            if ($foto && ($foto['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+                $fotoPath = $this->guardarFotoMedidor($foto, $lecturaId);
+                $stmt = $this->db->prepare('UPDATE lecturas SET foto_medicion_path = :foto WHERE id = :id');
+                $stmt->execute(['foto' => $fotoPath, 'id' => $lecturaId]);
+            }
 
             $this->db->commit();
 
@@ -198,9 +198,7 @@ class Verificador
             $errors['longitud'] = 'Captura la longitud de la lectura.';
         }
 
-        if (!$foto || ($foto['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
-            $errors['foto_medidor'] = 'Toma la foto del medidor.';
-        }
+        // Foto requerida solo cuando se envía con conexión; offline no incluye archivo
 
         $data['consumo_m3'] = max($data['medicion'] - $data['lectura_anterior'], 0);
 

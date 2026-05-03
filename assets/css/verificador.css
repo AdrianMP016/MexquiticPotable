@@ -44,12 +44,57 @@ body {
   background: rgba(255, 255, 255, 0.96);
   box-shadow: 0 8px 22px rgba(31, 53, 86, 0.08);
   display: flex;
+  flex-wrap: wrap;
   gap: 14px;
   justify-content: space-between;
   padding: 14px 18px;
   position: sticky;
   top: 0;
   z-index: 40;
+}
+
+.connection-bar {
+  align-items: center;
+  border-radius: 10px;
+  display: flex;
+  flex-basis: 100%;
+  font-size: 12px;
+  font-weight: 700;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 7px 12px;
+  width: 100%;
+}
+
+.connection-bar--online {
+  background: #e8f8ef;
+  color: #13784b;
+}
+
+.connection-bar--offline {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.connection-bar--syncing {
+  background: #e8f2ff;
+  color: #1f5ea8;
+}
+
+.btn-sync-now {
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: 8px;
+  color: inherit;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 4px 10px;
+}
+
+.btn-sync-now:disabled {
+  opacity: 0.6;
 }
 
 .brand-mark {
