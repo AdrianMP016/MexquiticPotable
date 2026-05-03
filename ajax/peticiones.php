@@ -38,6 +38,7 @@ function mexquiticAllowedModules(string $accion): array
         'rutas.actualizar' => ['plataforma'],
         'rutas.baja' => ['plataforma'],
         'padron.importar' => ['plataforma'],
+        'verificador.prepararDatos' => ['verificador'],
         'verificador.guardarMedicion' => ['verificador'],
         'verificador.buscarUsuarios' => ['verificador'],
         'verificador.obtenerUsuario' => ['verificador'],
@@ -413,6 +414,15 @@ try {
             $data = $importador->importarPadronExcel((string) $excelPath);
             mexquiticRegistrarBitacora($auth, $db, $accion, $data);
             JsonResponse::success('Padron importado correctamente.', $data);
+            break;
+
+        case 'verificador.prepararDatos':
+            $verificador = new Verificador($db);
+            $data = $verificador->prepararDatos();
+            JsonResponse::success('Datos offline preparados.', [
+                'usuarios' => $data,
+                'total'    => count($data),
+            ]);
             break;
 
         case 'verificador.guardarMedicion':

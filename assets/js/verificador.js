@@ -189,73 +189,47 @@ $(function () {
 
   // ── Preparar para campo ───────────────────────────────────────────────────
 
-  function prepararParaCampo(rutas) {
+  function prepararParaCampo() {
     if (_preparando || !navigator.onLine || !tenemosCola()) { return; }
-    if (!rutas || !rutas.length) { return; }
 
     _preparando = true;
     var $btn = $("#btnPreparar");
+    $btn.prop("disabled", true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Descargando datos...');
 
-    // Fase 1: descargar lista de usuarios por ruta
-    var totalRutas     = rutas.length;
-    var todosUsuarios  = [];
+    $.ajax({
+      url: ajaxUrl, method: "POST", cache: false, dataType: "json",
+      data: { accion: "verificador.prepararDatos" },
+      success: function (response) {
+        var usuarios = response.data && response.data.usuarios ? response.data.usuarios : [];
 
-    function cargarRuta(i) {
-      if (i >= totalRutas) {
-        // Fase 2: descargar detalle individual de cada usuario
-        cargarDetalles(todosUsuarios, 0);
-        return;
-      }
+        // Construir índice por ruta para cachear listas también
+        var porRuta = {};
+        usuarios.forEach(function (u) {
+          var clave = String(u.ruta || '').trim();
+          if (!porRuta[clave]) { porRuta[clave] = []; }
+          porRuta[clave].push(u);
+        });
 
-      $btn.prop("disabled", true).html(
-        '<i class="fas fa-spinner fa-spin mr-1"></i> Rutas ' + (i + 1) + "/" + totalRutas + "..."
-      );
+        var ops = [];
+        usuarios.forEach(function (u) {
+          ops.push(cacheGuardar("usuario:" + u.usuario_id, u));
+        });
+        Object.keys(porRuta).forEach(function (ruta) {
+          ops.push(cacheGuardar("ruta:" + ruta, porRuta[ruta]));
+        });
 
-      var ruta = rutas[i];
-      $.ajax({
-        url: ajaxUrl, method: "POST", cache: false, dataType: "json",
-        data: { accion: "verificador.buscarUsuarios", termino: ruta.codigo },
-        success: function (response) {
-          var usuarios = response.data && response.data.coincidencias
-            ? response.data.coincidencias : [];
-          todosUsuarios = todosUsuarios.concat(usuarios);
-          cacheGuardar("ruta:" + ruta.codigo, usuarios).then(function () {
-            cargarRuta(i + 1);
-          });
-        },
-        error: function () { cargarRuta(i + 1); }
-      });
-    }
-
-    // Fase 2: detalle por usuario (periodo, lectura anterior, etc.)
-    function cargarDetalles(usuarios, i) {
-      var total = usuarios.length;
-
-      if (i >= total) {
+        Promise.all(ops).then(function () {
+          _preparando = false;
+          $btn.prop("disabled", false).html('<i class="fas fa-download mr-1"></i> Preparar para campo');
+          showFeedback("info", "Listo. " + usuarios.length + " usuario(s) disponibles sin conexión.");
+        });
+      },
+      error: function () {
         _preparando = false;
         $btn.prop("disabled", false).html('<i class="fas fa-download mr-1"></i> Preparar para campo');
-        showFeedback("info", "Listo. " + total + " usuario(s) disponibles sin conexión.");
-        return;
+        showFeedback("warning", "No se pudieron descargar los datos. Verifica tu conexión.");
       }
-
-      $btn.prop("disabled", true).html(
-        '<i class="fas fa-spinner fa-spin mr-1"></i> Usuarios ' + (i + 1) + "/" + total + "..."
-      );
-
-      var uid = usuarios[i].usuario_id;
-      $.ajax({
-        url: ajaxUrl, method: "POST", cache: false, dataType: "json",
-        data: { accion: "verificador.obtenerUsuario", usuario_id: uid },
-        success: function (response) {
-          cacheGuardar("usuario:" + uid, response.data || {}).then(function () {
-            cargarDetalles(usuarios, i + 1);
-          });
-        },
-        error: function () { cargarDetalles(usuarios, i + 1); }
-      });
-    }
-
-    cargarRuta(0);
+    });
   }
 
   // ── Select de rutas ───────────────────────────────────────────────────────
@@ -609,9 +583,7 @@ $(function () {
   $("#btnSincronizarAhora").on("click", function () { sincronizarPendientes(); });
 
   $("#btnPreparar").on("click", function () {
-    cacheObtener("rutas").then(function (rutas) {
-      prepararParaCampo(rutas);
-    });
+    prepararParaCampo();
   });
 
   window.addEventListener("online",  function () { actualizarEstadoConexion(); sincronizarPendientes(); });

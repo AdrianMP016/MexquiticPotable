@@ -113,6 +113,91 @@ class Verificador
         return $stmt->fetchAll();
     }
 
+    public function prepararDatos(): array
+    {
+        $periodo   = $this->obtenerPeriodoActual();
+        $periodoId = (int) $periodo['periodo_id'];
+
+        // 1. Todos los usuarios activos con su domicilio, ruta y medidor
+        $stmt = $this->db->prepare(
+            "SELECT
+                u.id AS usuario_id,
+                u.nombre,
+                u.whatsapp,
+                u.activo,
+                d.id AS domicilio_id,
+                d.calle,
+                d.numero AS numero_domicilio,
+                d.colonia,
+                d.fachada_path,
+                COALESCE(rt.codigo, d.ruta) AS ruta,
+                rt.nombre AS ruta_nombre,
+                m.id AS medidor_id,
+                m.numero AS medidor,
+                m.estado AS estado_medidor
+             FROM usuarios_servicio u
+             LEFT JOIN domicilios d ON d.usuario_id = u.id
+             LEFT JOIN rutas rt ON rt.id = u.ruta_id
+             LEFT JOIN medidores m ON m.usuario_id = u.id
+             WHERE u.activo = 1
+               AND LOWER(COALESCE(m.estado, 'activo')) = 'activo'
+             ORDER BY COALESCE(rt.codigo, d.ruta) ASC, u.nombre ASC"
+        );
+        $stmt->execute();
+        $usuarios = $stmt->fetchAll();
+
+        // 2. Lecturas del periodo actual (una query para todos)
+        $stmt = $this->db->prepare(
+            "SELECT medidor_id, lectura_anterior, lectura_actual, id
+             FROM lecturas WHERE periodo_id = :periodo_id"
+        );
+        $stmt->execute(['periodo_id' => $periodoId]);
+        $lecturasPeriodo = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $lecturasPeriodo[(int) $row['medidor_id']] = $row;
+        }
+
+        // 3. Ultima lectura de periodos anteriores por medidor (una query para todos)
+        $stmt = $this->db->prepare(
+            "SELECT l.medidor_id, l.lectura_actual
+             FROM lecturas l
+             INNER JOIN (
+                 SELECT medidor_id, MAX(id) AS max_id
+                 FROM lecturas WHERE periodo_id != :periodo_id
+                 GROUP BY medidor_id
+             ) prev ON prev.medidor_id = l.medidor_id AND prev.max_id = l.id"
+        );
+        $stmt->execute(['periodo_id' => $periodoId]);
+        $ultimaLectura = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $ultimaLectura[(int) $row['medidor_id']] = (float) $row['lectura_actual'];
+        }
+
+        // Combinar datos en cada usuario
+        foreach ($usuarios as &$u) {
+            $mid          = (int) ($u['medidor_id'] ?? 0);
+            $lecturaActual = $lecturasPeriodo[$mid] ?? null;
+
+            $u['periodo_id']                = $periodo['periodo_id'];
+            $u['periodo_nombre']            = $periodo['nombre'];
+            $u['periodo_fecha_inicio']      = $periodo['fecha_inicio'];
+            $u['periodo_fecha_fin']         = $periodo['fecha_fin'];
+            $u['periodo_fecha_vencimiento'] = $periodo['fecha_vencimiento'];
+
+            if ($lecturaActual) {
+                $u['lectura_anterior']      = (float) $lecturaActual['lectura_anterior'];
+                $u['lectura_actual_guardada'] = (float) $lecturaActual['lectura_actual'];
+                $u['lectura_id_actual']     = (int) $lecturaActual['id'];
+            } else {
+                $u['lectura_anterior']      = $ultimaLectura[$mid] ?? 0;
+                $u['lectura_actual_guardada'] = null;
+                $u['lectura_id_actual']     = null;
+            }
+        }
+
+        return $usuarios;
+    }
+
     public function guardarMedicion(array $input, ?array $foto): array
     {
         $data = $this->normalizar($input);
