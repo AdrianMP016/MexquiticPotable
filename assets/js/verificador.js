@@ -2,9 +2,10 @@ $(function () {
   var ajaxUrl = "ajax/peticiones.php";
   var bootstrapVerificador = window.__mexquiticVerificadorBootstrap || {};
   var usuarioActual = null;
-  var gpsActual = null;
+  var gpsActual     = null;
   var lecturaAnterior = 0;
-  var _sincronizando = false;
+  var _sincronizando  = false;
+  var _preparando     = false;
 
   // ── Sesión ────────────────────────────────────────────────────────────────
 
@@ -51,7 +52,11 @@ $(function () {
     $("#verificadorFeedback").addClass("d-none").text("");
   }
 
-  // ── Conexión / Offline ────────────────────────────────────────────────────
+  function tenemosCola() {
+    return typeof VerificadorQueue !== "undefined";
+  }
+
+  // ── Barra de conexión ─────────────────────────────────────────────────────
 
   function actualizarEstadoConexion() {
     var online = navigator.onLine;
@@ -59,36 +64,35 @@ $(function () {
 
     $bar.removeClass("d-none connection-bar--online connection-bar--offline connection-bar--syncing");
     $bar.addClass(online ? "connection-bar--online" : "connection-bar--offline");
-
-    $("#connectionIcon").attr("class", online ? "fas fa-wifi mr-1" : "fas fa-exclamation-triangle mr-1");
+    $("#connectionIcon").attr("class", online
+      ? "fas fa-wifi mr-1"
+      : "fas fa-exclamation-triangle mr-1"
+    );
     $("#connectionLabel").text(online ? "En línea" : "Sin conexión");
 
-    if (typeof VerificadorQueue === "undefined") {
-      $("#syncInfo").addClass("d-none");
-      return;
+    if (online) {
+      $("#btnPreparar").removeClass("d-none");
+    } else {
+      $("#btnPreparar").addClass("d-none");
     }
+
+    if (!tenemosCola()) { $("#syncInfo").addClass("d-none"); return; }
 
     VerificadorQueue.contar().then(function (total) {
       if (total > 0) {
         $("#syncCount").text(total);
         $("#syncInfo").removeClass("d-none");
-        if (online) {
-          $("#btnSincronizarAhora").removeClass("d-none");
-        } else {
-          $("#btnSincronizarAhora").addClass("d-none");
-        }
+        $("#btnSincronizarAhora").toggleClass("d-none", !online);
       } else {
         $("#syncInfo").addClass("d-none");
       }
-    }).catch(function () {
-      $("#syncInfo").addClass("d-none");
-    });
+    }).catch(function () { $("#syncInfo").addClass("d-none"); });
   }
 
   // ── Cola offline ──────────────────────────────────────────────────────────
 
   function guardarEnCola() {
-    if (typeof VerificadorQueue === "undefined") {
+    if (!tenemosCola()) {
       alert("Tu dispositivo no soporta almacenamiento local. Necesitas conexión para guardar.");
       return;
     }
@@ -125,16 +129,13 @@ $(function () {
   }
 
   function sincronizarPendientes() {
-    if (!navigator.onLine || _sincronizando || typeof VerificadorQueue === "undefined") {
-      return;
-    }
+    if (!navigator.onLine || _sincronizando || !tenemosCola()) { return; }
 
     VerificadorQueue.obtenerTodos().then(function (pendientes) {
       if (!pendientes.length) { return; }
 
       _sincronizando = true;
-      var $bar = $("#connectionBar");
-      $bar.removeClass("connection-bar--online connection-bar--offline").addClass("connection-bar--syncing");
+      $("#connectionBar").removeClass("connection-bar--online connection-bar--offline").addClass("connection-bar--syncing");
       $("#connectionIcon").attr("class", "fas fa-sync-alt fa-spin mr-1");
       $("#connectionLabel").text("Sincronizando " + pendientes.length + " lectura(s)...");
       $("#btnSincronizarAhora").prop("disabled", true);
@@ -148,37 +149,88 @@ $(function () {
         }
 
         var reg = pendientes[i];
-        var formData = new FormData();
-        formData.append("accion",            "verificador.guardarMedicion");
-        formData.append("usuario_id",        reg.usuario_id);
-        formData.append("domicilio_id",      reg.domicilio_id);
-        formData.append("medidor_id",        reg.medidor_id);
-        formData.append("periodo_id",        reg.periodo_id);
-        formData.append("lectura_anterior",  reg.lectura_anterior);
-        formData.append("medicion",          reg.medicion);
-        formData.append("latitud",           reg.latitud);
-        formData.append("longitud",          reg.longitud);
-        formData.append("observaciones",     reg.observaciones || "");
+        var fd  = new FormData();
+        fd.append("accion",           "verificador.guardarMedicion");
+        fd.append("usuario_id",       reg.usuario_id);
+        fd.append("domicilio_id",     reg.domicilio_id);
+        fd.append("medidor_id",       reg.medidor_id);
+        fd.append("periodo_id",       reg.periodo_id);
+        fd.append("lectura_anterior", reg.lectura_anterior);
+        fd.append("medicion",         reg.medicion);
+        fd.append("latitud",          reg.latitud);
+        fd.append("longitud",         reg.longitud);
+        fd.append("observaciones",    reg.observaciones || "");
 
         $.ajax({
-          url:         ajaxUrl,
-          method:      "POST",
-          data:        formData,
-          processData: false,
-          contentType: false,
+          url: ajaxUrl, method: "POST", data: fd,
+          processData: false, contentType: false,
           success: function () {
-            VerificadorQueue.eliminar(reg.id).then(function () {
-              enviar(i + 1);
-            });
+            VerificadorQueue.eliminar(reg.id).then(function () { enviar(i + 1); });
           },
-          error: function () {
-            enviar(i + 1);
-          }
+          error: function () { enviar(i + 1); }
         });
       }
 
       enviar(0);
     });
+  }
+
+  // ── Caché de datos ────────────────────────────────────────────────────────
+
+  function cacheGuardar(clave, valor) {
+    if (!tenemosCola()) { return Promise.resolve(); }
+    return VerificadorQueue.cache.guardar(clave, valor).catch(function () {});
+  }
+
+  function cacheObtener(clave) {
+    if (!tenemosCola()) { return Promise.resolve(null); }
+    return VerificadorQueue.cache.obtener(clave).catch(function () { return null; });
+  }
+
+  // ── Preparar para campo ───────────────────────────────────────────────────
+
+  function prepararParaCampo(rutas) {
+    if (_preparando || !navigator.onLine || !tenemosCola()) { return; }
+    if (!rutas || !rutas.length) { return; }
+
+    _preparando = true;
+    var total   = rutas.length;
+    var hechas  = 0;
+
+    $("#btnPreparar")
+      .prop("disabled", true)
+      .html('<i class="fas fa-spinner fa-spin mr-1"></i> Preparando 0/' + total + '...');
+
+    function cargarRuta(i) {
+      if (i >= total) {
+        _preparando = false;
+        $("#btnPreparar")
+          .prop("disabled", false)
+          .html('<i class="fas fa-download mr-1"></i> Preparar para campo');
+        showFeedback("info", "Datos listos para trabajar sin conexión.");
+        return;
+      }
+
+      var ruta = rutas[i];
+      $.ajax({
+        url: ajaxUrl, method: "POST", cache: false, dataType: "json",
+        data: { accion: "verificador.buscarUsuarios", termino: ruta.codigo },
+        success: function (response) {
+          var usuarios = response.data && response.data.coincidencias
+            ? response.data.coincidencias : [];
+          cacheGuardar("ruta:" + ruta.codigo, usuarios).then(function () {
+            hechas++;
+            $("#btnPreparar").html(
+              '<i class="fas fa-spinner fa-spin mr-1"></i> Preparando ' + hechas + "/" + total + "..."
+            );
+            cargarRuta(i + 1);
+          });
+        },
+        error: function () { cargarRuta(i + 1); }
+      });
+    }
+
+    cargarRuta(0);
   }
 
   // ── Select de rutas ───────────────────────────────────────────────────────
@@ -191,8 +243,8 @@ $(function () {
       allowClear: true,
       minimumInputLength: 0,
       language: {
-        noResults:  function () { return "No hay rutas coincidentes"; },
-        searching:  function () { return "Buscando..."; }
+        noResults: function () { return "No hay rutas coincidentes"; },
+        searching: function () { return "Buscando..."; }
       }
     });
   }
@@ -212,21 +264,35 @@ $(function () {
   }
 
   function cargarRutasVerificador() {
+    // 1. Llenar inmediatamente con bootstrap (page-load)
     var rutasBootstrap = bootstrapVerificador.rutas || [];
     if (rutasBootstrap.length) {
       llenarOpcionesRuta(rutasBootstrap);
+      cacheGuardar("rutas", rutasBootstrap);
     }
 
-    if (!navigator.onLine) { return; }
+    if (!navigator.onLine) {
+      // Sin red: intentar caché si el bootstrap no trajo nada
+      if (!rutasBootstrap.length) {
+        cacheObtener("rutas").then(function (rutasCache) {
+          if (rutasCache && rutasCache.length) {
+            llenarOpcionesRuta(rutasCache);
+          }
+        });
+      }
+      return;
+    }
 
+    // Con red: refrescar desde servidor y actualizar caché
     $.ajax({
-      url:      ajaxUrl,
-      method:   "POST",
-      dataType: "json",
-      data:     { accion: "rutas.catalogo", comunidad_id: 0 },
-      success:  function (response) {
+      url: ajaxUrl, method: "POST", dataType: "json",
+      data: { accion: "rutas.catalogo", comunidad_id: 0 },
+      success: function (response) {
         var rutas = response.data && response.data.rutas ? response.data.rutas : [];
-        if (rutas.length) { llenarOpcionesRuta(rutas); }
+        if (rutas.length) {
+          llenarOpcionesRuta(rutas);
+          cacheGuardar("rutas", rutas);
+        }
       }
     });
   }
@@ -234,23 +300,23 @@ $(function () {
   // ── Resultados ────────────────────────────────────────────────────────────
 
   function renderResultados(usuarios) {
-    if (!usuarios.length) {
+    if (!usuarios || !usuarios.length) {
       $("#listaResultados").html(
         '<div class="empty-state"><i class="fas fa-search"></i><p>No se encontraron usuarios activos para esa ruta.</p></div>'
       );
       return;
     }
 
-    var cards = usuarios.map(function (usuario) {
-      var rutaDetalle = [usuario.ruta || "Sin ruta", usuario.ruta_nombre || ""].filter(Boolean).join(" | ");
+    var cards = usuarios.map(function (u) {
+      var rutaDetalle = [u.ruta || "Sin ruta", u.ruta_nombre || ""].filter(Boolean).join(" | ");
       return [
-        '<div class="result-card" data-id="' + usuario.usuario_id + '">',
+        '<div class="result-card" data-id="' + u.usuario_id + '">',
         '<div class="result-icon"><i class="fas fa-user-check"></i></div>',
         '<div>',
-        '<h3>' + escapeHtml(usuario.nombre) + '</h3>',
-        '<p>Ruta: ' + escapeHtml(rutaDetalle) + '</p>',
-        '<p>Medidor: ' + escapeHtml(usuario.medidor || "Sin medidor") + '</p>',
-        '<p>WhatsApp: ' + escapeHtml(usuario.whatsapp || "Sin WhatsApp") + '</p>',
+        '<h3>' + escapeHtml(u.nombre) + '</h3>',
+        '<p>Ruta: '    + escapeHtml(rutaDetalle) + '</p>',
+        '<p>Medidor: ' + escapeHtml(u.medidor || "Sin medidor") + '</p>',
+        '<p>WhatsApp: '+ escapeHtml(u.whatsapp || "Sin WhatsApp") + '</p>',
         '</div>',
         '</div>'
       ].join("");
@@ -268,16 +334,21 @@ $(function () {
     }
 
     if (!navigator.onLine) {
-      showFeedback("warning", "Sin conexión. La búsqueda requiere internet. Conéctate y vuelve a intentar.");
+      // Intentar desde caché
+      cacheObtener("ruta:" + termino).then(function (usuarios) {
+        if (usuarios && usuarios.length) {
+          hideFeedback();
+          renderResultados(usuarios);
+        } else {
+          showFeedback("warning", "Sin conexión y sin datos guardados para esta ruta. Usa el botón \"Preparar para campo\" cuando tengas internet.");
+        }
+      });
       return;
     }
 
     $.ajax({
-      url:      ajaxUrl,
-      method:   "POST",
-      cache:    false,
-      dataType: "json",
-      data:     { accion: "verificador.buscarUsuarios", termino: termino },
+      url: ajaxUrl, method: "POST", cache: false, dataType: "json",
+      data: { accion: "verificador.buscarUsuarios", termino: termino },
       beforeSend: function () {
         showFeedback("info", "Buscando usuarios por ruta...");
         $("#listaResultados").html(
@@ -287,43 +358,47 @@ $(function () {
       success: function (response) {
         hideFeedback();
         var usuarios = response.data && response.data.coincidencias ? response.data.coincidencias : [];
+        cacheGuardar("ruta:" + termino, usuarios);
         renderResultados(usuarios);
       },
       error: function (xhr) {
-        var message = xhr.responseJSON && xhr.responseJSON.message
-          ? xhr.responseJSON.message
-          : "No se pudo realizar la búsqueda.";
-        showFeedback("warning", message);
+        var msg = xhr.responseJSON && xhr.responseJSON.message
+          ? xhr.responseJSON.message : "No se pudo realizar la búsqueda.";
+        showFeedback("warning", msg);
       }
     });
   }
 
   function cargarUsuario(usuarioId) {
     if (!navigator.onLine) {
-      showFeedback("warning", "Sin conexión. No se puede cargar el detalle del usuario.");
+      cacheObtener("usuario:" + usuarioId).then(function (data) {
+        if (data) {
+          hideFeedback();
+          usuarioActual = data;
+          llenarDetalle(usuarioActual);
+          showScreen("screenDetalle");
+        } else {
+          showFeedback("warning", "Sin conexión y sin datos guardados para este usuario. Cárgalo primero con internet.");
+        }
+      });
       return;
     }
 
     $.ajax({
-      url:      ajaxUrl,
-      method:   "POST",
-      cache:    false,
-      dataType: "json",
-      data:     { accion: "verificador.obtenerUsuario", usuario_id: usuarioId },
-      beforeSend: function () {
-        showFeedback("info", "Cargando datos del domicilio...");
-      },
+      url: ajaxUrl, method: "POST", cache: false, dataType: "json",
+      data: { accion: "verificador.obtenerUsuario", usuario_id: usuarioId },
+      beforeSend: function () { showFeedback("info", "Cargando datos del domicilio..."); },
       success: function (response) {
         hideFeedback();
         usuarioActual = response.data || {};
+        cacheGuardar("usuario:" + usuarioId, usuarioActual);
         llenarDetalle(usuarioActual);
         showScreen("screenDetalle");
       },
       error: function (xhr) {
-        var message = xhr.responseJSON && xhr.responseJSON.message
-          ? xhr.responseJSON.message
-          : "No se pudo cargar el usuario.";
-        showFeedback("warning", message);
+        var msg = xhr.responseJSON && xhr.responseJSON.message
+          ? xhr.responseJSON.message : "No se pudo cargar el usuario.";
+        showFeedback("warning", msg);
       }
     });
   }
@@ -338,8 +413,7 @@ $(function () {
       formatDateLabel(usuario.periodo_fecha_fin)
     ].filter(Boolean).join(" al ");
     var lecturaActualGuardada = usuario.lectura_actual_guardada !== null && usuario.lectura_actual_guardada !== undefined
-      ? Number(usuario.lectura_actual_guardada)
-      : null;
+      ? Number(usuario.lectura_actual_guardada) : null;
 
     $("#detalleNombre").text(usuario.nombre || "Sin usuario");
     $("#detalleEstado")
@@ -394,19 +468,13 @@ $(function () {
       $("#gpsLng").text("No disponible");
       return;
     }
-
     $("#btnCapturarGps").html('<i class="fas fa-spinner fa-spin mr-1"></i> Capturando...');
-
     navigator.geolocation.getCurrentPosition(function (position) {
-      gpsActual = {
-        latitud:  position.coords.latitude,
-        longitud: position.coords.longitude
-      };
+      gpsActual = { latitud: position.coords.latitude, longitud: position.coords.longitude };
       $("#gpsLat").text(gpsActual.latitud.toFixed(8));
       $("#gpsLng").text(gpsActual.longitud.toFixed(8));
       $("#btnCapturarGps")
-        .removeClass("btn-outline-primary")
-        .addClass("btn-success")
+        .removeClass("btn-outline-primary").addClass("btn-success")
         .html('<i class="fas fa-check mr-1"></i> GPS capturado');
     }, function () {
       $("#gpsLat").text("Permiso denegado");
@@ -417,17 +485,13 @@ $(function () {
 
   // ── Foto ──────────────────────────────────────────────────────────────────
 
-  $("#btnFotoMedidor").on("click", function () {
-    $("#fotoMedidor").trigger("click");
-  });
+  $("#btnFotoMedidor").on("click", function () { $("#fotoMedidor").trigger("click"); });
 
   $("#fotoMedidor").on("change", function () {
     var file = this.files && this.files[0];
     if (!file) { return; }
     var imageUrl = URL.createObjectURL(file);
-    $("#previewFotoMedidor")
-      .removeClass("d-none")
-      .css("background-image", "url('" + imageUrl + "')");
+    $("#previewFotoMedidor").removeClass("d-none").css("background-image", "url('" + imageUrl + "')");
     $("#btnFotoMedidor").html('<i class="fas fa-check mr-1"></i> Foto capturada');
   });
 
@@ -441,50 +505,31 @@ $(function () {
       showFeedback("warning", "Selecciona un usuario antes de guardar lectura.");
       return;
     }
+    if (!$("#lecturaActual").val()) { alert("Captura la lectura actual."); return; }
+    if (!gpsActual)                 { alert("Captura la ubicación GPS."); return; }
 
-    if (!$("#lecturaActual").val()) {
-      alert("Captura la lectura actual.");
-      return;
-    }
+    // Sin conexión → cola local sin foto
+    if (!navigator.onLine) { guardarEnCola(); return; }
 
-    if (!gpsActual) {
-      alert("Captura la ubicación GPS.");
-      return;
-    }
+    // Con conexión → foto requerida
+    if (!$("#fotoMedidor")[0].files.length) { alert("Toma la foto del medidor."); return; }
 
-    // Sin conexión: guardar en cola local (sin foto)
-    if (!navigator.onLine) {
-      guardarEnCola();
-      return;
-    }
-
-    // Con conexión: foto requerida
-    if (!$("#fotoMedidor")[0].files.length) {
-      alert("Toma la foto del medidor.");
-      return;
-    }
-
-    var formData = new FormData();
-    formData.append("accion",           "verificador.guardarMedicion");
-    formData.append("usuario_id",       usuarioActual.usuario_id);
-    formData.append("domicilio_id",     usuarioActual.domicilio_id);
-    formData.append("medidor_id",       usuarioActual.medidor_id);
-    formData.append("periodo_id",       usuarioActual.periodo_id);
-    formData.append("lectura_anterior", lecturaAnterior);
-    formData.append("medicion",         $("#lecturaActual").val());
-    formData.append("latitud",          gpsActual.latitud);
-    formData.append("longitud",         gpsActual.longitud);
-    formData.append("observaciones",    $("#observacionesLectura").val());
-    formData.append("foto_medidor",     $("#fotoMedidor")[0].files[0]);
+    var fd = new FormData();
+    fd.append("accion",           "verificador.guardarMedicion");
+    fd.append("usuario_id",       usuarioActual.usuario_id);
+    fd.append("domicilio_id",     usuarioActual.domicilio_id);
+    fd.append("medidor_id",       usuarioActual.medidor_id);
+    fd.append("periodo_id",       usuarioActual.periodo_id);
+    fd.append("lectura_anterior", lecturaAnterior);
+    fd.append("medicion",         $("#lecturaActual").val());
+    fd.append("latitud",          gpsActual.latitud);
+    fd.append("longitud",         gpsActual.longitud);
+    fd.append("observaciones",    $("#observacionesLectura").val());
+    fd.append("foto_medidor",     $("#fotoMedidor")[0].files[0]);
 
     $.ajax({
-      url:         ajaxUrl,
-      method:      "POST",
-      cache:       false,
-      dataType:    "json",
-      data:        formData,
-      processData: false,
-      contentType: false,
+      url: ajaxUrl, method: "POST", cache: false,
+      dataType: "json", data: fd, processData: false, contentType: false,
       beforeSend: function () {
         $("#formLecturaDemo button[type='submit']")
           .prop("disabled", true)
@@ -503,10 +548,9 @@ $(function () {
         $("#modalLecturaGuardada").modal("show");
       },
       error: function (xhr) {
-        var message = xhr.responseJSON && xhr.responseJSON.message
-          ? xhr.responseJSON.message
-          : "No se pudo guardar la medición.";
-        alert(message);
+        var msg = xhr.responseJSON && xhr.responseJSON.message
+          ? xhr.responseJSON.message : "No se pudo guardar la medición.";
+        alert(msg);
       },
       complete: function () {
         $("#formLecturaDemo button[type='submit']")
@@ -519,13 +563,8 @@ $(function () {
   // ── Navegación ────────────────────────────────────────────────────────────
 
   $("#btnBuscarVerificador").on("click", buscarUsuarios);
-
   $("#selRutaVerificador").on("change", function () { hideFeedback(); });
-
-  $(document).on("click", ".result-card", function () {
-    cargarUsuario($(this).data("id"));
-  });
-
+  $(document).on("click", ".result-card", function () { cargarUsuario($(this).data("id")); });
   $("#btnIrLectura").on("click", function () { showScreen("screenLectura"); });
 
   $(".back-button, .bottom-nav button").on("click", function () {
@@ -540,20 +579,18 @@ $(function () {
 
   $("#lecturaActual").on("input", calcularConsumo);
 
-  // ── Sincronizador ─────────────────────────────────────────────────────────
+  // ── Sincronizador y Preparar ──────────────────────────────────────────────
 
-  $("#btnSincronizarAhora").on("click", function () {
-    sincronizarPendientes();
+  $("#btnSincronizarAhora").on("click", function () { sincronizarPendientes(); });
+
+  $("#btnPreparar").on("click", function () {
+    cacheObtener("rutas").then(function (rutas) {
+      prepararParaCampo(rutas);
+    });
   });
 
-  window.addEventListener("online", function () {
-    actualizarEstadoConexion();
-    sincronizarPendientes();
-  });
-
-  window.addEventListener("offline", function () {
-    actualizarEstadoConexion();
-  });
+  window.addEventListener("online",  function () { actualizarEstadoConexion(); sincronizarPendientes(); });
+  window.addEventListener("offline", function () { actualizarEstadoConexion(); });
 
   // ── Inicio ────────────────────────────────────────────────────────────────
 
@@ -561,8 +598,6 @@ $(function () {
     inicializarSelectRuta();
     cargarRutasVerificador();
     actualizarEstadoConexion();
-    if (navigator.onLine) {
-      sincronizarPendientes();
-    }
+    if (navigator.onLine) { sincronizarPendientes(); }
   });
 });
