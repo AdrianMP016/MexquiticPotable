@@ -58,6 +58,7 @@ class CobroAgua
             'cooperacion_default' => $parametros['cooperacion_default'],
             'multa_default' => $parametros['multa_default'],
             'recargo_default' => $parametros['recargo_default'],
+            'consumo_minimo_m3' => $parametros['consumo_minimo_m3'],
             'descripcion' => $this->descripcionTarifa($parametros),
             'descripcion_corta' => $this->descripcionTarifaCorta($parametros),
         ];

@@ -49,6 +49,7 @@ $(function () {
     cooperacion_default: 10,
     multa_default: 0,
     recargo_default: 0,
+    consumo_minimo_m3: 5,
     descripcion: "Primeros 15 m3 a $10.00 y excedente a $15.00 por m3.",
     descripcion_corta: "DOMESTICA 15m3 x $10 | Exc. $15"
   };
@@ -3329,9 +3330,11 @@ $(function () {
     const limite = Math.max(Number(config.limite_tramo_base_m3 || 0), 0);
     const precioBase = Math.max(Number(config.precio_tramo_base_m3 || 0), 0);
     const precioExcedente = Math.max(Number(config.precio_excedente_m3 || 0), 0);
-    const consumoSeguro = Math.max(Number(consumo || 0), 0);
-    const consumoBase = Math.min(consumoSeguro, limite);
-    const consumoExcedente = Math.max(consumoSeguro - limite, 0);
+    const consumoMinimo = Math.max(Number(config.consumo_minimo_m3 || 0), 0);
+    const consumoReal = Math.max(Number(consumo || 0), 0);
+    const consumoEfectivo = Math.max(consumoReal, consumoMinimo);
+    const consumoBase = Math.min(consumoEfectivo, limite);
+    const consumoExcedente = Math.max(consumoEfectivo - limite, 0);
 
     return (consumoBase * precioBase) + (consumoExcedente * precioExcedente);
   }
