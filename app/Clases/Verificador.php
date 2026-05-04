@@ -292,6 +292,7 @@ class Verificador
 
     private function obtenerPeriodoActual(): array
     {
+        // 1. Período cuyas fechas engloban hoy (captura en curso)
         $stmt = $this->db->prepare(
             "SELECT
                 id AS periodo_id,
@@ -301,13 +302,14 @@ class Verificador
                 fecha_vencimiento
              FROM periodos_bimestrales
              WHERE estado <> 'cancelado'
-               AND fecha_fin < CURDATE()
-             ORDER BY fecha_fin DESC, id DESC
+               AND CURDATE() BETWEEN fecha_inicio AND fecha_fin
+             ORDER BY fecha_inicio ASC, id ASC
              LIMIT 1"
         );
         $stmt->execute();
         $row = $stmt->fetch();
 
+        // 2. Si hoy no cae dentro de ningún período, usar el más reciente que ya terminó
         if (!$row) {
             $stmt = $this->db->prepare(
                 "SELECT
@@ -318,14 +320,15 @@ class Verificador
                     fecha_vencimiento
                  FROM periodos_bimestrales
                  WHERE estado <> 'cancelado'
-                   AND CURDATE() BETWEEN fecha_inicio AND fecha_fin
-                 ORDER BY fecha_inicio ASC, id ASC
+                   AND fecha_fin < CURDATE()
+                 ORDER BY fecha_fin DESC, id DESC
                  LIMIT 1"
             );
             $stmt->execute();
             $row = $stmt->fetch();
         }
 
+        // 3. Último recurso: primer período futuro disponible
         if (!$row) {
             $stmt = $this->db->prepare(
                 "SELECT
