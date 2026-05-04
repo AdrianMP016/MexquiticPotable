@@ -1,7 +1,7 @@
 <?php
 /**
  * Importa lecturas históricas 2026 desde el CSV de campo.
- * Uso: php tools/import_lecturas_2026.php [ruta_csv]
+ * Acceso: /tools/import_lecturas_2026.php?clave=agua2026
  *
  * Periodos:
  *   id=1  Enero-Febrero 2026   (lectura_anterior=NOV25, lectura_actual=ENE26)
@@ -10,20 +10,47 @@
  * ADVERTENCIA: borra los registros de prueba de los periodos 1 y 2 antes de insertar.
  */
 
+// ── Protección de acceso ──────────────────────────────────────────────────────
+
+$claveSecreta = 'agua2026';
+$claveRecibida = $_GET['clave'] ?? ($argv[1] ?? '');
+
+if ($claveRecibida !== $claveSecreta) {
+    http_response_code(403);
+    die('Acceso no autorizado. Agrega ?clave=agua2026 a la URL.');
+}
+
+// ── Rutas ─────────────────────────────────────────────────────────────────────
+
+$esCli  = php_sapi_name() === 'cli';
+$csvPath = __DIR__ . '/Lectura Marzo 2026.csv';
+
 require_once __DIR__ . '/../app/Core/Database.php';
 
-// ── Configuración ─────────────────────────────────────────────────────────────
+// ── Salida: HTML en navegador, texto plano en CLI ─────────────────────────────
 
-$csvPath = $argv[1] ?? 'C:/Users/Acer_V/Downloads/Lectura Marzo 2026.csv';
+function out(string $msg): void
+{
+    global $esCli;
+    echo $esCli ? $msg . "\n" : nl2br(htmlspecialchars($msg)) . "\n";
+}
 
-// Índices de columna (base 0)
-const COL_MEDIDOR  = 2;
-const COL_NOV25    = 12;   // lectura_anterior período 1
-const COL_ENE26    = 13;   // lectura_actual período 1 / lectura_anterior período 2
-const COL_MAR26    = 14;   // lectura_actual período 2
+if (!$esCli) {
+    echo '<!DOCTYPE html><html lang="es"><head><meta charset="utf-8">'
+       . '<title>Importar lecturas 2026</title>'
+       . '<style>body{font-family:monospace;padding:2rem;background:#111;color:#0f0;}'
+       . 'h2{color:#fff;}</style></head><body>'
+       . '<h2>Importador de lecturas 2026</h2><pre>';
+}
 
-const PERIODO_1 = 1;
-const PERIODO_2 = 2;
+// ── Índices de columna (base 0) ───────────────────────────────────────────────
+
+const COL_MEDIDOR = 2;
+const COL_NOV25   = 12;
+const COL_ENE26   = 13;
+const COL_MAR26   = 14;
+const PERIODO_1   = 1;
+const PERIODO_2   = 2;
 
 // ── Utilidades ────────────────────────────────────────────────────────────────
 
@@ -40,65 +67,56 @@ function parsearLectura(string $v): float
 
 function esNoRegistrado(string $medidor): bool
 {
-    // SAPMXQ-XXXX indica medidor sin número de serie registrado
     return stripos($medidor, 'XXXX') !== false;
 }
 
-// ── Ejecución ─────────────────────────────────────────────────────────────────
+// ── Validar CSV ───────────────────────────────────────────────────────────────
 
 if (!is_file($csvPath)) {
-    echo "ERROR: No se encontró el archivo CSV: {$csvPath}\n";
+    out("ERROR: No se encontró el CSV en: {$csvPath}");
     exit(1);
 }
+
+// ── Conectar a BD ─────────────────────────────────────────────────────────────
 
 try {
     $db = Database::connection();
 } catch (Throwable $e) {
-    echo "ERROR de conexión: " . $e->getMessage() . "\n";
+    out("ERROR de conexión: " . $e->getMessage());
     exit(1);
 }
 
-// Leer CSV completo
+// ── Leer CSV ──────────────────────────────────────────────────────────────────
+
 $handle = fopen($csvPath, 'r');
-if (!$handle) {
-    echo "ERROR: No se pudo abrir el archivo CSV.\n";
-    exit(1);
-}
-
-// Saltar encabezado
-fgetcsv($handle);
-
+fgetcsv($handle); // saltar encabezado
 $rows = [];
 while (($cols = fgetcsv($handle)) !== false) {
     $rows[] = $cols;
 }
 fclose($handle);
 
-echo "Filas leídas: " . count($rows) . "\n";
+out("Filas leídas: " . count($rows));
 
 // ── Borrar registros de prueba ────────────────────────────────────────────────
 
 $db->exec("SET FOREIGN_KEY_CHECKS = 0");
 
-$deletedPagos = $db->exec(
-    "DELETE FROM pagos
-     WHERE recibo_id IN (SELECT id FROM recibos WHERE periodo_id IN (1, 2))"
-);
-echo "Pagos de prueba eliminados      : {$deletedPagos}\n";
+$dp = $db->exec("DELETE FROM pagos WHERE recibo_id IN (SELECT id FROM recibos WHERE periodo_id IN (1, 2))");
+out("Pagos de prueba eliminados      : {$dp}");
 
-$deletedRec = $db->exec("DELETE FROM recibos WHERE periodo_id IN (1, 2)");
-echo "Recibos de prueba eliminados    : {$deletedRec}\n";
+$dr = $db->exec("DELETE FROM recibos WHERE periodo_id IN (1, 2)");
+out("Recibos de prueba eliminados    : {$dr}");
 
-$deleted = $db->exec("DELETE FROM lecturas WHERE periodo_id IN (1, 2)");
-echo "Lecturas de prueba eliminadas   : {$deleted}\n\n";
+$dl = $db->exec("DELETE FROM lecturas WHERE periodo_id IN (1, 2)");
+out("Lecturas de prueba eliminadas   : {$dl}");
+out("");
 
 $db->exec("SET FOREIGN_KEY_CHECKS = 1");
 
 // ── Preparar sentencias ───────────────────────────────────────────────────────
 
-$stmtBuscarMedidor = $db->prepare(
-    "SELECT id FROM medidores WHERE numero = :numero LIMIT 1"
-);
+$stmtMedidor = $db->prepare("SELECT id FROM medidores WHERE numero = :numero LIMIT 1");
 
 $stmtInsertar = $db->prepare(
     "INSERT INTO lecturas
@@ -109,62 +127,60 @@ $stmtInsertar = $db->prepare(
 
 // ── Procesar filas ────────────────────────────────────────────────────────────
 
-$insertados1 = 0;
-$insertados2 = 0;
-$omitidos    = 0;
+$ins1 = $ins2 = $omitidos = 0;
 
 foreach ($rows as $i => $cols) {
-    $fila     = $i + 2; // nro de fila en el CSV (con encabezado)
-    $medidor  = trim($cols[COL_MEDIDOR] ?? '');
+    $fila    = $i + 2;
+    $medidor = trim($cols[COL_MEDIDOR] ?? '');
 
     if ($medidor === '' || esNoRegistrado($medidor)) {
         $omitidos++;
         continue;
     }
 
-    // Buscar medidor_id
-    $stmtBuscarMedidor->execute([':numero' => $medidor]);
-    $med = $stmtBuscarMedidor->fetch();
+    $stmtMedidor->execute([':numero' => $medidor]);
+    $med = $stmtMedidor->fetch();
 
     if (!$med) {
-        echo "  [fila {$fila}] MEDIDOR NO ENCONTRADO en BD: {$medidor}\n";
+        out("  [fila {$fila}] Medidor no encontrado en BD: {$medidor}");
         $omitidos++;
         continue;
     }
 
-    $medidorId = (int) $med['id'];
-    $nov25     = $cols[COL_NOV25] ?? '';
-    $ene26     = $cols[COL_ENE26] ?? '';
-    $mar26     = $cols[COL_MAR26] ?? '';
+    $medId = (int) $med['id'];
+    $nov25 = $cols[COL_NOV25] ?? '';
+    $ene26 = $cols[COL_ENE26] ?? '';
+    $mar26 = $cols[COL_MAR26] ?? '';
 
-    // Periodo 1: anterior=NOV25, actual=ENE26
     if (esNumero($ene26)) {
-        $anterior1 = esNumero($nov25) ? parsearLectura($nov25) : 0.0;
         $stmtInsertar->execute([
-            ':medidor_id'      => $medidorId,
-            ':periodo_id'      => PERIODO_1,
-            ':lectura_anterior' => $anterior1,
-            ':lectura_actual'  => parsearLectura($ene26),
+            ':medidor_id'       => $medId,
+            ':periodo_id'       => PERIODO_1,
+            ':lectura_anterior' => esNumero($nov25) ? parsearLectura($nov25) : 0.0,
+            ':lectura_actual'   => parsearLectura($ene26),
         ]);
-        $insertados1++;
+        $ins1++;
     }
 
-    // Periodo 2: anterior=ENE26, actual=MAR26
     if (esNumero($mar26)) {
-        $anterior2 = esNumero($ene26) ? parsearLectura($ene26) : 0.0;
         $stmtInsertar->execute([
-            ':medidor_id'      => $medidorId,
-            ':periodo_id'      => PERIODO_2,
-            ':lectura_anterior' => $anterior2,
-            ':lectura_actual'  => parsearLectura($mar26),
+            ':medidor_id'       => $medId,
+            ':periodo_id'       => PERIODO_2,
+            ':lectura_anterior' => esNumero($ene26) ? parsearLectura($ene26) : 0.0,
+            ':lectura_actual'   => parsearLectura($mar26),
         ]);
-        $insertados2++;
+        $ins2++;
     }
 }
 
 // ── Resumen ───────────────────────────────────────────────────────────────────
 
-echo "\n=== IMPORTACIÓN COMPLETADA ===\n";
-echo "  Período 1 (ENE 26) insertados : {$insertados1}\n";
-echo "  Período 2 (MAR 26) insertados : {$insertados2}\n";
-echo "  Omitidos (XXXX o sin BD)      : {$omitidos}\n";
+out("");
+out("=== IMPORTACIÓN COMPLETADA ===");
+out("  Período 1 (ENE 26) insertados : {$ins1}");
+out("  Período 2 (MAR 26) insertados : {$ins2}");
+out("  Omitidos (XXXX o sin BD)      : {$omitidos}");
+
+if (!$esCli) {
+    echo '</pre></body></html>';
+}
