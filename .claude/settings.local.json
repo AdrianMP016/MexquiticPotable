@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(\"C:/Users/Acer_V/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node.exe\" \"c:/wamp64/www/mexquitic/tools/tomar_screenshots.mjs\")"
+    ]
+  }
+}
