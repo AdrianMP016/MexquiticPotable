@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Manual de Usuario — Sistema de Agua Potable Mexquitic</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; color: #222; background: #fff; font-size: 13px; line-height: 1.6; }
+
+  /* ── Portada ── */
+  .cover {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 100vh; background: linear-gradient(135deg, #0d6efd 0%, #084298 100%);
+    color: #fff; text-align: center; padding: 3rem;
+    page-break-after: always;
+  }
+  .cover .logo { font-size: 4rem; margin-bottom: 1rem; }
+  .cover h1 { font-size: 2.4rem; font-weight: 700; margin-bottom: .5rem; }
+  .cover h2 { font-size: 1.3rem; font-weight: 400; opacity: .85; margin-bottom: 2rem; }
+  .cover .badge { background: rgba(255,255,255,.2); border-radius: 8px; padding: .5rem 1.5rem; font-size: .95rem; }
+
+  /* ── Índice ── */
+  .toc { padding: 3rem 4rem; page-break-after: always; }
+  .toc h2 { font-size: 1.5rem; color: #0d6efd; border-bottom: 2px solid #0d6efd; padding-bottom: .5rem; margin-bottom: 1.5rem; }
+  .toc ol { list-style: none; counter-reset: toc-counter; }
+  .toc ol li { counter-increment: toc-counter; display: flex; align-items: baseline; gap: .5rem; padding: .4rem 0; border-bottom: 1px dotted #ccc; }
+  .toc ol li::before { content: counter(toc-counter) "."; font-weight: 700; color: #0d6efd; min-width: 1.5rem; }
+  .toc ol li span { flex: 1; }
+  .toc .sub { padding-left: 2rem; font-size: .92rem; color: #555; }
+  .toc .sub li::before { color: #888; }
+
+  /* ── Contenido ── */
+  .content { padding: 2rem 4rem; }
+  .section { margin-bottom: 3rem; page-break-inside: avoid; }
+  .section-header {
+    background: linear-gradient(90deg, #0d6efd, #6ea8fe);
+    color: #fff; padding: .8rem 1.2rem; border-radius: 8px;
+    font-size: 1.2rem; font-weight: 700; margin-bottom: 1.2rem;
+    display: flex; align-items: center; gap: .6rem;
+  }
+  .section-header .num { background: rgba(255,255,255,.25); border-radius: 50%; width: 1.8rem; height: 1.8rem; display: flex; align-items: center; justify-content: center; font-size: .9rem; flex-shrink: 0; }
+
+  h3 { font-size: 1rem; color: #0d6efd; margin: 1.2rem 0 .5rem; font-weight: 700; }
+  h4 { font-size: .92rem; color: #444; margin: .8rem 0 .3rem; font-weight: 700; }
+  p { margin-bottom: .7rem; }
+  ul, ol { margin: .4rem 0 .7rem 1.4rem; }
+  li { margin-bottom: .25rem; }
+
+  /* ── Tarjetas de módulo ── */
+  .modules { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 1rem 0; }
+  .module-card { border: 1px solid #dee2e6; border-radius: 10px; padding: 1rem; text-align: center; }
+  .module-card .icon { font-size: 2rem; margin-bottom: .4rem; }
+  .module-card h4 { color: #0d6efd; margin: 0 0 .3rem; }
+  .module-card p { font-size: .85rem; color: #555; margin: 0; }
+
+  /* ── Steps ── */
+  .steps { counter-reset: step; list-style: none; margin-left: 0; }
+  .steps li { counter-increment: step; display: flex; gap: .8rem; margin-bottom: .8rem; align-items: flex-start; }
+  .steps li::before {
+    content: counter(step); background: #0d6efd; color: #fff;
+    border-radius: 50%; width: 1.5rem; height: 1.5rem; min-width: 1.5rem;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .8rem; font-weight: 700; margin-top: .1rem;
+  }
+
+  /* ── Tablas ── */
+  table { width: 100%; border-collapse: collapse; margin: .8rem 0 1rem; font-size: .88rem; }
+  th { background: #0d6efd; color: #fff; padding: .5rem .8rem; text-align: left; }
+  td { padding: .45rem .8rem; border-bottom: 1px solid #e9ecef; }
+  tr:nth-child(even) td { background: #f8f9fa; }
+
+  /* ── Notas / alertas ── */
+  .note { background: #fff3cd; border-left: 4px solid #ffc107; padding: .7rem 1rem; border-radius: 0 6px 6px 0; margin: .8rem 0; font-size: .88rem; }
+  .tip  { background: #d1e7dd; border-left: 4px solid #198754; padding: .7rem 1rem; border-radius: 0 6px 6px 0; margin: .8rem 0; font-size: .88rem; }
+  .warn { background: #f8d7da; border-left: 4px solid #dc3545; padding: .7rem 1rem; border-radius: 0 6px 6px 0; margin: .8rem 0; font-size: .88rem; }
+
+  /* ── Credenciales ── */
+  .cred { display: inline-block; background: #212529; color: #0dcaf0; font-family: monospace; padding: .15rem .5rem; border-radius: 4px; font-size: .88rem; }
+
+  /* ── Divisor ── */
+  .divider { border: none; border-top: 1px solid #dee2e6; margin: 1.5rem 0; }
+
+  /* ── Flujo visual ── */
+  .flow { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; margin: .8rem 0; }
+  .flow-box { background: #e7f1ff; border: 1px solid #b6d4fe; border-radius: 6px; padding: .4rem .8rem; font-size: .85rem; font-weight: 600; color: #084298; }
+  .flow-arrow { color: #0d6efd; font-size: 1.1rem; }
+
+  /* ── Menú visual ── */
+  .menu-item { display: flex; align-items: center; gap: .7rem; padding: .5rem .8rem; border: 1px solid #dee2e6; border-radius: 6px; margin-bottom: .4rem; font-size: .88rem; }
+  .menu-item .mi-icon { background: #0d6efd; color: #fff; border-radius: 6px; width: 2rem; height: 2rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: .9rem; }
+  .menu-item strong { color: #0d6efd; }
+
+  /* ── Fórmula ── */
+  .formula { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: .8rem 1.2rem; font-family: monospace; font-size: .9rem; margin: .5rem 0; }
+
+  /* ── Print ── */
+  @media print {
+    body { font-size: 11px; }
+    .cover { min-height: auto; padding: 4rem 3rem; }
+    .section { page-break-inside: avoid; }
+    .modules { grid-template-columns: repeat(3,1fr); }
+  }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════
+     PORTADA
+════════════════════════════════════════════ -->
+<div class="cover">
+  <div class="logo">💧</div>
+  <h1>Sistema de Agua Potable</h1>
+  <h2>Mexquitic de Carmona — Manual de Usuario</h2>
+  <div class="badge">Versión 2026 &nbsp;·&nbsp; Uso interno</div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     ÍNDICE
+════════════════════════════════════════════ -->
+<div class="toc">
+  <h2>📋 Contenido</h2>
+  <ol>
+    <li><span>¿Qué es el sistema?</span></li>
+    <li><span>Cómo ingresar al sistema (Login)</span></li>
+    <li>
+      <span>Panel de Administración</span>
+      <ol class="sub">
+        <li><span>Alta de usuario</span></li>
+        <li><span>Consulta de usuarios</span></li>
+        <li><span>Medidores</span></li>
+        <li><span>Rutas</span></li>
+        <li><span>Periodos bimestrales</span></li>
+        <li><span>Lecturas y recibos</span></li>
+        <li><span>Pagos</span></li>
+        <li><span>WhatsApp</span></li>
+        <li><span>Usuarios del sistema</span></li>
+      </ol>
+    </li>
+    <li><span>Módulo Verificador (lectura en campo)</span></li>
+    <li><span>Módulo Cobro en campo</span></li>
+    <li><span>Fórmula de cobro de agua</span></li>
+    <li><span>Trabajo sin conexión (modo offline)</span></li>
+    <li><span>Preguntas frecuentes</span></li>
+  </ol>
+</div>
+
+<!-- ════════════════════════════════════════════
+     CONTENIDO
+════════════════════════════════════════════ -->
+<div class="content">
+
+  <!-- 1. QUÉ ES EL SISTEMA -->
+  <div class="section">
+    <div class="section-header"><span class="num">1</span> ¿Qué es el sistema?</div>
+    <p>El <strong>Sistema de Agua Potable de Mexquitic</strong> es una plataforma web que permite administrar de forma digital todo el proceso de cobro de agua: desde registrar a los usuarios y sus medidores, hasta capturar lecturas en campo, generar recibos y registrar pagos.</p>
+
+    <div class="modules">
+      <div class="module-card">
+        <div class="icon">🖥️</div>
+        <h4>Panel Admin</h4>
+        <p>Para el personal de oficina. Gestiona usuarios, medidores, recibos y pagos.</p>
+      </div>
+      <div class="module-card">
+        <div class="icon">📋</div>
+        <h4>Verificador</h4>
+        <p>Para el lector de campo. Captura las lecturas de los medidores en casa de cada usuario.</p>
+      </div>
+      <div class="module-card">
+        <div class="icon">💳</div>
+        <h4>Cobro en campo</h4>
+        <p>Para el cobrador. Escanea el QR del recibo y registra el pago en el momento.</p>
+      </div>
+    </div>
+
+    <div class="tip">💡 Cada módulo tiene su propio acceso y contraseña. Un verificador no puede ver el panel de administración y viceversa.</div>
+  </div>
+
+  <!-- 2. LOGIN -->
+  <div class="section">
+    <div class="section-header"><span class="num">2</span> Cómo ingresar al sistema</div>
+
+    <p>Existen tres páginas de acceso, una por cada módulo:</p>
+
+    <table>
+      <tr><th>Módulo</th><th>URL de acceso</th><th>Para quién</th></tr>
+      <tr><td><strong>Administración</strong></td><td><span class="cred">/login-admin.php</span></td><td>Directivos y personal de oficina</td></tr>
+      <tr><td><strong>Verificador</strong></td><td><span class="cred">/login-verificador.php</span></td><td>Lectores de medidores en campo</td></tr>
+      <tr><td><strong>Cobro</strong></td><td><span class="cred">/login-cobro.php</span></td><td>Cobradores en campo</td></tr>
+    </table>
+
+    <h3>Pasos para ingresar</h3>
+    <ol class="steps">
+      <li>Abre el navegador y escribe la dirección del sistema.</li>
+      <li>Ingresa tu <strong>usuario</strong> y <strong>contraseña</strong> asignados por el administrador.</li>
+      <li>Presiona <strong>Iniciar sesión</strong>.</li>
+      <li>Si es la primera vez, el administrador debe crearte una cuenta desde <em>Usuarios del sistema</em>.</li>
+    </ol>
+
+    <div class="warn">⚠️ Si olvidaste tu contraseña, contacta al administrador del sistema. No compartas tu contraseña con nadie.</div>
+  </div>
+
+  <!-- 3. PANEL ADMIN -->
+  <div class="section">
+    <div class="section-header"><span class="num">3</span> Panel de Administración</div>
+    <p>Al ingresar como administrador verás un menú lateral izquierdo con todas las secciones del sistema.</p>
+
+    <hr class="divider">
+
+    <!-- 3.1 Alta -->
+    <h3>3.1 Alta de usuario</h3>
+    <p>Permite registrar a un nuevo usuario en el padrón de agua.</p>
+    <ol class="steps">
+      <li>Haz clic en <strong>Alta de usuario</strong> en el menú.</li>
+      <li>Llena los datos del usuario: nombre completo, teléfono, WhatsApp.</li>
+      <li>Selecciona la <strong>ruta</strong> a la que pertenece.</li>
+      <li>Agrega su <strong>domicilio</strong>: calle, número, colonia.</li>
+      <li>Opcionalmente puedes marcar su ubicación en el mapa.</li>
+      <li>Presiona <strong>Guardar</strong>. El sistema revisará si ya existe un usuario similar para evitar duplicados.</li>
+    </ol>
+    <div class="note">📝 Después de dar de alta al usuario, debes asignarle un medidor desde la sección <strong>Medidores</strong>.</div>
+
+    <hr class="divider">
+
+    <!-- 3.2 Consulta -->
+    <h3>3.2 Consulta de usuarios</h3>
+    <p>Muestra la lista completa de todos los usuarios registrados en el padrón.</p>
+    <ul>
+      <li>Puedes <strong>buscar</strong> por nombre, ruta o número de medidor.</li>
+      <li>Desde aquí puedes <strong>editar</strong> los datos de un usuario o <strong>darlo de baja</strong>.</li>
+      <li>También puedes ver si tiene medidor asignado y cuál es su ruta.</li>
+    </ul>
+
+    <hr class="divider">
+
+    <!-- 3.3 Medidores -->
+    <h3>3.3 Medidores</h3>
+    <p>Aquí se administran los medidores de agua asignados a cada usuario.</p>
+    <ul>
+      <li>Cada usuario debe tener exactamente <strong>un medidor activo</strong> para poder capturar lecturas.</li>
+      <li>El número de medidor sigue el formato <span class="cred">SAPMXQ-XXXX</span> (ej. SAPMXQ-0507).</li>
+      <li>Si un medidor se reemplaza, se marca como <em>reemplazado</em> y se crea el nuevo.</li>
+    </ul>
+
+    <table>
+      <tr><th>Estado del medidor</th><th>Significado</th></tr>
+      <tr><td>Activo</td><td>En uso normal, acepta lecturas</td></tr>
+      <tr><td>Inactivo</td><td>Suspendido temporalmente</td></tr>
+      <tr><td>Reemplazado</td><td>Se cambió por uno nuevo</td></tr>
+      <tr><td>Sin medidor</td><td>El usuario no tiene medidor instalado</td></tr>
+    </table>
+
+    <hr class="divider">
+
+    <!-- 3.4 Rutas -->
+    <h3>3.4 Rutas</h3>
+    <p>Las rutas agrupan a los usuarios por zona geográfica para organizar el trabajo del verificador.</p>
+    <ul>
+      <li>Cada ruta tiene un <strong>código</strong> (ej. <span class="cred">Bellav-001</span>) y un nombre descriptivo.</li>
+      <li>El verificador de campo busca usuarios seleccionando una ruta.</li>
+      <li>Desde aquí puedes crear nuevas rutas, editarlas o darlas de baja.</li>
+    </ul>
+
+    <hr class="divider">
+
+    <!-- 3.5 Periodos -->
+    <h3>3.5 Periodos bimestrales</h3>
+    <p>El cobro del agua se realiza cada <strong>dos meses (bimestre)</strong>. Los periodos definen las fechas de cada ciclo de cobro.</p>
+
+    <table>
+      <tr><th>Periodo</th><th>Meses</th><th>Ejemplo 2026</th></tr>
+      <tr><td>Bimestre 1</td><td>Enero – Febrero</td><td>01/01/2026 al 28/02/2026</td></tr>
+      <tr><td>Bimestre 2</td><td>Marzo – Abril</td><td>01/03/2026 al 30/04/2026</td></tr>
+      <tr><td>Bimestre 3</td><td>Mayo – Junio</td><td>01/05/2026 al 30/06/2026</td></tr>
+      <tr><td>Bimestre 4</td><td>Julio – Agosto</td><td>01/07/2026 al 31/08/2026</td></tr>
+      <tr><td>Bimestre 5</td><td>Septiembre – Octubre</td><td>01/09/2026 al 31/10/2026</td></tr>
+      <tr><td>Bimestre 6</td><td>Noviembre – Diciembre</td><td>01/11/2026 al 31/12/2026</td></tr>
+    </table>
+
+    <div class="tip">💡 El sistema detecta automáticamente qué periodo está vigente según la fecha actual. No es necesario activarlo manualmente.</div>
+
+    <hr class="divider">
+
+    <!-- 3.6 Lecturas y recibos -->
+    <h3>3.6 Lecturas y recibos</h3>
+    <p>Esta sección es el núcleo del proceso de cobro. Aquí puedes:</p>
+    <ul>
+      <li><strong>Ver todas las lecturas</strong> capturadas por el verificador para cada periodo.</li>
+      <li><strong>Generar recibos</strong> individuales o por periodo completo.</li>
+      <li><strong>Imprimir recibos</strong> en lote para repartirlos.</li>
+      <li><strong>Enviar recibos por WhatsApp</strong> directamente al usuario.</li>
+    </ul>
+
+    <h4>¿Cómo generar un recibo?</h4>
+    <ol class="steps">
+      <li>Busca al usuario por nombre o ruta.</li>
+      <li>Selecciona el periodo del que quieres generar el recibo.</li>
+      <li>El sistema calcula automáticamente el monto según el consumo.</li>
+      <li>Haz clic en <strong>Generar recibo</strong>. Se crea con un código QR único.</li>
+      <li>Puedes enviarlo por WhatsApp o imprimirlo.</li>
+    </ol>
+
+    <div class="note">📝 Solo se puede generar recibo si el verificador ya capturó la lectura del periodo correspondiente.</div>
+
+    <hr class="divider">
+
+    <!-- 3.7 Pagos -->
+    <h3>3.7 Pagos</h3>
+    <p>Permite registrar y consultar los pagos realizados por los usuarios.</p>
+    <ul>
+      <li>Busca al usuario y verás sus recibos pendientes de pago.</li>
+      <li>Selecciona el recibo y registra el pago manualmente.</li>
+      <li>También puedes <strong>eliminar</strong> un pago registrado por error.</li>
+      <li>Se lleva registro de quién registró cada pago y a qué hora.</li>
+    </ul>
+
+    <div class="tip">💡 El cobrador en campo puede registrar pagos directamente escaneando el QR del recibo desde el módulo <strong>Cobro</strong>, sin necesidad de entrar al panel admin.</div>
+
+    <hr class="divider">
+
+    <!-- 3.8 WhatsApp -->
+    <h3>3.8 WhatsApp</h3>
+    <p>El sistema puede enviar notificaciones y recibos automáticamente por WhatsApp.</p>
+    <ul>
+      <li>Desde aquí se configura la sesión de WhatsApp del sistema.</li>
+      <li>Se pueden enviar notificaciones <strong>masivas</strong> a todos los usuarios de un periodo.</li>
+      <li>Se puede ver el historial de mensajes enviados.</li>
+    </ul>
+    <div class="warn">⚠️ Si el WhatsApp se desconecta, el administrador debe reconectarlo desde esta pantalla.</div>
+
+    <hr class="divider">
+
+    <!-- 3.9 Usuarios sistema -->
+    <h3>3.9 Usuarios del sistema</h3>
+    <p>Solo visible para el <strong>administrador</strong>. Aquí se crean las cuentas de acceso para el personal.</p>
+
+    <table>
+      <tr><th>Rol</th><th>Lo que puede hacer</th></tr>
+      <tr><td>Admin</td><td>Todo: crear usuarios del sistema, ver bitácora, configurar todo</td></tr>
+      <tr><td>Supervisor</td><td>Consultar, generar recibos, registrar pagos, pero no puede eliminar datos ni gestionar cuentas</td></tr>
+      <tr><td>Operario</td><td>Acceso básico de consulta y registro de pagos</td></tr>
+    </table>
+
+    <div class="note">📝 La bitácora registra automáticamente todas las acciones del sistema: quién hizo qué y cuándo.</div>
+  </div>
+
+  <!-- 4. VERIFICADOR -->
+  <div class="section">
+    <div class="section-header"><span class="num">4</span> Módulo Verificador — Lectura en campo</div>
+
+    <p>Esta es la herramienta que usa el lector de medidores cuando va de casa en casa. Está diseñada para funcionar en un <strong>teléfono celular</strong>.</p>
+
+    <h3>Flujo de trabajo del verificador</h3>
+    <div class="flow">
+      <div class="flow-box">1. Iniciar sesión</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">2. Seleccionar ruta</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">3. Buscar usuario</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">4. Ver detalle</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">5. Capturar lectura</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">6. Guardar y continuar</div>
+    </div>
+
+    <h3>Paso a paso</h3>
+    <ol class="steps">
+      <li><strong>Ingresar:</strong> Abre el navegador en el teléfono y entra con tu usuario y contraseña de verificador.</li>
+      <li><strong>Seleccionar ruta:</strong> En la pantalla principal elige la ruta que te fue asignada (ej. Bellav-001, Cent1-095).</li>
+      <li><strong>Ver lista de usuarios:</strong> Aparece la lista de todos los usuarios de esa ruta.</li>
+      <li><strong>Seleccionar usuario:</strong> Toca el nombre del usuario cuyo medidor vas a leer.</li>
+      <li><strong>Ver detalle:</strong> Verás el nombre, dirección, número de medidor y la <strong>última lectura</strong> registrada (referencia para calcular el consumo).</li>
+      <li><strong>Registrar lectura:</strong> Presiona <em>"Registrar lectura"</em> e ingresa:
+        <ul>
+          <li>El número que muestra el medidor físico actualmente.</li>
+          <li>Opcionalmente: foto del medidor, observaciones, ubicación GPS.</li>
+        </ul>
+      </li>
+      <li><strong>Guardar:</strong> El sistema calcula automáticamente el consumo. Presiona <em>"Guardar lectura"</em>.</li>
+    </ol>
+
+    <h3>Información que muestra el detalle del usuario</h3>
+    <table>
+      <tr><th>Campo</th><th>Descripción</th></tr>
+      <tr><td>Medidor</td><td>Número de medidor (ej. SAPMXQ-0510)</td></tr>
+      <tr><td>Ruta</td><td>Código de ruta del usuario</td></tr>
+      <tr><td>Dirección</td><td>Domicilio del usuario</td></tr>
+      <tr><td>Ultima lectura</td><td>Lo que marcaba el medidor al inicio de este periodo</td></tr>
+      <tr><td>Periodo de cobro</td><td>Bimestre activo (ej. Mayo-Junio 2026)</td></tr>
+      <tr><td>Rango del periodo</td><td>Fechas de inicio y fin del bimestre</td></tr>
+    </table>
+
+    <div class="tip">💡 Si ya capturaste la lectura de un usuario, al volver a entrar verás el valor que guardaste como "Lectura actual guardada".</div>
+    <div class="note">📝 Si hay dos usuarios con el mismo nombre, identifícalos por el número de medidor o la dirección.</div>
+  </div>
+
+  <!-- 5. COBRO EN CAMPO -->
+  <div class="section">
+    <div class="section-header"><span class="num">5</span> Módulo Cobro en campo</div>
+
+    <p>Herramienta para el <strong>cobrador</strong> que visita a los usuarios para recibir el pago de sus recibos.</p>
+
+    <h3>Paso a paso</h3>
+    <ol class="steps">
+      <li>Ingresa con tu usuario y contraseña de <strong>cobrador</strong>.</li>
+      <li>Para cobrar un recibo tienes dos opciones:
+        <ul>
+          <li><strong>Escanear QR:</strong> El usuario presenta su recibo (impreso o en pantalla) y el cobrador escanea el código QR con la cámara del teléfono.</li>
+          <li><strong>Buscar manualmente:</strong> Escribe el nombre del usuario y selecciona el recibo pendiente.</li>
+        </ul>
+      </li>
+      <li>El sistema muestra el recibo con el monto a pagar.</li>
+      <li>Confirma el pago. Queda registrado de inmediato con hora y nombre del cobrador.</li>
+    </ol>
+
+    <div class="warn">⚠️ No registres un pago que no hayas recibido físicamente. Los pagos quedan registrados con tu nombre de usuario.</div>
+  </div>
+
+  <!-- 6. FÓRMULA DE COBRO -->
+  <div class="section">
+    <div class="section-header"><span class="num">6</span> Fórmula de cobro de agua</div>
+
+    <p>El costo del agua se calcula de la siguiente manera:</p>
+
+    <table>
+      <tr><th>Consumo</th><th>Precio por m³</th></tr>
+      <tr><td>Primeros 15 m³</td><td>$10.00 por m³</td></tr>
+      <tr><td>A partir del m³ 16 en adelante</td><td>$15.00 por m³</td></tr>
+    </table>
+
+    <div class="formula">
+      Si consumo ≤ 15 m³:   Total agua = consumo × $10
+      Si consumo &gt; 15 m³:   Total agua = ($10 × 15) + ($15 × metros excedentes)
+    </div>
+
+    <h4>Ejemplo práctico</h4>
+    <p>Un usuario que consumió <strong>20 m³</strong> en el bimestre:</p>
+    <ul>
+      <li>Primeros 15 m³ → 15 × $10 = <strong>$150</strong></li>
+      <li>5 m³ excedentes → 5 × $15 = <strong>$75</strong></li>
+      <li>Total de agua: <strong>$225</strong></li>
+    </ul>
+
+    <h4>Cargos fijos por bimestre</h4>
+    <table>
+      <tr><th>Concepto</th><th>Monto</th></tr>
+      <tr><td>Cooperación bimestral</td><td>$10.00 (fijo, todos los usuarios)</td></tr>
+      <tr><td>Multa por incumplimiento</td><td>Según aplique</td></tr>
+      <tr><td>Recargo por pago tardío</td><td>Según aplique</td></tr>
+    </table>
+
+    <div class="note">📝 La cooperación de $10 se cobra en todos los bimestres independientemente del consumo. Los demás cargos los asigna el administrador según cada caso.</div>
+  </div>
+
+  <!-- 7. MODO OFFLINE -->
+  <div class="section">
+    <div class="section-header"><span class="num">7</span> Trabajo sin conexión (modo offline)</div>
+
+    <p>El verificador puede trabajar <strong>sin internet</strong> en zonas sin señal. Para esto debes preparar el dispositivo <strong>antes de salir a campo</strong>.</p>
+
+    <h3>Cómo prepararse para trabajar sin conexión</h3>
+    <ol class="steps">
+      <li>Asegúrate de tener conexión a internet <strong>antes</strong> de salir.</li>
+      <li>Entra al verificador en el teléfono.</li>
+      <li>Presiona el botón <strong>"Preparar para campo"</strong> (ícono de descarga en la barra superior).</li>
+      <li>Espera a que descargue todos los usuarios y sus datos. Aparecerá el mensaje: <em>"Listo. XXX usuarios disponibles sin conexión"</em>.</li>
+      <li>Ya puedes salir a campo. El teléfono funcionará sin internet.</li>
+    </ol>
+
+    <h3>¿Qué pasa con las lecturas capturadas sin internet?</h3>
+    <ul>
+      <li>Las lecturas se guardan temporalmente en el teléfono.</li>
+      <li>En la barra superior aparece el número de lecturas <strong>pendientes de sincronizar</strong>.</li>
+      <li>Cuando recuperes conexión, presiona <strong>"Sincronizar"</strong> y las lecturas se enviarán al servidor.</li>
+    </ul>
+
+    <div class="tip">💡 Siempre sincroniza antes de terminar la jornada y antes de que otro verificador use el mismo teléfono.</div>
+    <div class="warn">⚠️ Si borras el historial del navegador o cierras la app completamente sin sincronizar, podrías perder las lecturas guardadas localmente.</div>
+  </div>
+
+  <!-- 8. FAQ -->
+  <div class="section">
+    <div class="section-header"><span class="num">8</span> Preguntas frecuentes</div>
+
+    <h4>¿Por qué no aparece un usuario en el verificador?</h4>
+    <p>Posibles causas: el usuario está marcado como inactivo, no tiene medidor asignado, o no está en la ruta que seleccionaste.</p>
+
+    <h4>¿Qué significa "Ultima lectura: 0"?</h4>
+    <p>El medidor no tiene lecturas anteriores registradas. El verificador debe capturar el número actual del medidor físico normalmente.</p>
+
+    <h4>¿Puedo corregir una lectura ya guardada?</h4>
+    <p>Desde el verificador puedes volver a entrar al mismo usuario en el mismo periodo y el sistema actualizará la lectura. Si el recibo ya fue generado, el administrador debe eliminarlo y regenerarlo.</p>
+
+    <h4>¿Por qué sale el mensaje "Sin conexión" al entrar al detalle de un usuario?</h4>
+    <p>No presionaste "Preparar para campo" antes de salir sin internet. Regresa a una zona con señal y descarga los datos primero.</p>
+
+    <h4>¿Qué hago si el medidor está dañado o no se puede leer?</h4>
+    <p>Usa el campo <strong>Observaciones</strong> para describir la situación (ej. "Medidor dañado", "Casa cerrada", "No se puede leer"). Puedes guardarlo sin capturar la lectura numérica.</p>
+
+    <h4>¿Cómo sé que la sincronización funcionó?</h4>
+    <p>El contador de "pendiente(s)" en la barra superior debe quedar en 0 después de sincronizar.</p>
+
+    <h4>¿Un usuario puede tener dos cuentas?</h4>
+    <p>Sí. Si una persona tiene dos propiedades con medidor, aparece dos veces con distinto número de padrón y diferente ruta/medidor.</p>
+
+    <h4>¿Cómo agrego un medidor nuevo a un usuario?</h4>
+    <p>En el panel de administración, entra a <strong>Medidores</strong>, busca el usuario y usa el botón "Agregar medidor". El número debe seguir el formato SAPMXQ-0000.</p>
+  </div>
+
+</div><!-- /content -->
+
+<div style="text-align:center; padding: 2rem; color: #aaa; font-size: .8rem; border-top: 1px solid #eee; margin-top: 2rem;">
+  Sistema de Agua Potable — Mexquitic de Carmona &nbsp;·&nbsp; Manual interno 2026
+</div>
+
+</body>
+</html>
