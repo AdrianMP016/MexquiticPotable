@@ -185,13 +185,17 @@ class Verificador
             $u['periodo_fecha_vencimiento'] = $periodo['fecha_vencimiento'];
 
             if ($lecturaActual) {
-                $u['lectura_anterior']      = (float) $lecturaActual['lectura_anterior'];
+                $u['lectura_anterior']        = (float) $lecturaActual['lectura_anterior'];
                 $u['lectura_actual_guardada'] = (float) $lecturaActual['lectura_actual'];
-                $u['lectura_id_actual']     = (int) $lecturaActual['id'];
+                $u['lectura_id_actual']       = (int) $lecturaActual['id'];
+                $u['es_primera_lectura']      = false;
             } else {
-                $u['lectura_anterior']      = $ultimaLectura[$mid] ?? 0;
+                $tieneHistorial               = array_key_exists($mid, $ultimaLectura);
+                $u['lectura_anterior']        = $tieneHistorial ? $ultimaLectura[$mid] : 0;
                 $u['lectura_actual_guardada'] = null;
-                $u['lectura_id_actual']     = null;
+                $u['lectura_id_actual']       = null;
+                // Sin ningún historial previo → la captura es solo lectura inicial (sin cobro de consumo)
+                $u['es_primera_lectura']      = !$tieneHistorial;
             }
         }
 
@@ -246,6 +250,7 @@ class Verificador
     {
         $medicion = Request::cleanString($input['medicion'] ?? null);
         $lecturaAnterior = Request::cleanString($input['lectura_anterior'] ?? '0') ?? '0';
+        $esPrimeraLectura = filter_var($input['es_primera_lectura'] ?? false, FILTER_VALIDATE_BOOLEAN);
 
         return [
             'usuario_id' => (int) ($input['usuario_id'] ?? 0),
@@ -258,6 +263,7 @@ class Verificador
             'latitud' => Request::cleanString($input['latitud'] ?? null),
             'longitud' => Request::cleanString($input['longitud'] ?? null),
             'observaciones' => Request::cleanString($input['observaciones'] ?? null),
+            'es_primera_lectura' => $esPrimeraLectura,
         ];
     }
 
@@ -285,6 +291,10 @@ class Verificador
 
         // Foto requerida solo cuando se envía con conexión; offline no incluye archivo
 
+        // Primera lectura: establecer base sin cobrar consumo
+        if ($data['es_primera_lectura']) {
+            $data['lectura_anterior'] = (float) $data['medicion'];
+        }
         $data['consumo_m3'] = max($data['medicion'] - $data['lectura_anterior'], 0);
 
         return $errors;

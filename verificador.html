@@ -153,6 +153,11 @@
 
           <form id="formLecturaDemo">
             <input type="hidden" id="lecturaPeriodoId" value="">
+            <input type="hidden" id="esPrimeraLectura" value="false">
+
+            <div class="alert alert-warning d-none" id="alertPrimeraLectura" style="border-radius:8px;font-size:.85rem;margin-bottom:.5rem;">
+              <strong>⚠ Primera lectura</strong> — Este usuario no tiene historial. La lectura actual se guardará como base inicial sin cobro de consumo.
+            </div>
 
             <div class="period-card">
               <span>Periodo vigente para captura</span>

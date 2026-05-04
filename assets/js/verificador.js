@@ -433,6 +433,13 @@ $(function () {
   function llenarDetalle(usuario) {
     var direccion = [usuario.calle, usuario.numero_domicilio, usuario.colonia].filter(Boolean).join(" ");
     lecturaAnterior = Number(usuario.lectura_anterior || 0);
+    var esPrimera = !!usuario.es_primera_lectura;
+    $("#esPrimeraLectura").val(esPrimera ? "true" : "false");
+    if (esPrimera) {
+      $("#alertPrimeraLectura").removeClass("d-none");
+    } else {
+      $("#alertPrimeraLectura").addClass("d-none");
+    }
     var periodoRango = [
       formatDateLabel(usuario.periodo_fecha_inicio),
       formatDateLabel(usuario.periodo_fecha_fin)
@@ -481,7 +488,8 @@ $(function () {
 
   function calcularConsumo() {
     var actual  = Number($("#lecturaActual").val() || 0);
-    var consumo = Math.max(actual - lecturaAnterior, 0);
+    var esPrimera = $("#esPrimeraLectura").val() === "true";
+    var consumo = esPrimera ? 0 : Math.max(actual - lecturaAnterior, 0);
     $("#consumoCalculado").text(consumo.toFixed(2) + " m3");
   }
 
@@ -554,7 +562,8 @@ $(function () {
       fd.append("latitud",          gpsActual.latitud);
       fd.append("longitud",         gpsActual.longitud);
       fd.append("observaciones",    $("#observacionesLectura").val());
-      fd.append("foto_medidor",     fotoComprimida, "medidor.jpg");
+      fd.append("foto_medidor",      fotoComprimida, "medidor.jpg");
+      fd.append("es_primera_lectura", $("#esPrimeraLectura").val());
 
       $.ajax({
         url: ajaxUrl, method: "POST", cache: false,
