@@ -1,3 +1,5 @@
+USE mezquitic_agua;
+
 ALTER TABLE bitacora_sistema CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ALTER TABLE comunidades CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ALTER TABLE conceptos_cobro CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

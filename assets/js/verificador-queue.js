@@ -115,14 +115,43 @@ var VerificadorQueue = (function () {
     });
   }
 
+  // Escribe un array de {clave, valor} en lotes dentro de pocas transacciones.
+  // Más seguro que 673 transacciones paralelas en iOS Safari.
+  function cacheGuardarLote(items) {
+    if (!items || !items.length) { return Promise.resolve(); }
+    var BATCH = 100;
+    var batches = [];
+    for (var i = 0; i < items.length; i += BATCH) {
+      batches.push(items.slice(i, i + BATCH));
+    }
+    function procesarBatch(idx) {
+      if (idx >= batches.length) { return Promise.resolve(); }
+      return open().then(function (db) {
+        return new Promise(function (resolve, reject) {
+          var tx    = db.transaction(CACHE, 'readwrite');
+          var store = tx.objectStore(CACHE);
+          var ts    = Date.now();
+          tx.oncomplete = function () { resolve(); };
+          tx.onerror    = function () { reject(tx.error); };
+          tx.onabort    = function () { reject(new Error('tx aborted')); };
+          batches[idx].forEach(function (item) {
+            store.put({ clave: item.clave, valor: item.valor, ts: ts });
+          });
+        });
+      }).then(function () { return procesarBatch(idx + 1); });
+    }
+    return procesarBatch(0);
+  }
+
   return {
     agregar:      agregar,
     obtenerTodos: obtenerTodos,
     eliminar:     eliminar,
     contar:       contar,
     cache: {
-      guardar:  cacheGuardar,
-      obtener:  cacheObtener
+      guardar:     cacheGuardar,
+      guardarLote: cacheGuardarLote,
+      obtener:     cacheObtener
     }
   };
 })();

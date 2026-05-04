@@ -1,4 +1,4 @@
-var CACHE = 'mexquitic-verificador-v1';
+var CACHE = 'mexquitic-verificador-v2';
 
 self.addEventListener('install', function (e) {
   self.skipWaiting();

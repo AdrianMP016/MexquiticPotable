@@ -210,18 +210,22 @@ $(function () {
           porRuta[clave].push(u);
         });
 
-        var ops = [];
+        var lote = [];
         usuarios.forEach(function (u) {
-          ops.push(cacheGuardar("usuario:" + u.usuario_id, u));
+          lote.push({ clave: "usuario:" + u.usuario_id, valor: u });
         });
         Object.keys(porRuta).forEach(function (ruta) {
-          ops.push(cacheGuardar("ruta:" + ruta, porRuta[ruta]));
+          lote.push({ clave: "ruta:" + ruta, valor: porRuta[ruta] });
         });
 
-        Promise.all(ops).then(function () {
+        VerificadorQueue.cache.guardarLote(lote).then(function () {
           _preparando = false;
           $btn.prop("disabled", false).html('<i class="fas fa-download mr-1"></i> Preparar para campo');
           showFeedback("info", "Listo. " + usuarios.length + " usuario(s) disponibles sin conexión.");
+        }).catch(function () {
+          _preparando = false;
+          $btn.prop("disabled", false).html('<i class="fas fa-download mr-1"></i> Preparar para campo');
+          showFeedback("warning", "Error al guardar datos localmente. Intenta de nuevo.");
         });
       },
       error: function () {
