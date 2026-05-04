@@ -480,8 +480,8 @@ class Verificador
             throw new RuntimeException('No se pudo subir la foto del medidor.');
         }
 
-        if (($file['size'] ?? 0) > 5 * 1024 * 1024) {
-            throw new RuntimeException('La foto del medidor no debe pesar mas de 5 MB.');
+        if (($file['size'] ?? 0) > 10 * 1024 * 1024) {
+            throw new RuntimeException('La foto del medidor no debe pesar mas de 10 MB.');
         }
 
         $allowed = [

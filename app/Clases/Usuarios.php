@@ -676,8 +676,8 @@ class Usuarios
             throw new RuntimeException('No se pudo subir la foto de fachada.');
         }
 
-        if (($file['size'] ?? 0) > 5 * 1024 * 1024) {
-            throw new RuntimeException('La foto de fachada no debe pesar mas de 5 MB.');
+        if (($file['size'] ?? 0) > 10 * 1024 * 1024) {
+            throw new RuntimeException('La foto de fachada no debe pesar mas de 10 MB.');
         }
 
         $allowed = [

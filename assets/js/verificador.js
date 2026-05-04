@@ -27,6 +27,28 @@ $(function () {
     return $("<div>").text(value || "").html();
   }
 
+  function comprimirImagen(file, maxWidth, quality) {
+    maxWidth = maxWidth || 1920;
+    quality  = quality  || 0.82;
+    return new Promise(function (resolve) {
+      if (!file || file.size < 1024 * 1024) { resolve(file); return; }
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        var img = new Image();
+        img.onload = function () {
+          var w = img.width, h = img.height;
+          if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
+          var canvas = document.createElement("canvas");
+          canvas.width = w; canvas.height = h;
+          canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+          canvas.toBlob(function (blob) { resolve(blob || file); }, "image/jpeg", quality);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
   function formatDateLabel(value) {
     if (!value) { return ""; }
     var parts = String(value).split("-");
@@ -517,49 +539,47 @@ $(function () {
     // Con conexión → foto requerida
     if (!$("#fotoMedidor")[0].files.length) { alert("Toma la foto del medidor."); return; }
 
-    var fd = new FormData();
-    fd.append("accion",           "verificador.guardarMedicion");
-    fd.append("usuario_id",       usuarioActual.usuario_id);
-    fd.append("domicilio_id",     usuarioActual.domicilio_id);
-    fd.append("medidor_id",       usuarioActual.medidor_id);
-    fd.append("periodo_id",       usuarioActual.periodo_id);
-    fd.append("lectura_anterior", lecturaAnterior);
-    fd.append("medicion",         $("#lecturaActual").val());
-    fd.append("latitud",          gpsActual.latitud);
-    fd.append("longitud",         gpsActual.longitud);
-    fd.append("observaciones",    $("#observacionesLectura").val());
-    fd.append("foto_medidor",     $("#fotoMedidor")[0].files[0]);
+    var $btn = $("#formLecturaDemo button[type='submit']");
+    $btn.prop("disabled", true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Guardando...');
 
-    $.ajax({
-      url: ajaxUrl, method: "POST", cache: false,
-      dataType: "json", data: fd, processData: false, contentType: false,
-      beforeSend: function () {
-        $("#formLecturaDemo button[type='submit']")
-          .prop("disabled", true)
-          .html('<i class="fas fa-spinner fa-spin mr-1"></i> Guardando...');
-      },
-      success: function (response) {
-        if (usuarioActual) {
-          usuarioActual.lectura_actual_guardada = Number($("#lecturaActual").val() || 0);
+    comprimirImagen($("#fotoMedidor")[0].files[0]).then(function (fotoComprimida) {
+      var fd = new FormData();
+      fd.append("accion",           "verificador.guardarMedicion");
+      fd.append("usuario_id",       usuarioActual.usuario_id);
+      fd.append("domicilio_id",     usuarioActual.domicilio_id);
+      fd.append("medidor_id",       usuarioActual.medidor_id);
+      fd.append("periodo_id",       usuarioActual.periodo_id);
+      fd.append("lectura_anterior", lecturaAnterior);
+      fd.append("medicion",         $("#lecturaActual").val());
+      fd.append("latitud",          gpsActual.latitud);
+      fd.append("longitud",         gpsActual.longitud);
+      fd.append("observaciones",    $("#observacionesLectura").val());
+      fd.append("foto_medidor",     fotoComprimida, "medidor.jpg");
+
+      $.ajax({
+        url: ajaxUrl, method: "POST", cache: false,
+        dataType: "json", data: fd, processData: false, contentType: false,
+        success: function (response) {
+          if (usuarioActual) {
+            usuarioActual.lectura_actual_guardada = Number($("#lecturaActual").val() || 0);
+          }
+          $("#modalLecturaTitulo").text("Lectura guardada");
+          $("#modalLecturaMsg").text(
+            "Lectura ID: " + response.data.lectura_id +
+            " | Periodo: " + (response.data.periodo_nombre || usuarioActual.periodo_nombre || "-") +
+            " | Consumo: " + response.data.consumo_m3 + " m3"
+          );
+          $("#modalLecturaGuardada").modal("show");
+        },
+        error: function (xhr) {
+          var msg = xhr.responseJSON && xhr.responseJSON.message
+            ? xhr.responseJSON.message : "No se pudo guardar la medición.";
+          alert(msg);
+        },
+        complete: function () {
+          $btn.prop("disabled", false).html('<i class="fas fa-save mr-1"></i> Guardar lectura');
         }
-        $("#modalLecturaTitulo").text("Lectura guardada");
-        $("#modalLecturaMsg").text(
-          "Lectura ID: " + response.data.lectura_id +
-          " | Periodo: " + (response.data.periodo_nombre || usuarioActual.periodo_nombre || "-") +
-          " | Consumo: " + response.data.consumo_m3 + " m3"
-        );
-        $("#modalLecturaGuardada").modal("show");
-      },
-      error: function (xhr) {
-        var msg = xhr.responseJSON && xhr.responseJSON.message
-          ? xhr.responseJSON.message : "No se pudo guardar la medición.";
-        alert(msg);
-      },
-      complete: function () {
-        $("#formLecturaDemo button[type='submit']")
-          .prop("disabled", false)
-          .html('<i class="fas fa-save mr-1"></i> Guardar lectura');
-      }
+      });
     });
   });
 

@@ -1329,6 +1329,28 @@ $(function () {
     return $("<div>").text(value || "").html();
   }
 
+  function comprimirImagen(file, maxWidth, quality) {
+    maxWidth = maxWidth || 1920;
+    quality  = quality  || 0.82;
+    return new Promise(function (resolve) {
+      if (!file || file.size < 1024 * 1024) { resolve(file); return; }
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        var img = new Image();
+        img.onload = function () {
+          var w = img.width, h = img.height;
+          if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
+          var canvas = document.createElement("canvas");
+          canvas.width = w; canvas.height = h;
+          canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+          canvas.toBlob(function (blob) { resolve(blob || file); }, "image/jpeg", quality);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
   function estadoMedidorTexto(value) {
     const map = {
       activo: "Activo",
@@ -4464,41 +4486,46 @@ $(function () {
       return;
     }
 
-    $.ajax({
-      url: ajaxUrl,
-      method: "POST",
-      dataType: "json",
-      data: formData,
-      processData: false,
-      contentType: false,
-      beforeSend: function () {
-        renderFieldErrors({});
-        showFeedback("info", "Guardando usuario en MySQL...");
-        $buttons.prop("disabled", true);
-        $("#btnGuardarPanel").html('<i class="fas fa-spinner fa-spin mr-1"></i> Guardando usuario');
-      },
-      success: function (response) {
-        showFeedback("success", response.message || "Usuario guardado correctamente.");
-        $("#modalGuardado .modal-title").html('<i class="fas fa-check-circle text-success mr-2"></i>Registro guardado');
-        $("#modalGuardado .modal-body").text("Usuario ID: " + response.data.usuario_id + " | Medidor ID: " + response.data.medidor_id);
-        $("#modalGuardado").modal("show");
-        cargarUsuarios();
-        cargarSugerenciasMedidoresAlta();
-      },
-      error: function (xhr) {
-        const message = extractAjaxMessage(xhr, "No se pudo guardar el usuario.");
-        const errors = xhr.responseJSON && xhr.responseJSON.errors ? xhr.responseJSON.errors : {};
+    const fachadaFile = $("#fachada")[0].files && $("#fachada")[0].files[0];
+    comprimirImagen(fachadaFile).then(function (blob) {
+      if (blob && blob !== fachadaFile) { formData.set("fachada", blob, "fachada.jpg"); }
 
-        renderFieldErrors(errors);
-        showFeedback("danger", message);
-        $("#modalGuardado .modal-title").html('<i class="fas fa-exclamation-circle text-danger mr-2"></i>Error al guardar');
-        $("#modalGuardado .modal-body").text(message);
-        $("#modalGuardado").modal("show");
-      },
-      complete: function () {
-        $buttons.prop("disabled", false);
-        $("#btnGuardarPanel").html('<i class="fas fa-save mr-1"></i> Guardar usuario');
-      }
+      $.ajax({
+        url: ajaxUrl,
+        method: "POST",
+        dataType: "json",
+        data: formData,
+        processData: false,
+        contentType: false,
+        beforeSend: function () {
+          renderFieldErrors({});
+          showFeedback("info", "Guardando usuario en MySQL...");
+          $buttons.prop("disabled", true);
+          $("#btnGuardarPanel").html('<i class="fas fa-spinner fa-spin mr-1"></i> Guardando usuario');
+        },
+        success: function (response) {
+          showFeedback("success", response.message || "Usuario guardado correctamente.");
+          $("#modalGuardado .modal-title").html('<i class="fas fa-check-circle text-success mr-2"></i>Registro guardado');
+          $("#modalGuardado .modal-body").text("Usuario ID: " + response.data.usuario_id + " | Medidor ID: " + response.data.medidor_id);
+          $("#modalGuardado").modal("show");
+          cargarUsuarios();
+          cargarSugerenciasMedidoresAlta();
+        },
+        error: function (xhr) {
+          const message = extractAjaxMessage(xhr, "No se pudo guardar el usuario.");
+          const errors = xhr.responseJSON && xhr.responseJSON.errors ? xhr.responseJSON.errors : {};
+
+          renderFieldErrors(errors);
+          showFeedback("danger", message);
+          $("#modalGuardado .modal-title").html('<i class="fas fa-exclamation-circle text-danger mr-2"></i>Error al guardar');
+          $("#modalGuardado .modal-body").text(message);
+          $("#modalGuardado").modal("show");
+        },
+        complete: function () {
+          $buttons.prop("disabled", false);
+          $("#btnGuardarPanel").html('<i class="fas fa-save mr-1"></i> Guardar usuario');
+        }
+      });
     });
   });
 
@@ -4507,29 +4534,34 @@ $(function () {
 
     const formData = new FormData(this);
     const $button = $("#btnActualizarUsuario");
+    const fachadaFile = $("#editFachada")[0].files && $("#editFachada")[0].files[0];
 
-    $.ajax({
-      url: ajaxUrl,
-      method: "POST",
-      dataType: "json",
-      data: formData,
-      processData: false,
-      contentType: false,
-      beforeSend: function () {
-        showModalFeedback("info", "Guardando cambios...");
-        $button.prop("disabled", true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Guardando');
-      },
-      success: function (response) {
-        llenarModal(response.data || {});
-        showModalFeedback("success", response.message || "Usuario actualizado correctamente.");
-        cargarUsuarios();
-      },
-      error: function (xhr) {
-        showModalFeedback("danger", extractAjaxMessage(xhr, "No se pudieron guardar los cambios."));
-      },
-      complete: function () {
-        $button.prop("disabled", false).html('<i class="fas fa-save mr-1"></i> Guardar cambios');
-      }
+    comprimirImagen(fachadaFile).then(function (blob) {
+      if (blob && blob !== fachadaFile) { formData.set("fachada", blob, "fachada.jpg"); }
+
+      $.ajax({
+        url: ajaxUrl,
+        method: "POST",
+        dataType: "json",
+        data: formData,
+        processData: false,
+        contentType: false,
+        beforeSend: function () {
+          showModalFeedback("info", "Guardando cambios...");
+          $button.prop("disabled", true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Guardando');
+        },
+        success: function (response) {
+          llenarModal(response.data || {});
+          showModalFeedback("success", response.message || "Usuario actualizado correctamente.");
+          cargarUsuarios();
+        },
+        error: function (xhr) {
+          showModalFeedback("danger", extractAjaxMessage(xhr, "No se pudieron guardar los cambios."));
+        },
+        complete: function () {
+          $button.prop("disabled", false).html('<i class="fas fa-save mr-1"></i> Guardar cambios');
+        }
+      });
     });
   });
 
