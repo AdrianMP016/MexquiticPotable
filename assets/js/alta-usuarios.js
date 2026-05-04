@@ -1470,7 +1470,7 @@ $(function () {
       $("#pageTitle").text("Lecturas y recibos");
       $("#pageBreadcrumb").text("Recibos");
       hidratarVistaDesdeBootstrap("lecturas");
-      cargarFiltroPeriodosLectura();
+      cargarFiltroPeriodosLectura(obtenerPeriodoActualIdDesdeBootstrap());
       cargarLecturas();
       return;
     }
@@ -2470,6 +2470,19 @@ $(function () {
       }));
 
     $select.html(options.join(""));
+  }
+
+  function obtenerPeriodoActualIdDesdeBootstrap() {
+    var hoy = new Date().toISOString().slice(0, 10);
+    var periodos = (bootstrapAdminData.periodos && bootstrapAdminData.periodos.periodos) || [];
+    var activo = periodos.find(function (p) {
+      return p.fecha_inicio <= hoy && p.fecha_fin >= hoy && String(p.estado || "").toLowerCase() !== "cancelado";
+    });
+    if (activo) { return String(activo.periodo_id); }
+    var pasados = periodos
+      .filter(function (p) { return p.fecha_fin < hoy && String(p.estado || "").toLowerCase() !== "cancelado"; })
+      .sort(function (a, b) { return b.fecha_fin.localeCompare(a.fecha_fin); });
+    return pasados.length ? String(pasados[0].periodo_id) : "";
   }
 
   function cargarFiltroPeriodosLectura(selectedPeriodoId) {

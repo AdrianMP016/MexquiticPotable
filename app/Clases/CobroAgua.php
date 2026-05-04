@@ -13,6 +13,7 @@ class CobroAgua
         'tarifa_agua_cooperacion_default' => '10',
         'tarifa_agua_multa_default' => '0',
         'tarifa_agua_recargo_default' => '0',
+        'tarifa_agua_consumo_minimo_m3' => '5',
     ];
 
     public function __construct(PDO $db)
@@ -85,7 +86,9 @@ class CobroAgua
     public function calcular(float $consumo, ?array $parametros = null): array
     {
         $config = $this->normalizarParametros($parametros ?? $this->parametros());
-        $consumo = round(max($consumo, 0), 2);
+        $consumoReal = round(max($consumo, 0), 2);
+        // Aplicar consumo mínimo facturable (cargo mínimo de $50)
+        $consumo = max($consumoReal, $config['consumo_minimo_m3']);
         $limiteBase = $config['limite_tramo_base_m3'];
         $consumoBase = round(min($consumo, $limiteBase), 2);
         $consumoExcedente = round(max($consumo - $limiteBase, 0), 2);
@@ -108,8 +111,11 @@ class CobroAgua
                 'importe' => $importeExcedente,
             ];
         } else {
+            $etiqueta = ($consumoReal < $config['consumo_minimo_m3'])
+                ? sprintf('Consumo minimo (%s m3)', $this->formatoNumero($config['consumo_minimo_m3']))
+                : 'Consumo de agua';
             $detalles[] = [
-                'descripcion' => 'Consumo de agua',
+                'descripcion' => $etiqueta,
                 'cantidad' => $consumo,
                 'precio_unitario' => $config['precio_tramo_base_m3'],
                 'importe' => $subtotal,
@@ -140,6 +146,7 @@ class CobroAgua
             'cooperacion_default' => max($this->toFloat($values['cooperacion_default'] ?? $values['tarifa_agua_cooperacion_default'] ?? self::DEFAULTS['tarifa_agua_cooperacion_default']), 0),
             'multa_default' => max($this->toFloat($values['multa_default'] ?? $values['tarifa_agua_multa_default'] ?? self::DEFAULTS['tarifa_agua_multa_default']), 0),
             'recargo_default' => max($this->toFloat($values['recargo_default'] ?? $values['tarifa_agua_recargo_default'] ?? self::DEFAULTS['tarifa_agua_recargo_default']), 0),
+            'consumo_minimo_m3' => max($this->toFloat($values['consumo_minimo_m3'] ?? $values['tarifa_agua_consumo_minimo_m3'] ?? self::DEFAULTS['tarifa_agua_consumo_minimo_m3']), 0),
         ];
     }
 
