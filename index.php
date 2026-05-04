@@ -11,6 +11,7 @@ mexquiticRenderAdminPage([
     'modal_fragments' => [
         'modals/modal-ruta.html',
         'modals/modal-editar-usuario.html',
+        'modals/modal-lightbox-foto.html',
     ],
     'bootstrap_view' => 'consulta',
     'needs_maps' => true,

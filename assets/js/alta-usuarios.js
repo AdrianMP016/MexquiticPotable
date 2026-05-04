@@ -1731,8 +1731,83 @@ $(function () {
     }
 
     $('#tabsEditarUsuario a[href="#tabDatosUsuario"]').tab("show");
+    // Resetear tab lecturas para que cargue al abrirla
+    $("#lecturasUsuarioLista").addClass("d-none").empty();
+    $("#lecturasUsuarioLoading").removeClass("d-none");
     $("#modalEditarUsuario").modal("show");
   }
+
+  function renderLecturasUsuario(lecturas) {
+    if (!lecturas || !lecturas.length) {
+      return '<p class="text-muted text-center py-3"><i class="fas fa-inbox mr-1"></i> Sin lecturas registradas para este usuario.</p>';
+    }
+
+    return lecturas.map(function (l) {
+      var consumo = parseFloat(l.consumo_m3 || 0).toFixed(2);
+      var fecha = l.fecha_captura ? l.fecha_captura.substring(0, 10) : "-";
+      var foto = l.foto_medicion_path
+        ? '<img src="' + escapeHtml(l.foto_medicion_path) + '" alt="Foto medidor" data-src="' + escapeHtml(l.foto_medicion_path) + '">'
+        : '<div class="sin-foto"><i class="fas fa-camera-slash fa-lg d-block mb-1"></i>Sin foto</div>';
+      var obs = l.observaciones
+        ? '<div class="lectura-card-observacion"><i class="fas fa-comment-alt mr-1"></i>' + escapeHtml(l.observaciones) + '</div>'
+        : '<div class="lectura-card-sin-obs">Sin observaciones</div>';
+
+      return (
+        '<div class="lectura-card">' +
+          '<div class="lectura-card-header">' +
+            '<span><i class="fas fa-calendar-alt mr-1"></i>' + escapeHtml(l.periodo_nombre || "-") + '</span>' +
+            '<span>' + fecha + '</span>' +
+          '</div>' +
+          '<div class="lectura-card-body">' +
+            '<div class="lectura-card-foto" data-foto="' + escapeHtml(l.foto_medicion_path || "") + '">' + foto + '</div>' +
+            '<div class="lectura-card-datos">' +
+              '<div class="dato-row"><span class="label">Ant. →  Act.</span><strong>' +
+                parseFloat(l.lectura_anterior || 0).toFixed(2) + ' → ' + parseFloat(l.lectura_actual || 0).toFixed(2) +
+              '</strong></div>' +
+              '<div class="dato-row"><span class="label">Consumo</span><strong>' + consumo + ' m³</strong></div>' +
+              obs +
+            '</div>' +
+          '</div>' +
+        '</div>'
+      );
+    }).join("");
+  }
+
+  function cargarUltimasLecturas(usuarioId) {
+    $.ajax({
+      url: ajaxUrl,
+      method: "POST",
+      dataType: "json",
+      data: { accion: "usuarios.ultimasLecturas", usuario_id: usuarioId },
+      success: function (response) {
+        var html = renderLecturasUsuario((response.data || {}).lecturas || []);
+        $("#lecturasUsuarioLista").html(html).removeClass("d-none");
+        $("#lecturasUsuarioLoading").addClass("d-none");
+      },
+      error: function () {
+        $("#lecturasUsuarioLoading").html('<p class="text-danger text-center">No se pudieron cargar las lecturas.</p>');
+      }
+    });
+  }
+
+  // Cargar lecturas al hacer clic en la pestaña
+  $(document).on("click", '#tabsEditarUsuario a[href="#tabLecturasUsuario"]', function () {
+    var usuarioId = parseInt($("#editUsuarioId").val(), 10);
+    if (usuarioId > 0) {
+      cargarUltimasLecturas(usuarioId);
+    }
+  });
+
+  // Lightbox foto medidor
+  $(document).on("click", ".lectura-card-foto[data-foto]", function () {
+    var src = $(this).data("foto");
+    if (!src) { return; }
+    $("#lightboxImg").attr("src", src);
+    $("#lightboxFotoMedidor").addClass("open");
+  });
+  $(document).on("click", "#lightboxClose, #lightboxFotoMedidor", function (e) {
+    if (e.target === this) { $("#lightboxFotoMedidor").removeClass("open"); }
+  });
 
   function abrirEditarUsuario(usuarioId) {
     $.ajax({

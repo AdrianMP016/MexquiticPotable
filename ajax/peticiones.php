@@ -267,6 +267,13 @@ try {
             JsonResponse::success('Usuario dado de baja correctamente.', $data);
             break;
 
+        case 'usuarios.ultimasLecturas':
+            $usuarios = new Usuarios($db);
+            $usuarioId = (int) Request::input('usuario_id', 0);
+            $lecturas = $usuarios->ultimasLecturas($usuarioId);
+            JsonResponse::success('Lecturas consultadas.', ['lecturas' => $lecturas]);
+            break;
+
         case 'medidores.listar':
             $medidores = new Medidores($db);
             $page = (int) Request::input('page', 1);

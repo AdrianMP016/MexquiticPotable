@@ -37,6 +37,11 @@
               </a>
             </li>
             <li class="nav-item">
+              <a class="nav-link" data-toggle="pill" href="#tabLecturasUsuario" role="tab" id="tabLecturasUsuarioLink">
+                <i class="fas fa-camera mr-1"></i> Lecturas
+              </a>
+            </li>
+            <li class="nav-item">
               <a class="nav-link" data-toggle="pill" href="#tabBajaUsuario" role="tab">
                 <i class="fas fa-user-slash mr-1"></i> Baja
               </a>
@@ -209,6 +214,15 @@
                     </select>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            <div class="tab-pane fade" id="tabLecturasUsuario" role="tabpanel">
+              <div id="lecturasUsuarioContainer">
+                <div class="text-center text-muted py-4" id="lecturasUsuarioLoading">
+                  <i class="fas fa-spinner fa-spin fa-2x mb-2"></i><br>Cargando lecturas...
+                </div>
+                <div id="lecturasUsuarioLista" class="d-none"></div>
               </div>
             </div>
 

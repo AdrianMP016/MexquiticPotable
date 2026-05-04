@@ -725,4 +725,33 @@ class Usuarios
 
         return null;
     }
+
+    public function ultimasLecturas(int $usuarioId, int $limit = 6): array
+    {
+        $stmt = $this->db->prepare(
+            "SELECT
+                l.id              AS lectura_id,
+                l.lectura_anterior,
+                l.lectura_actual,
+                l.consumo_m3,
+                l.fecha_captura,
+                l.observaciones,
+                l.foto_medicion_path,
+                p.nombre          AS periodo_nombre,
+                p.fecha_inicio,
+                p.fecha_fin
+             FROM lecturas l
+             JOIN medidores m ON m.id = l.medidor_id
+             JOIN usuarios_servicio u ON u.id = m.usuario_id
+             JOIN periodos_bimestrales p ON p.id = l.periodo_id
+             WHERE u.id = :usuario_id
+             ORDER BY l.fecha_captura DESC, l.id DESC
+             LIMIT :lim"
+        );
+        $stmt->bindValue(':usuario_id', $usuarioId, PDO::PARAM_INT);
+        $stmt->bindValue(':lim', max(1, min($limit, 20)), PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll();
+    }
 }
