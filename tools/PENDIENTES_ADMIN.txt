@@ -1,0 +1,56 @@
+PENDIENTES PARA EL ADMINISTRADOR DEL SISTEMA
+Fecha: 2026-05-03
+=====================================================
+
+USUARIOS SIN MEDIDOR REGISTRADO (15 cuentas)
+----------------------------------------------
+Estos usuarios aparecen en el padrón con SAPMXQ-XXXX,
+lo que indica que no tienen número de medidor capturado
+en el sistema. No pueden tener lecturas registradas ni
+aparecer en el verificador de campo hasta que se les
+asigne un medidor desde el panel de administración.
+
+Acción requerida: Verificar si cada usuario tiene un
+medidor físico instalado. Si sí:
+  → Asignar el número de medidor real desde el panel Admin
+Si no tiene medidor físico:
+  → Marcar al usuario como inactivo o registrarlo con
+    estado "sin_medidor"
+
+LISTADO:
+  Padrón  72  | JOSÉ REYEZ PÉREZ HERNANDEZ        | Ruta: Bellav-073
+  Padrón 341  | JULIO TOVAR ORTIZ                 | Ruta: Cent1-264
+  Padrón 366  | MIGUEL HERNANDEZ SANDATE          | Ruta: Ejidal-023
+  Padrón 367  | GERARDO MARTINEZ MARTINEZ         | Ruta: Ejidal-024
+  Padrón 377  | JOSE LUIS HERNANDEZ GARCIA        | Ruta: Ejidal-034
+  Padrón 408  | MA CONCEPCION HERNANDEZ FLORES    | Ruta: Llani-020
+  Padrón 519  | JUAN CARLOS VALENTIN GARCIA HdEZ  | Ruta: Pedre-041
+  Padrón 633  | JUAN JACOBO RAMIREZ               | Ruta: Pedre-156
+  Padrón 634  | JUAN JACOBO RAMIREZ               | Ruta: Pedre-157
+  Padrón 658  | LORENA ZARAZUA HERNANDEZ          | Ruta: Playa-023
+  Padrón 664  | MARÍA DE JESÚS JIMÉNEZ MORALES    | Ruta: Playa-029
+  Padrón 684  | FERNANDO AVILA GARCIA             | Ruta: Playa-047
+  Padrón 686  | IRENE PÉREZ HERNANDEZ             | Ruta: Bellav-076
+  Padrón 687  | HIPÓLITO PUENTE HERNANDEZ         | Ruta: Cent1-267
+  Padrón 688  | MA.SANTOS ORTIZ HERNANDEZ         | Ruta: Llani-088
+
+NOTA: Los padrón 633 y 634 (JUAN JACOBO RAMIREZ) son dos
+cuentas distintas, probablemente dos propiedades diferentes.
+
+=====================================================
+USUARIOS CON MEDIDOR PERO SIN LECTURA 2026 (7 cuentas)
+----------------------------------------------
+Tienen medidor registrado en el sistema pero sus lecturas
+de ENE 26 y MAR 26 estaban en 0 en el CSV. Se importaron
+con valor 0. El verificador los mostrará con "Ultima lectura: 0"
+y el lector de campo deberá capturar el valor real del medidor.
+
+  Padrón 172  | JOSE ABEL ZAVALA RAMIREZ          | Medidor: SAPMXQ-0147 | Ruta: Cent1-095
+  Padrón 182  | MARCO ANTONIO MEDINA              | Medidor: SAPMXQ-0066 | Ruta: Cent1-105
+  Padrón 227  | VALENTINA ZARAZUA QUISTIAN        | Medidor: SAPMXQ-0051 | Ruta: Cent1-149
+  Padrón 241  | BLANCA ESMERALDA SIFUENTES        | Medidor: SAPMXQ-0121 | Ruta: Cent1-163
+  Padrón 414  | JOSE EDGAR HERNANDEZ GUZMAN       | Medidor: SAPMXQ-0275 | Ruta: Llani-026
+  Padrón 499  | MOISES PUENTE FLORES              | Medidor: SAPMXQ-0309 | Ruta: Pedre-022
+  Padrón 680  | MA ELSA VILET                     | Medidor: SAPMXQ-0433 | Ruta: Playa-043
+
+=====================================================
