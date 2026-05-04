@@ -1101,6 +1101,11 @@ class Recibos
     {
         $direccionLineas = $this->construirDireccionRecibo($lectura);
         $extras = $data['cooperaciones'] + $data['multas'] + $data['recargos'];
+        // m³ facturados (puede ser mayor al consumo real cuando aplica mínimo facturable)
+        $consumoBilledM3 = 0.0;
+        foreach ((array) ($cobro['detalle'] ?? []) as $d) {
+            $consumoBilledM3 += (float) ($d['cantidad'] ?? 0);
+        }
         $cooperacionFugas = (float) $data['cooperaciones'];
         $multaRecargo = (float) $data['multas'] + (float) $data['recargos'];
         $periodoConsumo = $this->periodoConsumoTexto(
@@ -1156,7 +1161,7 @@ class Recibos
             'fecha_emision' => date('d/m/Y'),
             'fecha_captura' => date('d/m/Y', strtotime($lectura['fecha_captura'])),
             'ubicacion' => ($lectura['latitud'] && $lectura['longitud']) ? 'GPS CAPTURADO' : 'SIN GPS',
-            'concepto_consumo_cantidad' => $this->formatoNumero($lectura['consumo_m3']) . ' m3',
+            'concepto_consumo_cantidad' => $this->formatoNumero($consumoBilledM3) . ' m3',
             'concepto_consumo_importe' => $this->moneda($subtotal),
             'concepto_extra_descripcion' => $extras > 0 ? 'Extras del periodo' : '',
             'concepto_extra_cantidad' => $extras > 0 ? '1' : '',
