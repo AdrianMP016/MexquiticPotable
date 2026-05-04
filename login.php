@@ -145,6 +145,17 @@ $loginRoutes = [
       font-size: 12px;
       color: #6b7c93;
     }
+    .input-group .btn-toggle-pw {
+      border: 1px solid #ced4da;
+      border-left: 0;
+      background: #fff;
+      color: #6b7c93;
+      padding: 0 .75rem;
+      border-radius: 0 .25rem .25rem 0;
+      line-height: 1;
+    }
+    .input-group .btn-toggle-pw:hover { color: var(--agua-primary); }
+    .input-group .form-control { border-right: 0; }
     @media (max-width: 991.98px) {
       .login-brand {
         border-bottom: 1px solid rgba(255,255,255,.08);
@@ -213,7 +224,14 @@ $loginRoutes = [
                   </div>
                   <div class="form-group">
                     <label for="loginPassword">Contraseña</label>
-                    <input type="password" class="form-control" id="loginPassword" name="password" maxlength="80" autocomplete="current-password" required>
+                    <div class="input-group">
+                      <input type="password" class="form-control" id="loginPassword" name="password" maxlength="80" autocomplete="current-password" required>
+                      <div class="input-group-append">
+                        <button type="button" class="btn-toggle-pw" data-target="loginPassword" title="Mostrar / ocultar contraseña">
+                          <i class="fas fa-eye"></i>
+                        </button>
+                      </div>
+                    </div>
                   </div>
                   <input type="hidden" id="loginModulo" name="modulo" value="<?php echo htmlspecialchars($access, ENT_QUOTES, 'UTF-8'); ?>">
                   <div class="form-group">
@@ -241,7 +259,14 @@ $loginRoutes = [
                   </div>
                   <div class="form-group">
                     <label for="recuperarPassword">Nueva contraseña</label>
-                    <input type="password" class="form-control" id="recuperarPassword" name="nueva_password" maxlength="80" required>
+                    <div class="input-group">
+                      <input type="password" class="form-control" id="recuperarPassword" name="nueva_password" maxlength="80" required>
+                      <div class="input-group-append">
+                        <button type="button" class="btn-toggle-pw" data-target="recuperarPassword" title="Mostrar / ocultar contraseña">
+                          <i class="fas fa-eye"></i>
+                        </button>
+                      </div>
+                    </div>
                   </div>
                   <button type="submit" class="btn btn-outline-primary btn-block">
                     <i class="fas fa-key mr-1"></i> Actualizar contraseña
@@ -327,6 +352,19 @@ $loginRoutes = [
         }).always(function () {
           $form.find("button[type='submit']").prop("disabled", false);
         });
+      });
+
+      $(document).on("click", ".btn-toggle-pw", function () {
+        var targetId = $(this).data("target");
+        var $input = $("#" + targetId);
+        var $icon = $(this).find("i");
+        if ($input.attr("type") === "password") {
+          $input.attr("type", "text");
+          $icon.removeClass("fa-eye").addClass("fa-eye-slash");
+        } else {
+          $input.attr("type", "password");
+          $icon.removeClass("fa-eye-slash").addClass("fa-eye");
+        }
       });
 
       $("#formRecuperar").on("submit", function (event) {
