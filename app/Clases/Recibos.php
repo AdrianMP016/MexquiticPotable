@@ -64,7 +64,6 @@ class Recibos
                 d.numero AS numero_domicilio,
                 d.colonia,
                 d.ruta,
-                c.nombre AS comunidad,
                 m.id AS medidor_id,
                 m.numero AS medidor,
                 p.id AS periodo_id,
@@ -84,7 +83,6 @@ class Recibos
              JOIN medidores m ON m.id = l.medidor_id
              JOIN usuarios_servicio u ON u.id = m.usuario_id
              JOIN domicilios d ON d.id = m.domicilio_id
-             JOIN comunidades c ON c.id = d.comunidad_id
              JOIN periodos_bimestrales p ON p.id = l.periodo_id
              LEFT JOIN recibos r ON r.lectura_id = l.id
                 OR (r.lectura_id IS NULL AND r.medidor_id = l.medidor_id AND r.periodo_id = l.periodo_id)
@@ -179,7 +177,6 @@ class Recibos
                 d.numero AS numero_domicilio,
                 d.colonia,
                 d.ruta,
-                c.nombre AS comunidad,
                 m.numero AS medidor,
                 p.nombre AS periodo,
                 p.fecha_inicio,
@@ -201,7 +198,6 @@ class Recibos
              JOIN medidores m ON m.id = l.medidor_id
              JOIN usuarios_servicio u ON u.id = m.usuario_id
              JOIN domicilios d ON d.id = m.domicilio_id
-             JOIN comunidades c ON c.id = d.comunidad_id
              JOIN periodos_bimestrales p ON p.id = l.periodo_id
              LEFT JOIN recibos r ON r.lectura_id = l.id
                 OR (r.lectura_id IS NULL AND r.medidor_id = l.medidor_id AND r.periodo_id = l.periodo_id)
