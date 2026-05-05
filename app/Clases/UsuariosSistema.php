@@ -22,8 +22,12 @@ class UsuariosSistema
 
         $termino = trim($termino);
         if ($termino !== '') {
-            $where = "WHERE nombre LIKE :termino OR usuario LIKE :termino OR rol LIKE :termino OR telefono LIKE :termino";
-            $params['termino'] = '%' . $termino . '%';
+            $where = "WHERE nombre LIKE :termino1 OR usuario LIKE :termino2 OR rol LIKE :termino3 OR telefono LIKE :termino4";
+            $t = '%' . $termino . '%';
+            $params['termino1'] = $t;
+            $params['termino2'] = $t;
+            $params['termino3'] = $t;
+            $params['termino4'] = $t;
         }
 
         $countStmt = $this->db->prepare("SELECT COUNT(*) AS total FROM usuarios_sistema $where");
