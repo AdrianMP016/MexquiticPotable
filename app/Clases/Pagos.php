@@ -19,11 +19,14 @@ class Pagos
 
         if (trim($termino) !== '') {
             $where .= " AND (
-                u.nombre LIKE :termino
-                OR d.ruta LIKE :termino
-                OR m.numero LIKE :termino
+                u.nombre LIKE :termino_u
+                OR d.ruta LIKE :termino_r
+                OR m.numero LIKE :termino_m
             )";
-            $params['termino'] = '%' . trim($termino) . '%';
+            $t = '%' . trim($termino) . '%';
+            $params['termino_u'] = $t;
+            $params['termino_r'] = $t;
+            $params['termino_m'] = $t;
         }
 
         $stmt = $this->db->prepare(
