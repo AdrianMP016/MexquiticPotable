@@ -141,7 +141,7 @@ class Rutas
                 COUNT(DISTINCT m.id) AS total_medidores,
                 COUNT(DISTINCT CASE WHEN l.id IS NOT NULL THEN m.id END) AS con_lectura
              FROM rutas r
-             LEFT JOIN usuarios_servicio u ON u.ruta_id = r.id AND u.estado = 'activo'
+             LEFT JOIN usuarios_servicio u ON u.ruta_id = r.id AND u.activo = 1
              LEFT JOIN medidores m ON m.usuario_id = u.id AND m.estado IN ('activo', 'sin_medidor')
              LEFT JOIN lecturas l ON l.medidor_id = m.id AND l.periodo_id = :periodo_id
              WHERE r.activo = 1
@@ -204,7 +204,7 @@ class Rutas
              LEFT JOIN medidores m ON m.usuario_id = u.id AND m.estado IN ('activo', 'sin_medidor')
              LEFT JOIN domicilios d ON d.id = m.domicilio_id
              LEFT JOIN lecturas l ON l.medidor_id = m.id AND l.periodo_id = :periodo_id
-             WHERE u.estado = 'activo'
+             WHERE u.activo = 1
                $whereRuta
                AND l.id IS NULL
                AND m.id IS NOT NULL
