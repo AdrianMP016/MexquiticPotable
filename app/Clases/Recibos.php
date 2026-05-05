@@ -31,11 +31,15 @@ class Recibos
         $conditions = [];
 
         if (trim($termino) !== '') {
-            $conditions[] = "(u.nombre LIKE :termino
-                OR d.ruta LIKE :termino
-                OR m.numero LIKE :termino
-                OR p.nombre LIKE :termino)";
-            $params['termino'] = '%' . trim($termino) . '%';
+            $conditions[] = "(u.nombre LIKE :termino_u
+                OR d.ruta LIKE :termino_r
+                OR m.numero LIKE :termino_m
+                OR p.nombre LIKE :termino_p)";
+            $t = '%' . trim($termino) . '%';
+            $params['termino_u'] = $t;
+            $params['termino_r'] = $t;
+            $params['termino_m'] = $t;
+            $params['termino_p'] = $t;
         }
 
         if ($periodoId > 0) {
