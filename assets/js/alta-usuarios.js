@@ -2319,6 +2319,192 @@ $(function () {
     });
   }
 
+  // ── Estado de verificacion por ruta ──────────────────────────────────────────
+
+  var estadoRutasData = null; // cache del ultimo resultado consultado
+
+  function inicializarModalEstadoRutas() {
+    var $modal = $("#modalEstadoRutas");
+    if (!$modal.length) { return; }
+
+    $modal.on("show.bs.modal", function () {
+      var $sel = $("#estadoRutasPeriodo");
+      hidratarCatalogoPeriodos($sel, obtenerPeriodoActualIdDesdeBootstrap());
+      $sel.find("option[value='']").remove(); // sin opcion "todos" aqui
+      mostrarEstadoRutasVacio();
+    });
+
+    $("#btnCargarEstadoRutas").on("click", function () {
+      var periodoId = $("#estadoRutasPeriodo").val();
+      if (!periodoId) {
+        alert("Selecciona un periodo para consultar.");
+        return;
+      }
+      cargarEstadoRutas(periodoId);
+    });
+
+    $("#btnDescargarFaltantesTodas").on("click", function () {
+      if (!estadoRutasData) { return; }
+      var periodoId = $("#estadoRutasPeriodo").val();
+      descargarFaltantesCSV(periodoId, 0, estadoRutasData.periodo_nombre || "periodo");
+    });
+
+    $(document).on("click", ".btn-descargar-faltantes-ruta", function () {
+      var rutaId = $(this).data("ruta-id");
+      var rutaCodigo = $(this).data("ruta-codigo");
+      var periodoId = $("#estadoRutasPeriodo").val();
+      if (!periodoId || !rutaId) { return; }
+      descargarFaltantesCSV(periodoId, rutaId, rutaCodigo);
+    });
+  }
+
+  function mostrarEstadoRutasVacio() {
+    $("#estadoRutasResumen").addClass("d-none");
+    $("#estadoRutasTablaWrap").addClass("d-none");
+    $("#estadoRutasCargando").addClass("d-none");
+    $("#btnDescargarFaltantesTodas").addClass("d-none");
+    $("#estadoRutasVacio").removeClass("d-none");
+    estadoRutasData = null;
+  }
+
+  function cargarEstadoRutas(periodoId) {
+    $("#estadoRutasVacio").addClass("d-none");
+    $("#estadoRutasResumen").addClass("d-none");
+    $("#estadoRutasTablaWrap").addClass("d-none");
+    $("#estadoRutasCargando").removeClass("d-none");
+    $("#btnDescargarFaltantesTodas").addClass("d-none");
+
+    $.ajax({
+      url: ajaxUrl,
+      method: "POST",
+      dataType: "json",
+      data: { accion: "rutas.estadoVerificacion", periodo_id: periodoId },
+      success: function (response) {
+        $("#estadoRutasCargando").addClass("d-none");
+        var data = response.data || {};
+        var rutas = data.rutas || [];
+        var resumen = data.resumen || {};
+        var $sel = $("#estadoRutasPeriodo");
+        var periodoNombre = $sel.find("option:selected").text() || "periodo";
+        estadoRutasData = { rutas: rutas, resumen: resumen, periodo_nombre: periodoNombre };
+
+        renderEstadoRutasResumen(resumen);
+        renderEstadoRutasTabla(rutas);
+
+        if (resumen.sin_lectura > 0) {
+          $("#btnDescargarFaltantesTodas").removeClass("d-none");
+        }
+      },
+      error: function (xhr) {
+        $("#estadoRutasCargando").addClass("d-none");
+        alert(extractAjaxMessage(xhr, "No se pudo consultar el estado de verificacion."));
+        mostrarEstadoRutasVacio();
+      }
+    });
+  }
+
+  function renderEstadoRutasResumen(resumen) {
+    $("#estadoRutasTotalMedidores").text(resumen.total_medidores || 0);
+    $("#estadoRutasVerificados").text(resumen.con_lectura || 0);
+    $("#estadoRutasFaltantes").text(resumen.sin_lectura || 0);
+    $("#estadoRutasPorcentaje").text((resumen.porcentaje || 0) + "%");
+    $("#estadoRutasResumen").removeClass("d-none");
+  }
+
+  function renderEstadoRutasTabla(rutas) {
+    var $tbody = $("#tablaEstadoRutasTbody");
+
+    if (!rutas.length) {
+      $tbody.html('<tr><td colspan="6" class="text-center text-muted py-3">No hay rutas activas registradas.</td></tr>');
+      $("#estadoRutasTablaWrap").removeClass("d-none");
+      return;
+    }
+
+    var rows = rutas.map(function (ruta) {
+      var pct = Number(ruta.porcentaje || 0);
+      var barClass = pct >= 100 ? "bg-success" : (pct >= 50 ? "bg-primary" : "bg-warning");
+      var badge = ruta.sin_lectura > 0
+        ? '<span class="badge badge-warning">' + ruta.sin_lectura + ' faltantes</span>'
+        : '<span class="badge badge-success">Completo</span>';
+      var csvBtn = ruta.sin_lectura > 0
+        ? '<button class="btn btn-sm btn-outline-secondary btn-descargar-faltantes-ruta" data-ruta-id="' + ruta.ruta_id + '" data-ruta-codigo="' + escapeHtml(ruta.codigo) + '"><i class="fas fa-download mr-1"></i>CSV</button>'
+        : '<span class="text-muted small">-</span>';
+
+      return [
+        '<tr>',
+        '<td><strong>' + escapeHtml(ruta.codigo) + '</strong><br><small class="text-muted">' + escapeHtml(ruta.nombre) + '</small></td>',
+        '<td class="text-center">' + ruta.total_medidores + '</td>',
+        '<td class="text-center text-success"><strong>' + ruta.con_lectura + '</strong></td>',
+        '<td class="text-center">' + badge + '</td>',
+        '<td>',
+        '<div class="progress" style="height:16px;border-radius:4px">',
+        '<div class="progress-bar ' + barClass + '" style="width:' + pct + '%" title="' + pct + '%"></div>',
+        '</div>',
+        '<small class="text-muted">' + pct + '%</small>',
+        '</td>',
+        '<td class="text-right">' + csvBtn + '</td>',
+        '</tr>'
+      ].join("");
+    }).join("");
+
+    $tbody.html(rows);
+    $("#estadoRutasTablaWrap").removeClass("d-none");
+  }
+
+  function descargarFaltantesCSV(periodoId, rutaId, nombreArchivo) {
+    var $btn = rutaId > 0
+      ? $(".btn-descargar-faltantes-ruta[data-ruta-id='" + rutaId + "']")
+      : $("#btnDescargarFaltantesTodas");
+    var textoOriginal = $btn.html();
+    $btn.prop("disabled", true).html('<i class="fas fa-spinner fa-spin mr-1"></i>Descargando...');
+
+    $.ajax({
+      url: ajaxUrl,
+      method: "POST",
+      dataType: "json",
+      data: { accion: "rutas.faltantes", periodo_id: periodoId, ruta_id: rutaId || 0 },
+      success: function (response) {
+        $btn.prop("disabled", false).html(textoOriginal);
+        var faltantes = (response.data && response.data.faltantes) || [];
+
+        if (!faltantes.length) {
+          alert("No hay faltantes para esta ruta en el periodo seleccionado.");
+          return;
+        }
+
+        var header = ["Padron", "Nombre", "Ruta", "Calle", "Numero", "Colonia", "Medidor"].join(",");
+        var lineas = faltantes.map(function (f) {
+          return [
+            f.padron_id || "",
+            '"' + (f.usuario || "").replace(/"/g, '""') + '"',
+            '"' + (f.ruta_codigo || "").replace(/"/g, '""') + '"',
+            '"' + (f.calle || "").replace(/"/g, '""') + '"',
+            '"' + (f.numero_domicilio || "").replace(/"/g, '""') + '"',
+            '"' + (f.colonia || "").replace(/"/g, '""') + '"',
+            '"' + (f.medidor || "").replace(/"/g, '""') + '"'
+          ].join(",");
+        });
+
+        var csv = "﻿" + header + "\n" + lineas.join("\n");
+        var blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        var url = URL.createObjectURL(blob);
+        var link = document.createElement("a");
+        link.href = url;
+        link.download = "faltantes-" + nombreArchivo + ".csv";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      },
+      error: function (xhr) {
+        $btn.prop("disabled", false).html(textoOriginal);
+        alert(extractAjaxMessage(xhr, "No se pudieron obtener los faltantes."));
+      }
+    });
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+
   function renderPeriodos(periodos) {
     const $tbody = $("#tablaPeriodos tbody");
 
@@ -4240,6 +4426,8 @@ $(function () {
   $("#btnAgregarRuta").on("click", function () {
     abrirAgregarRuta();
   });
+
+  inicializarModalEstadoRutas();
 
   $("#btnRutaNuevaAlta").on("click", function () {
     abrirAgregarRuta(comunidadIdPorNombre($("#comunidad").val()));

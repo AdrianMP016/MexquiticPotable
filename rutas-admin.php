@@ -10,5 +10,6 @@ mexquiticRenderAdminPage([
     'content_fragment' => 'pages/rutas.html',
     'modal_fragments' => [
         'modals/modal-ruta.html',
+        'modals/modal-estado-rutas.html',
     ],
 ]);

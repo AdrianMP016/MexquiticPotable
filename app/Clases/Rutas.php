@@ -124,6 +124,90 @@ class Rutas
         return [$where, $params];
     }
 
+    public function estadoVerificacion(int $periodoId): array
+    {
+        $stmt = $this->db->prepare(
+            "SELECT
+                r.id AS ruta_id,
+                r.codigo,
+                r.nombre,
+                COUNT(DISTINCT m.id) AS total_medidores,
+                COUNT(DISTINCT CASE WHEN l.id IS NOT NULL THEN m.id END) AS con_lectura
+             FROM rutas r
+             LEFT JOIN usuarios_servicio u ON u.ruta_id = r.id AND u.estado = 'activo'
+             LEFT JOIN medidores m ON m.usuario_id = u.id AND m.estado IN ('activo', 'sin_medidor')
+             LEFT JOIN lecturas l ON l.medidor_id = m.id AND l.periodo_id = :periodo_id
+             WHERE r.activo = 1
+             GROUP BY r.id, r.codigo, r.nombre
+             ORDER BY r.codigo ASC"
+        );
+        $stmt->execute(['periodo_id' => $periodoId]);
+        $rutas = $stmt->fetchAll();
+
+        $totalMedidores = 0;
+        $totalConLectura = 0;
+
+        foreach ($rutas as &$ruta) {
+            $ruta['total_medidores'] = (int) $ruta['total_medidores'];
+            $ruta['con_lectura'] = (int) $ruta['con_lectura'];
+            $ruta['sin_lectura'] = $ruta['total_medidores'] - $ruta['con_lectura'];
+            $ruta['porcentaje'] = $ruta['total_medidores'] > 0
+                ? round($ruta['con_lectura'] / $ruta['total_medidores'] * 100, 1)
+                : 0.0;
+            $totalMedidores += $ruta['total_medidores'];
+            $totalConLectura += $ruta['con_lectura'];
+        }
+        unset($ruta);
+
+        return [
+            'rutas' => $rutas,
+            'resumen' => [
+                'total_medidores' => $totalMedidores,
+                'con_lectura' => $totalConLectura,
+                'sin_lectura' => $totalMedidores - $totalConLectura,
+                'porcentaje' => $totalMedidores > 0
+                    ? round($totalConLectura / $totalMedidores * 100, 1)
+                    : 0.0,
+            ],
+        ];
+    }
+
+    public function faltantesPorRuta(int $periodoId, int $rutaId = 0): array
+    {
+        $params = ['periodo_id' => $periodoId];
+        $whereRuta = '';
+
+        if ($rutaId > 0) {
+            $whereRuta = 'AND u.ruta_id = :ruta_id';
+            $params['ruta_id'] = $rutaId;
+        }
+
+        $stmt = $this->db->prepare(
+            "SELECT
+                u.padron_id,
+                u.nombre AS usuario,
+                r.codigo AS ruta_codigo,
+                r.nombre AS ruta_nombre,
+                d.calle,
+                d.numero AS numero_domicilio,
+                d.colonia,
+                m.numero AS medidor
+             FROM usuarios_servicio u
+             LEFT JOIN rutas r ON r.id = u.ruta_id
+             LEFT JOIN medidores m ON m.usuario_id = u.id AND m.estado IN ('activo', 'sin_medidor')
+             LEFT JOIN domicilios d ON d.id = m.domicilio_id
+             LEFT JOIN lecturas l ON l.medidor_id = m.id AND l.periodo_id = :periodo_id
+             WHERE u.estado = 'activo'
+               $whereRuta
+               AND l.id IS NULL
+               AND m.id IS NOT NULL
+             ORDER BY r.codigo ASC, u.nombre ASC"
+        );
+        $stmt->execute($params);
+
+        return $stmt->fetchAll();
+    }
+
     public function catalogo(int $comunidadId = 0): array
     {
         $sql = "SELECT

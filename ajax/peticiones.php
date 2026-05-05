@@ -37,6 +37,8 @@ function mexquiticAllowedModules(string $accion): array
         'rutas.guardar' => ['plataforma'],
         'rutas.actualizar' => ['plataforma'],
         'rutas.baja' => ['plataforma'],
+        'rutas.estadoVerificacion' => ['plataforma'],
+        'rutas.faltantes' => ['plataforma'],
         'padron.importar' => ['plataforma'],
         'verificador.prepararDatos' => ['verificador'],
         'verificador.guardarMedicion' => ['verificador'],
@@ -410,6 +412,27 @@ try {
             $data = $rutas->darDeBaja($rutaId);
             mexquiticRegistrarBitacora($auth, $db, $accion, $data);
             JsonResponse::success('Ruta dada de baja correctamente.', $data);
+            break;
+
+        case 'rutas.estadoVerificacion':
+            $rutas = new Rutas($db);
+            $periodoId = (int) Request::input('periodo_id', 0);
+            if ($periodoId <= 0) {
+                JsonResponse::error('Se requiere el periodo_id.');
+            }
+            $data = $rutas->estadoVerificacion($periodoId);
+            JsonResponse::success('Estado de verificacion consultado.', $data);
+            break;
+
+        case 'rutas.faltantes':
+            $rutas = new Rutas($db);
+            $periodoId = (int) Request::input('periodo_id', 0);
+            $rutaId = (int) Request::input('ruta_id', 0);
+            if ($periodoId <= 0) {
+                JsonResponse::error('Se requiere el periodo_id.');
+            }
+            $data = $rutas->faltantesPorRuta($periodoId, $rutaId);
+            JsonResponse::success('Faltantes consultados correctamente.', ['faltantes' => $data, 'total' => count($data)]);
             break;
 
         case 'padron.importar':
