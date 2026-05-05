@@ -2321,17 +2321,16 @@ $(function () {
 
   // ── Estado de verificacion por ruta ──────────────────────────────────────────
 
-  var estadoRutasData = null; // cache del ultimo resultado consultado
+  var estadoRutasData = null;
+  var estadoRutasPeriodosLoaded = false;
 
   function inicializarModalEstadoRutas() {
     var $modal = $("#modalEstadoRutas");
     if (!$modal.length) { return; }
 
     $modal.on("show.bs.modal", function () {
-      var $sel = $("#estadoRutasPeriodo");
-      hidratarCatalogoPeriodos($sel, obtenerPeriodoActualIdDesdeBootstrap());
-      $sel.find("option[value='']").remove(); // sin opcion "todos" aqui
       mostrarEstadoRutasVacio();
+      cargarPeriodosEstadoRutas();
     });
 
     $("#btnCargarEstadoRutas").on("click", function () {
@@ -2341,6 +2340,10 @@ $(function () {
         return;
       }
       cargarEstadoRutas(periodoId);
+    });
+
+    $("#estadoRutasFiltroTexto").on("input", function () {
+      filtrarTablaEstadoRutas($(this).val());
     });
 
     $("#btnDescargarFaltantesTodas").on("click", function () {
@@ -2358,12 +2361,78 @@ $(function () {
     });
   }
 
+  function cargarPeriodosEstadoRutas() {
+    var $sel = $("#estadoRutasPeriodo");
+    $sel.html('<option value="">Cargando periodos...</option>');
+
+    // Intentar desde bootstrap primero
+    var periodosBootstrap = bootstrapAdminData.periodos && bootstrapAdminData.periodos.periodos
+      ? bootstrapAdminData.periodos.periodos : [];
+
+    if (periodosBootstrap.length) {
+      poblarSelectPeriodosEstado($sel, periodosBootstrap);
+      return;
+    }
+
+    // Si no hay bootstrap, cargar via AJAX
+    $.ajax({
+      url: ajaxUrl,
+      method: "POST",
+      dataType: "json",
+      data: { accion: "periodos.listar", per_page: 0 },
+      success: function (response) {
+        var periodos = (response.data && response.data.periodos) || [];
+        poblarSelectPeriodosEstado($sel, periodos);
+      },
+      error: function () {
+        $sel.html('<option value="">No se pudieron cargar los periodos</option>');
+      }
+    });
+  }
+
+  function poblarSelectPeriodosEstado($sel, periodos) {
+    var periodoActualId = obtenerPeriodoActualIdDesdeBootstrap();
+    var opciones = periodos
+      .filter(function (p) { return String(p.estado || "").toLowerCase() !== "cancelado"; })
+      .map(function (p) {
+        var sel = String(p.periodo_id) === String(periodoActualId) ? " selected" : "";
+        return '<option value="' + p.periodo_id + '"' + sel + '>' + escapeHtml(p.nombre || "Sin nombre") + '</option>';
+      });
+
+    if (!opciones.length) {
+      $sel.html('<option value="">Sin periodos disponibles</option>');
+      return;
+    }
+
+    $sel.html('<option value="">Selecciona un periodo...</option>' + opciones.join(""));
+
+    // Si hay un periodo activo, auto-seleccionarlo
+    if (periodoActualId) {
+      $sel.val(periodoActualId);
+    }
+  }
+
+  function filtrarTablaEstadoRutas(texto) {
+    var filtro = (texto || "").toLowerCase().trim();
+    var hayResultados = false;
+
+    $("#tablaEstadoRutasTbody tr").each(function () {
+      var texto = $(this).text().toLowerCase();
+      var visible = !filtro || texto.indexOf(filtro) !== -1;
+      $(this).toggle(visible);
+      if (visible) { hayResultados = true; }
+    });
+
+    $("#estadoRutasSinResultados").toggleClass("d-none", hayResultados || !filtro);
+  }
+
   function mostrarEstadoRutasVacio() {
     $("#estadoRutasResumen").addClass("d-none");
     $("#estadoRutasTablaWrap").addClass("d-none");
     $("#estadoRutasCargando").addClass("d-none");
     $("#btnDescargarFaltantesTodas").addClass("d-none");
     $("#estadoRutasVacio").removeClass("d-none");
+    $("#estadoRutasFiltroTexto").val("");
     estadoRutasData = null;
   }
 

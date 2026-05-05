@@ -9,26 +9,32 @@
       </div>
 
       <div class="modal-body">
+        <!-- Filtros -->
         <div class="form-row align-items-end mb-3">
-          <div class="col-md-5">
+          <div class="col-md-4 mb-2 mb-md-0">
             <label for="estadoRutasPeriodo" class="mb-1">Periodo bimestral</label>
             <select id="estadoRutasPeriodo" class="form-control">
               <option value="">Cargando periodos...</option>
             </select>
           </div>
-          <div class="col-md-7 mt-2 mt-md-0 d-flex align-items-end">
+          <div class="col-md-3 mb-2 mb-md-0">
+            <label for="estadoRutasFiltroTexto" class="mb-1">Filtrar ruta</label>
+            <input type="text" id="estadoRutasFiltroTexto" class="form-control" placeholder="Nombre o codigo...">
+          </div>
+          <div class="col-md-5 mt-2 mt-md-0 d-flex align-items-end">
             <button type="button" class="btn btn-success mr-2" id="btnCargarEstadoRutas">
               <i class="fas fa-search mr-1"></i> Consultar
             </button>
             <button type="button" class="btn btn-outline-secondary d-none" id="btnDescargarFaltantesTodas">
-              <i class="fas fa-download mr-1"></i> CSV — Todos los faltantes
+              <i class="fas fa-download mr-1"></i> CSV todos los faltantes
             </button>
           </div>
         </div>
 
+        <!-- Resumen general -->
         <div id="estadoRutasResumen" class="d-none mb-3">
           <div class="row text-center">
-            <div class="col-md-3 col-6 mb-2">
+            <div class="col-6 col-md-3 mb-2">
               <div class="info-box mb-0">
                 <span class="info-box-icon bg-info"><i class="fas fa-home"></i></span>
                 <div class="info-box-content">
@@ -37,7 +43,7 @@
                 </div>
               </div>
             </div>
-            <div class="col-md-3 col-6 mb-2">
+            <div class="col-6 col-md-3 mb-2">
               <div class="info-box mb-0">
                 <span class="info-box-icon bg-success"><i class="fas fa-check-circle"></i></span>
                 <div class="info-box-content">
@@ -46,7 +52,7 @@
                 </div>
               </div>
             </div>
-            <div class="col-md-3 col-6 mb-2">
+            <div class="col-6 col-md-3 mb-2">
               <div class="info-box mb-0">
                 <span class="info-box-icon bg-warning"><i class="fas fa-exclamation-circle"></i></span>
                 <div class="info-box-content">
@@ -55,7 +61,7 @@
                 </div>
               </div>
             </div>
-            <div class="col-md-3 col-6 mb-2">
+            <div class="col-6 col-md-3 mb-2">
               <div class="info-box mb-0">
                 <span class="info-box-icon bg-primary"><i class="fas fa-percentage"></i></span>
                 <div class="info-box-content">
@@ -67,6 +73,7 @@
           </div>
         </div>
 
+        <!-- Tabla por ruta -->
         <div id="estadoRutasTablaWrap" class="d-none">
           <div class="table-responsive">
             <table class="table table-hover table-sm mb-0" id="tablaEstadoRutas">
@@ -80,13 +87,16 @@
                   <th class="text-right">Acciones</th>
                 </tr>
               </thead>
-              <tbody id="tablaEstadoRutasTbody">
-              </tbody>
+              <tbody id="tablaEstadoRutasTbody"></tbody>
             </table>
+          </div>
+          <div class="text-center text-muted py-2 d-none" id="estadoRutasSinResultados">
+            <small>Ninguna ruta coincide con el filtro.</small>
           </div>
         </div>
 
-        <div id="estadoRutasVacio" class="text-center text-muted py-5 d-none">
+        <!-- Estados vacío / cargando -->
+        <div id="estadoRutasVacio" class="text-center text-muted py-5">
           <i class="fas fa-search fa-2x mb-2"></i><br>
           Selecciona un periodo y haz clic en <strong>Consultar</strong>.
         </div>
