@@ -114,17 +114,24 @@ class Medidores
                 break;
             default:
                 $where = "WHERE (
-                    CAST(m.id AS CHAR) LIKE :buscar
-                    OR m.numero LIKE :buscar
-                    OR u.nombre LIKE :buscar
-                    OR d.ruta LIKE :buscar
-                    OR c.nombre LIKE :buscar
-                    OR REPLACE(m.estado, '_', ' ') LIKE :buscar
+                    CAST(m.id AS CHAR) LIKE :buscar1
+                    OR m.numero LIKE :buscar2
+                    OR u.nombre LIKE :buscar3
+                    OR d.ruta LIKE :buscar4
+                    OR c.nombre LIKE :buscar5
+                    OR REPLACE(m.estado, '_', ' ') LIKE :buscar6
                 )";
                 break;
         }
 
-        $params['buscar'] = '%' . $buscar . '%';
+        $b = '%' . $buscar . '%';
+        $params['buscar'] = $b;
+        $params['buscar1'] = $b;
+        $params['buscar2'] = $b;
+        $params['buscar3'] = $b;
+        $params['buscar4'] = $b;
+        $params['buscar5'] = $b;
+        $params['buscar6'] = $b;
 
         return [$where, $params];
     }
