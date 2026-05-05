@@ -109,17 +109,24 @@ class Rutas
                 break;
             default:
                 $where = "WHERE (
-                    CAST(r.id AS CHAR) LIKE :buscar
-                    OR r.codigo LIKE :buscar
-                    OR r.nombre LIKE :buscar
-                    OR c.nombre LIKE :buscar
-                    OR r.descripcion LIKE :buscar
-                    OR CASE WHEN r.activo = 1 THEN 'activa' ELSE 'baja' END LIKE :buscar
+                    CAST(r.id AS CHAR) LIKE :buscar1
+                    OR r.codigo LIKE :buscar2
+                    OR r.nombre LIKE :buscar3
+                    OR c.nombre LIKE :buscar4
+                    OR r.descripcion LIKE :buscar5
+                    OR CASE WHEN r.activo = 1 THEN 'activa' ELSE 'baja' END LIKE :buscar6
                 )";
                 break;
         }
 
-        $params['buscar'] = '%' . $buscar . '%';
+        $b = '%' . $buscar . '%';
+        $params['buscar'] = $b;
+        $params['buscar1'] = $b;
+        $params['buscar2'] = $b;
+        $params['buscar3'] = $b;
+        $params['buscar4'] = $b;
+        $params['buscar5'] = $b;
+        $params['buscar6'] = $b;
 
         return [$where, $params];
     }
