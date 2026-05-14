@@ -32,7 +32,7 @@
       "direccion_3": { "x": 295, "y": 710, "width": 790, "fontSize": 19 },
       "direccion_4": { "x": 295, "y": 754, "width": 790, "fontSize": 19 },
 
-      "medidor": { "x": 1262, "y": 510, "width": 238, "fontSize": 18 },
+      "medidor": { "x": 1100, "y": 510, "width": 490, "fontSize": 14 },
       "lectura_anterior": { "x": 1360, "y": 570, "width": 140, "fontSize": 18 },
       "lectura_actual": { "x": 1360, "y": 630, "width": 140, "fontSize": 18 },
       "consumo_m3": { "x": 1360, "y": 690, "width": 140, "fontSize": 18 },
@@ -58,10 +58,10 @@
 
       "observaciones": { "x": 92, "y": 1398, "width": 690, "fontSize": 19 },
 
-      "stub_usuario": { "x": 92, "y": 1842, "width": 640, "fontSize": 18 },
-      "stub_medidor": { "x": 740, "y": 1842, "width": 430, "fontSize": 18 },
-      "stub_aviso": { "x": 1180, "y": 1842, "width": 220, "fontSize": 18 },
-      "stub_ruta": { "x": 92, "y": 1892, "width": 1350, "fontSize": 18 },
+      "stub_usuario": { "x": 92, "y": 1842, "width": 640, "fontSize": 14 },
+      "stub_medidor": { "x": 740, "y": 1842, "width": 430, "fontSize": 14 },
+      "stub_aviso": { "x": 1180, "y": 1842, "width": 220, "fontSize": 14 },
+      "stub_ruta": { "x": 92, "y": 1892, "width": 1350, "fontSize": 14 },
 
       "stub_mov1_desc": { "x": 92, "y": 1988, "width": 574, "fontSize": 17 },
       "stub_mov1_signo": { "x": 668, "y": 1988, "width": 34, "fontSize": 17 },
