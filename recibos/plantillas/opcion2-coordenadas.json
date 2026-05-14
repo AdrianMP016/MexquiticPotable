@@ -19,7 +19,7 @@
     "fontFamily": "Arial, sans-serif",
     "offsetX": 20,
     "offsetY": 36,
-    "qr": { "x": 1420, "y": 2340, "size": 170 },
+    "qr": { "x": 1455, "y": 2344, "size": 170 },
     "fields": {
       "aviso_recibo": { "x": 1036, "y": 182, "width": 140 },
       "fecha_limite_pago": { "x": 866, "y": 284, "width": 326 },
