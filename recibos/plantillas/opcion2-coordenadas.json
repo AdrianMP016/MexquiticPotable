@@ -32,11 +32,11 @@
       "direccion_3": { "x": 295, "y": 710, "width": 790, "fontSize": 19 },
       "direccion_4": { "x": 295, "y": 754, "width": 790, "fontSize": 19 },
 
-      "medidor": { "x": 1262, "y": 430, "width": 238, "fontSize": 18 },
-      "lectura_anterior": { "x": 1360, "y": 490, "width": 140, "fontSize": 18 },
-      "lectura_actual": { "x": 1360, "y": 550, "width": 140, "fontSize": 18 },
-      "consumo_m3": { "x": 1360, "y": 610, "width": 140, "fontSize": 18 },
-      "tarifa": { "x": 1252, "y": 670, "width": 248, "fontSize": 18 },
+      "medidor": { "x": 1262, "y": 510, "width": 238, "fontSize": 18 },
+      "lectura_anterior": { "x": 1360, "y": 570, "width": 140, "fontSize": 18 },
+      "lectura_actual": { "x": 1360, "y": 630, "width": 140, "fontSize": 18 },
+      "consumo_m3": { "x": 1360, "y": 690, "width": 140, "fontSize": 18 },
+      "tarifa": { "x": 1252, "y": 750, "width": 248, "fontSize": 18 },
 
       "mov1_desc": { "x": 96, "y": 818, "width": 590, "fontSize": 18 },
       "mov1_signo": { "x": 688, "y": 818, "width": 38, "fontSize": 18 },
