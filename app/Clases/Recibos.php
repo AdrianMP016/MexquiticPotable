@@ -11,6 +11,7 @@ class Recibos
     private string $outputDir;
     private string $qrSecret;
     private ?CobroAgua $cobroAgua = null;
+    private array $qrCache = [];
 
     public function __construct(PDO $db)
     {
@@ -269,6 +270,8 @@ class Recibos
 
     public function previsualizarPeriodo(array $input): array
     {
+        set_time_limit(0);
+        $this->qrCache = [];
         $periodoId = (int) ($input['periodo_id'] ?? 0);
         $data = $this->normalizarRecibo($input);
         $errors = $this->validarRecibo($data, false);
@@ -1567,6 +1570,11 @@ class Recibos
             ],
         ]);
 
+        $cacheKey = $token . '|' . $size;
+        if (isset($this->qrCache[$cacheKey])) {
+            return @imagecreatefromstring($this->qrCache[$cacheKey]);
+        }
+
         foreach ($providers as $url) {
             $binary = @file_get_contents($url, false, $context);
             if ($binary === false || $binary === '') {
@@ -1575,6 +1583,7 @@ class Recibos
 
             $img = @imagecreatefromstring($binary);
             if ($img !== false) {
+                $this->qrCache[$cacheKey] = $binary;
                 return $img;
             }
         }
