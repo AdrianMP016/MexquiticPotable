@@ -3999,6 +3999,7 @@ $(function () {
   }
 
   function prepararPreviewRecibosPeriodo() {
+    const LOTE = 5;
     const periodoId = $("#previewPeriodoId").val();
     const periodoTexto = $("#previewPeriodoId option:selected").text() || "Sin periodo";
 
@@ -4007,52 +4008,82 @@ $(function () {
       return;
     }
 
-    $.ajax({
-      url: ajaxUrl,
-      method: "POST",
-      dataType: "json",
-      data: obtenerConfiguracionPreviewRecibos(),
-      beforeSend: function () {
-        showPreviewRecibosPeriodoFeedback("info", "Preparando vista previa del periodo seleccionado...");
-        $("#previewRecibosPeriodoEstado").text("Generando y actualizando los recibos del periodo " + periodoTexto + "...");
-        $("#tablaPreviewRecibosPeriodo tbody").html('<tr><td colspan="5" class="text-center text-muted py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Preparando recibos...</td></tr>');
-        $("#btnPrepararPreviewRecibosPeriodo").prop("disabled", true);
-        $("#btnImprimirTodosRecibosPeriodo").prop("disabled", true);
-        $("#btnEnviarTodosWhatsAppPeriodo").prop("disabled", true);
-      },
-      success: function (response) {
-        const data = response.data || {};
-        colaPreviewRecibosPeriodo = data.recibos || [];
-        renderPreviewRecibosPeriodo(colaPreviewRecibosPeriodo);
-        $("#previewRecibosPeriodoResumen").html([
-          '<div class="recibo-summary-title">Periodo ' + escapeHtml(data.periodo || periodoTexto) + '</div>',
-          '<div class="recibo-summary-grid">',
-          '<span>Total listos <strong>' + numberFormat(data.total || 0) + '</strong></span>',
-          '<span>Nuevos <strong>' + numberFormat(data.insertados || 0) + '</strong></span>',
-          '<span>Actualizados <strong>' + numberFormat(data.actualizados || 0) + '</strong></span>',
-          '<span>Omitidos <strong>' + numberFormat(data.omitidos || 0) + '</strong></span>',
-          '</div>'
-        ].join(""));
-        $("#previewRecibosPeriodoEstado").text("Vista previa lista. Puedes imprimir todo el lote o sacar solo los recibos que falten.");
+    colaPreviewRecibosPeriodo = [];
+    let acumInsertados = 0;
+    let acumActualizados = 0;
+    let acumOmitidos = 0;
+    let periodoNombre = periodoTexto;
 
-        if (Number(data.omitidos || 0) > 0) {
-          showPreviewRecibosPeriodoFeedback("warning", "Se prepararon " + numberFormat(data.total || 0) + " recibos y se omitieron " + numberFormat(data.omitidos || 0) + " registros. Revisa los faltantes antes de imprimir.");
-        } else {
-          showPreviewRecibosPeriodoFeedback("success", response.message || "Vista previa preparada correctamente.");
+    $("#tablaPreviewRecibosPeriodo tbody").html('<tr><td colspan="5" class="text-center text-muted py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Iniciando preparacion...</td></tr>');
+    $("#btnPrepararPreviewRecibosPeriodo").prop("disabled", true);
+    $("#btnImprimirTodosRecibosPeriodo").prop("disabled", true);
+    $("#btnEnviarTodosWhatsAppPeriodo").prop("disabled", true);
+    showPreviewRecibosPeriodoFeedback("info", "Preparando recibos del periodo seleccionado...");
+
+    function procesarLote(offset) {
+      const params = obtenerConfiguracionPreviewRecibos();
+      params.offset = offset;
+      params.limit = LOTE;
+
+      $.ajax({
+        url: ajaxUrl,
+        method: "POST",
+        dataType: "json",
+        data: params,
+        success: function (response) {
+          const data = response.data || {};
+          const loteRecibos = data.recibos || [];
+          const totalLecturas = Number(data.total_lecturas || 0);
+
+          acumInsertados += Number(data.insertados || 0);
+          acumActualizados += Number(data.actualizados || 0);
+          acumOmitidos += Number(data.omitidos || 0);
+          periodoNombre = data.periodo || periodoNombre;
+
+          colaPreviewRecibosPeriodo = colaPreviewRecibosPeriodo.concat(loteRecibos);
+          renderPreviewRecibosPeriodo(colaPreviewRecibosPeriodo);
+
+          const procesados = acumInsertados + acumActualizados + acumOmitidos;
+          const progreso = totalLecturas > 0 ? Math.min(100, Math.round((procesados / totalLecturas) * 100)) : 100;
+          $("#previewRecibosPeriodoEstado").text("Generando recibos: " + procesados + " de " + totalLecturas + " (" + progreso + "%)...");
+          showPreviewRecibosPeriodoFeedback("info", "Procesados " + procesados + " de " + totalLecturas + " recibos...");
+
+          if (data.has_more) {
+            procesarLote(offset + LOTE);
+          } else {
+            terminarPreparacion(periodoNombre, acumInsertados, acumActualizados, acumOmitidos);
+          }
+        },
+        error: function (xhr) {
+          $("#previewRecibosPeriodoEstado").text("Error al preparar la vista previa.");
+          showPreviewRecibosPeriodoFeedback("danger", extractAjaxMessage(xhr, "No se pudo preparar la vista previa de recibos."));
+          if (!colaPreviewRecibosPeriodo.length) renderPreviewRecibosPeriodo([]);
+          $("#btnPrepararPreviewRecibosPeriodo").prop("disabled", false);
         }
+      });
+    }
 
-        cargarLecturas();
-      },
-      error: function (xhr) {
-        colaPreviewRecibosPeriodo = [];
-        renderPreviewRecibosPeriodo([]);
-        $("#previewRecibosPeriodoEstado").text("No fue posible preparar la vista previa del periodo seleccionado.");
-        showPreviewRecibosPeriodoFeedback("danger", extractAjaxMessage(xhr, "No se pudo preparar la vista previa de recibos."));
-      },
-      complete: function () {
-        $("#btnPrepararPreviewRecibosPeriodo").prop("disabled", false);
+    function terminarPreparacion(periodo, insertados, actualizados, omitidos) {
+      $("#previewRecibosPeriodoResumen").html([
+        '<div class="recibo-summary-title">Periodo ' + escapeHtml(periodo) + '</div>',
+        '<div class="recibo-summary-grid">',
+        '<span>Total listos <strong>' + numberFormat(colaPreviewRecibosPeriodo.length) + '</strong></span>',
+        '<span>Nuevos <strong>' + numberFormat(insertados) + '</strong></span>',
+        '<span>Actualizados <strong>' + numberFormat(actualizados) + '</strong></span>',
+        '<span>Omitidos <strong>' + numberFormat(omitidos) + '</strong></span>',
+        '</div>'
+      ].join(""));
+      $("#previewRecibosPeriodoEstado").text("Vista previa lista. Puedes imprimir todo el lote o sacar solo los recibos que falten.");
+      if (omitidos > 0) {
+        showPreviewRecibosPeriodoFeedback("warning", "Se prepararon " + numberFormat(colaPreviewRecibosPeriodo.length) + " recibos y se omitieron " + numberFormat(omitidos) + " registros.");
+      } else {
+        showPreviewRecibosPeriodoFeedback("success", "Vista previa preparada correctamente.");
       }
-    });
+      $("#btnPrepararPreviewRecibosPeriodo").prop("disabled", false);
+      cargarLecturas();
+    }
+
+    procesarLote(0);
   }
 
   function iniciarEnvioMasivoWhatsApp() {

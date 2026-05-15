@@ -270,9 +270,11 @@ class Recibos
 
     public function previsualizarPeriodo(array $input): array
     {
-        set_time_limit(0);
+        set_time_limit(120);
         $this->qrCache = [];
         $periodoId = (int) ($input['periodo_id'] ?? 0);
+        $offset    = max(0, (int) ($input['offset'] ?? 0));
+        $limit     = max(1, (int) ($input['limit'] ?? 5));
         $data = $this->normalizarRecibo($input);
         $errors = $this->validarRecibo($data, false);
 
@@ -284,21 +286,27 @@ class Recibos
             throw new InvalidArgumentException(json_encode($errors, JSON_UNESCAPED_UNICODE));
         }
 
-        $lecturas = $this->obtenerLecturasPorPeriodo($periodoId);
+        $todasLasLecturas = $this->obtenerLecturasPorPeriodo($periodoId);
+        $totalLecturas = count($todasLasLecturas);
 
-        if (empty($lecturas)) {
+        if ($totalLecturas === 0) {
             return [
-                'periodo_id' => $periodoId,
-                'periodo' => '',
-                'total' => 0,
-                'insertados' => 0,
-                'actualizados' => 0,
-                'omitidos' => 0,
-                'recibos' => [],
-                'errores' => [],
+                'periodo_id'     => $periodoId,
+                'periodo'        => '',
+                'total'          => 0,
+                'total_lecturas' => 0,
+                'offset'         => $offset,
+                'limit'          => $limit,
+                'has_more'       => false,
+                'insertados'     => 0,
+                'actualizados'   => 0,
+                'omitidos'       => 0,
+                'recibos'        => [],
+                'errores'        => [],
             ];
         }
 
+        $lecturas = array_slice($todasLasLecturas, $offset, $limit);
         $insertados = 0;
         $actualizados = 0;
         $omitidos = 0;
@@ -331,25 +339,25 @@ class Recibos
                 $omitidos++;
                 $errores[] = [
                     'lectura_id' => (int) ($lectura['lectura_id'] ?? 0),
-                    'usuario' => (string) ($lectura['usuario'] ?? 'Sin usuario'),
-                    'detalle' => $exception->getMessage(),
+                    'usuario'    => (string) ($lectura['usuario'] ?? 'Sin usuario'),
+                    'detalle'    => $exception->getMessage(),
                 ];
             }
         }
 
-        usort($recibos, static function (array $a, array $b): int {
-            return strcasecmp((string) ($a['usuario'] ?? ''), (string) ($b['usuario'] ?? ''));
-        });
-
         return [
-            'periodo_id' => $periodoId,
-            'periodo' => (string) ($lecturas[0]['periodo'] ?? ''),
-            'total' => count($recibos),
-            'insertados' => $insertados,
-            'actualizados' => $actualizados,
-            'omitidos' => $omitidos,
-            'recibos' => $recibos,
-            'errores' => $errores,
+            'periodo_id'     => $periodoId,
+            'periodo'        => (string) ($todasLasLecturas[0]['periodo'] ?? ''),
+            'total'          => count($recibos),
+            'total_lecturas' => $totalLecturas,
+            'offset'         => $offset,
+            'limit'          => $limit,
+            'has_more'       => ($offset + $limit) < $totalLecturas,
+            'insertados'     => $insertados,
+            'actualizados'   => $actualizados,
+            'omitidos'       => $omitidos,
+            'recibos'        => $recibos,
+            'errores'        => $errores,
         ];
     }
 
