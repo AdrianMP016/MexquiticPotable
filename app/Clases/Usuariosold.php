@@ -472,15 +472,15 @@ class Usuarios
 
     private function validarDuplicados(array $data, int $usuarioIdExcluir = 0, int $medidorIdExcluir = 0): void
     {
-        //$stmt = $this->db->prepare('SELECT id FROM usuarios_servicio WHERE whatsapp = :whatsapp AND id <> :id LIMIT 1');
-        //$stmt->execute([
-        //    'whatsapp' => $data['whatsapp'],
-        //    'id' => $usuarioIdExcluir,
-        //]);
+        $stmt = $this->db->prepare('SELECT id FROM usuarios_servicio WHERE whatsapp = :whatsapp AND id <> :id LIMIT 1');
+        $stmt->execute([
+            'whatsapp' => $data['whatsapp'],
+            'id' => $usuarioIdExcluir,
+        ]);
 
-        //if ($stmt->fetch()) {
-        //    throw new RuntimeException('Ya existe un usuario registrado con ese numero de WhatsApp.');
-        //}
+        if ($stmt->fetch()) {
+            throw new RuntimeException('Ya existe un usuario registrado con ese numero de WhatsApp.');
+        }
 
         $stmt = $this->db->prepare(
             'SELECT id FROM usuarios_servicio WHERE nombre = :nombre AND ruta_id = :ruta_id AND id <> :id LIMIT 1'

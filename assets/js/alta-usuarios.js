@@ -33,6 +33,9 @@ $(function () {
   let envioMasivoActivo = false;
   let temporizadorNotificacionMasiva = null;
   let colaPreviewRecibosPeriodo = [];
+  let enviandoMasivoWhatsApp = false;
+  let indiceEnvioMasivoWhatsApp = 0;
+  let temporizadorEnvioMasivoWhatsApp = null;
   let sistemaUsuariosPaginaActual = 1;
   let sistemaUsuariosPorPaginaActual = 25;
   let sistemaUsuariosTotalPaginas = 1;
@@ -3926,8 +3929,9 @@ $(function () {
     const $tbody = $("#tablaPreviewRecibosPeriodo tbody");
 
     if (!items.length) {
-      $tbody.html('<tr><td colspan="4" class="text-center text-muted py-4">Aun no hay recibos preparados para imprimir.</td></tr>');
+      $tbody.html('<tr><td colspan="5" class="text-center text-muted py-4">Aun no hay recibos preparados para imprimir.</td></tr>');
       $("#btnImprimirTodosRecibosPeriodo").prop("disabled", true);
+      $("#btnEnviarTodosWhatsAppPeriodo").prop("disabled", true);
       return;
     }
 
@@ -3936,12 +3940,16 @@ $(function () {
       const preview = imageUrl
         ? '<img src="' + escapeHtml(imageUrl) + '" alt="Recibo ' + escapeHtml(item.folio || "") + '" style="max-width:120px;width:100%;height:auto;border:1px solid #d6e2f5;border-radius:8px;">'
         : '<span class="text-muted">Sin imagen</span>';
+      const whatsappBadge = item.whatsapp && item.recibo_id
+        ? '<span class="badge badge-secondary whatsapp-estado-fila" data-recibo-id="' + escapeHtml(String(item.recibo_id)) + '"><i class="fas fa-clock mr-1"></i>Pendiente</span>'
+        : '<span class="badge badge-light text-muted"><i class="fas fa-ban mr-1"></i>Sin WhatsApp</span>';
 
       return [
         '<tr>',
         '<td><strong>' + escapeHtml(item.usuario || "Sin usuario") + '</strong><br><small class="text-muted">' + escapeHtml(item.medidor || "Sin medidor") + ' | ' + escapeHtml(item.ruta || "Sin ruta") + '</small></td>',
         '<td><strong>' + escapeHtml(item.folio || "Sin folio") + '</strong><br><small class="text-muted">' + escapeHtml(item.periodo || "Sin periodo") + '</small><br><small class="text-muted">Total ' + money(item.total || 0) + '</small></td>',
         '<td>' + preview + '</td>',
+        '<td>' + whatsappBadge + '</td>',
         '<td class="text-right"><div class="table-actions justify-content-end"><a class="btn btn-sm btn-outline-info" target="_blank" href="' + escapeHtml(imageUrl || "#") + '"><i class="fas fa-image mr-1"></i> Abrir</a><button type="button" class="btn btn-sm btn-outline-primary btn-imprimir-preview-recibo" data-index="' + index + '" data-lectura-id="' + item.lectura_id + '"><i class="fas fa-print mr-1"></i> Imprimir</button></div></td>',
         '</tr>'
       ].join("");
@@ -3949,13 +3957,22 @@ $(function () {
 
     $tbody.html(rows);
     $("#btnImprimirTodosRecibosPeriodo").prop("disabled", false);
+    const tieneWhatsApp = items.some(function (i) { return i.whatsapp && i.recibo_id; });
+    $("#btnEnviarTodosWhatsAppPeriodo").prop("disabled", !tieneWhatsApp);
   }
 
   function reiniciarPreviewRecibosPeriodo() {
+    enviandoMasivoWhatsApp = false;
+    if (temporizadorEnvioMasivoWhatsApp) {
+      clearTimeout(temporizadorEnvioMasivoWhatsApp);
+      temporizadorEnvioMasivoWhatsApp = null;
+    }
     colaPreviewRecibosPeriodo = [];
     $("#previewRecibosPeriodoFeedback").addClass("d-none");
     $("#previewRecibosPeriodoEstado").text("Prepara la vista previa para generar o actualizar los recibos del periodo seleccionado.");
     $("#previewRecibosPeriodoResumen").html('<div class="text-muted">Selecciona un periodo en el filtro superior para preparar la impresion masiva.</div>');
+    $("#btnDetenerEnvioWhatsAppPeriodo").addClass("d-none");
+    $("#btnEnviarTodosWhatsAppPeriodo").removeClass("d-none").prop("disabled", true);
     renderPreviewRecibosPeriodo([]);
   }
 
@@ -3998,9 +4015,10 @@ $(function () {
       beforeSend: function () {
         showPreviewRecibosPeriodoFeedback("info", "Preparando vista previa del periodo seleccionado...");
         $("#previewRecibosPeriodoEstado").text("Generando y actualizando los recibos del periodo " + periodoTexto + "...");
-        $("#tablaPreviewRecibosPeriodo tbody").html('<tr><td colspan="4" class="text-center text-muted py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Preparando recibos...</td></tr>');
+        $("#tablaPreviewRecibosPeriodo tbody").html('<tr><td colspan="5" class="text-center text-muted py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Preparando recibos...</td></tr>');
         $("#btnPrepararPreviewRecibosPeriodo").prop("disabled", true);
         $("#btnImprimirTodosRecibosPeriodo").prop("disabled", true);
+        $("#btnEnviarTodosWhatsAppPeriodo").prop("disabled", true);
       },
       success: function (response) {
         const data = response.data || {};
@@ -4035,6 +4053,109 @@ $(function () {
         $("#btnPrepararPreviewRecibosPeriodo").prop("disabled", false);
       }
     });
+  }
+
+  function iniciarEnvioMasivoWhatsApp() {
+    const cola = colaPreviewRecibosPeriodo.filter(function (item) {
+      return item.recibo_id && item.whatsapp;
+    });
+
+    if (!cola.length) {
+      showPreviewRecibosPeriodoFeedback("warning", "No hay recibos con WhatsApp registrado para enviar.");
+      return;
+    }
+
+    if (!confirm("Se enviaran " + cola.length + " recibos por WhatsApp con un intervalo de 8 segundos entre cada envio. ¿Deseas continuar?")) {
+      return;
+    }
+
+    enviandoMasivoWhatsApp = true;
+    indiceEnvioMasivoWhatsApp = 0;
+    $("#btnEnviarTodosWhatsAppPeriodo").addClass("d-none");
+    $("#btnDetenerEnvioWhatsAppPeriodo").removeClass("d-none");
+    procesarSiguienteEnvioMasivoWhatsApp();
+  }
+
+  function procesarSiguienteEnvioMasivoWhatsApp() {
+    if (!enviandoMasivoWhatsApp) return;
+
+    const cola = colaPreviewRecibosPeriodo.filter(function (item) {
+      return item.recibo_id && item.whatsapp;
+    });
+
+    if (indiceEnvioMasivoWhatsApp >= cola.length) {
+      finalizarEnvioMasivoWhatsApp("success", "Envio masivo completado. Se enviaron " + cola.length + " recibos por WhatsApp.");
+      return;
+    }
+
+    const item = cola[indiceEnvioMasivoWhatsApp];
+    const progreso = (indiceEnvioMasivoWhatsApp + 1) + " de " + cola.length;
+
+    showPreviewRecibosPeriodoFeedback("info", "Enviando " + progreso + ": " + escapeHtml(item.usuario || "") + "...");
+    actualizarEstadoWhatsAppFila(item.recibo_id, "enviando");
+
+    $.ajax({
+      url: ajaxUrl,
+      method: "POST",
+      dataType: "json",
+      data: {
+        accion: "recibos.enviarWhatsApp",
+        recibo_id: item.recibo_id
+      },
+      success: function () {
+        actualizarEstadoWhatsAppFila(item.recibo_id, "enviado");
+      },
+      error: function (xhr) {
+        actualizarEstadoWhatsAppFila(item.recibo_id, "error", extractAjaxMessage(xhr));
+      },
+      complete: function () {
+        indiceEnvioMasivoWhatsApp++;
+        if (!enviandoMasivoWhatsApp) return;
+        if (indiceEnvioMasivoWhatsApp >= cola.length) {
+          finalizarEnvioMasivoWhatsApp("success", "Envio masivo completado. Se enviaron " + cola.length + " recibos por WhatsApp.");
+        } else {
+          temporizadorEnvioMasivoWhatsApp = setTimeout(procesarSiguienteEnvioMasivoWhatsApp, 8000);
+        }
+      }
+    });
+  }
+
+  function detenerEnvioMasivoWhatsApp() {
+    enviandoMasivoWhatsApp = false;
+    if (temporizadorEnvioMasivoWhatsApp) {
+      clearTimeout(temporizadorEnvioMasivoWhatsApp);
+      temporizadorEnvioMasivoWhatsApp = null;
+    }
+    const cola = colaPreviewRecibosPeriodo.filter(function (item) {
+      return item.recibo_id && item.whatsapp;
+    });
+    finalizarEnvioMasivoWhatsApp("warning", "Envio detenido. Se procesaron " + indiceEnvioMasivoWhatsApp + " de " + cola.length + " recibos.");
+  }
+
+  function finalizarEnvioMasivoWhatsApp(tipo, mensaje) {
+    enviandoMasivoWhatsApp = false;
+    if (temporizadorEnvioMasivoWhatsApp) {
+      clearTimeout(temporizadorEnvioMasivoWhatsApp);
+      temporizadorEnvioMasivoWhatsApp = null;
+    }
+    showPreviewRecibosPeriodoFeedback(tipo, mensaje);
+    $("#btnDetenerEnvioWhatsAppPeriodo").addClass("d-none");
+    $("#btnEnviarTodosWhatsAppPeriodo").removeClass("d-none").prop("disabled", false);
+    cargarPanelWhatsapp();
+  }
+
+  function actualizarEstadoWhatsAppFila(reciboId, estado, mensajeError) {
+    var badge;
+    if (estado === "enviando") {
+      badge = '<span class="badge badge-info whatsapp-estado-fila" data-recibo-id="' + reciboId + '"><i class="fas fa-spinner fa-spin mr-1"></i>Enviando...</span>';
+    } else if (estado === "enviado") {
+      badge = '<span class="badge badge-success whatsapp-estado-fila" data-recibo-id="' + reciboId + '"><i class="fab fa-whatsapp mr-1"></i>Enviado</span>';
+    } else if (estado === "error") {
+      badge = '<span class="badge badge-danger whatsapp-estado-fila" data-recibo-id="' + reciboId + '" title="' + escapeHtml(mensajeError || "Error al enviar") + '"><i class="fas fa-exclamation-triangle mr-1"></i>Error</span>';
+    } else {
+      badge = '<span class="badge badge-secondary whatsapp-estado-fila" data-recibo-id="' + reciboId + '"><i class="fas fa-clock mr-1"></i>Pendiente</span>';
+    }
+    $(".whatsapp-estado-fila[data-recibo-id='" + reciboId + "']").replaceWith(badge);
   }
 
   function llenarModalRecibo(lectura) {
@@ -4655,6 +4776,16 @@ $(function () {
         actualizarBotonEnvioRecibo();
       }
     });
+  });
+
+  $("#btnEnviarTodosWhatsAppPeriodo").on("click", function () {
+    iniciarEnvioMasivoWhatsApp();
+  });
+
+  $("#btnDetenerEnvioWhatsAppPeriodo").on("click", function () {
+    if (confirm("¿Deseas detener el envio masivo de recibos por WhatsApp?")) {
+      detenerEnvioMasivoWhatsApp();
+    }
   });
 
   $(document).on("click", ".btn-registrar-pago", function () {
