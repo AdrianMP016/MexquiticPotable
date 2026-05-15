@@ -4202,9 +4202,12 @@ $(function () {
     $("#btnImprimirReciboActual").addClass("d-none").prop("disabled", true).removeAttr("data-lectura-id data-folio data-usuario");
     $("#btnEnviarReciboWhatsapp").prop("disabled", true).removeAttr("data-recibo-id").attr("title", "Primero genera la imagen del recibo");
     $("#reciboLecturaId").val(lectura.lectura_id);
-    $("#reciboCooperaciones").val(numberFormat(Number(lectura.cooperaciones || cobroConfig.cooperacion_default || 0), 2));
-    $("#reciboMultas").val(numberFormat(Number(lectura.multas || cobroConfig.multa_default || 0), 2));
-    $("#reciboRecargos").val(numberFormat(Number(lectura.recargos || cobroConfig.recargo_default || 0), 2));
+    const _valCoop = parseFloat(lectura.cooperaciones) || 0;
+    const _valMult = parseFloat(lectura.multas) || 0;
+    const _valRec  = parseFloat(lectura.recargos) || 0;
+    $("#reciboCooperaciones").val(numberFormat(_valCoop > 0 ? _valCoop : (cobroConfig.cooperacion_default || 0), 2));
+    $("#reciboMultas").val(numberFormat(_valMult > 0 ? _valMult : (cobroConfig.multa_default || 0), 2));
+    $("#reciboRecargos").val(numberFormat(_valRec > 0 ? _valRec : (cobroConfig.recargo_default || 0), 2));
     $("#reciboMetodoPago").val("Caja de cobro del sistema de agua");
     $("#reciboReferenciaPago").val("Presentar este recibo al realizar el pago");
     $("#reciboFechaLimite").val(lectura.fecha_vencimiento || dateInputValue(addDays(new Date(), 7)));
