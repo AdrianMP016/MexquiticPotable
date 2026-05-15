@@ -4100,7 +4100,7 @@ $(function () {
       return;
     }
 
-    if (!confirm("Se enviaran " + cola.length + " recibos por WhatsApp con un intervalo de 8 segundos entre cada envio. ¿Deseas continuar?")) {
+    if (!confirm("Se enviaran " + cola.length + " recibos por WhatsApp con un intervalo de 15 segundos entre cada envio.\n\nRecomendacion: no mas de 100 envios por sesion para evitar bloqueos.\n\n¿Deseas continuar?")) {
       return;
     }
 
@@ -4149,7 +4149,8 @@ $(function () {
         if (indiceEnvioMasivoWhatsApp >= cola.length) {
           finalizarEnvioMasivoWhatsApp("success", "Envio masivo completado. Se enviaron " + cola.length + " recibos por WhatsApp.");
         } else {
-          temporizadorEnvioMasivoWhatsApp = setTimeout(procesarSiguienteEnvioMasivoWhatsApp, 8000);
+          var jitter = Math.floor(Math.random() * 6000); // 0–6s extra aleatorio
+          temporizadorEnvioMasivoWhatsApp = setTimeout(procesarSiguienteEnvioMasivoWhatsApp, 15000 + jitter);
         }
       }
     });
