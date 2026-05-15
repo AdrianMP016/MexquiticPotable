@@ -3944,9 +3944,14 @@ $(function () {
       const preview = imageUrl
         ? '<img src="' + escapeHtml(imageUrl) + '" alt="Recibo ' + escapeHtml(item.folio || "") + '" style="max-width:120px;width:100%;height:auto;border:1px solid #d6e2f5;border-radius:8px;">'
         : '<span class="text-muted">Sin imagen</span>';
-      const whatsappBadge = item.whatsapp && item.recibo_id
-        ? '<span class="badge badge-secondary whatsapp-estado-fila" data-recibo-id="' + escapeHtml(String(item.recibo_id)) + '"><i class="fas fa-clock mr-1"></i>Pendiente</span>'
-        : '<span class="badge badge-light text-muted"><i class="fas fa-ban mr-1"></i>Sin WhatsApp</span>';
+      var whatsappBadge;
+      if (!item.whatsapp || !item.recibo_id) {
+        whatsappBadge = '<span class="badge badge-light text-muted"><i class="fas fa-ban mr-1"></i>Sin WhatsApp</span>';
+      } else if (item.whatsapp_enviado_at) {
+        whatsappBadge = '<span class="badge badge-success whatsapp-estado-fila" data-recibo-id="' + escapeHtml(String(item.recibo_id)) + '" title="' + escapeHtml(item.whatsapp_enviado_at) + '"><i class="fas fa-check mr-1"></i>Enviado</span>';
+      } else {
+        whatsappBadge = '<span class="badge badge-secondary whatsapp-estado-fila" data-recibo-id="' + escapeHtml(String(item.recibo_id)) + '"><i class="fas fa-clock mr-1"></i>Pendiente</span>';
+      }
 
       return [
         '<tr>',
@@ -3961,8 +3966,13 @@ $(function () {
 
     $tbody.html(rows);
     $("#btnImprimirTodosRecibosPeriodo").prop("disabled", false);
-    const tieneWhatsApp = items.some(function (i) { return i.whatsapp && i.recibo_id; });
-    $("#btnEnviarTodosWhatsAppPeriodo").prop("disabled", !tieneWhatsApp);
+    const tienePendientes = items.some(function (i) { return i.whatsapp && i.recibo_id && !i.whatsapp_enviado_at; });
+    const totalEnviados = items.filter(function (i) { return i.whatsapp_enviado_at; }).length;
+    const totalPendientes = items.filter(function (i) { return i.whatsapp && i.recibo_id && !i.whatsapp_enviado_at; }).length;
+    $("#btnEnviarTodosWhatsAppPeriodo")
+      .prop("disabled", !tienePendientes)
+      .text(tienePendientes ? " Enviar pendientes (" + totalPendientes + ")" : " Todos enviados (" + totalEnviados + ")")
+      .prepend('<i class="fab fa-whatsapp mr-1"></i>');
   }
 
   function reiniciarPreviewRecibosPeriodo() {
@@ -4091,16 +4101,25 @@ $(function () {
   }
 
   function iniciarEnvioMasivoWhatsApp() {
-    const cola = colaPreviewRecibosPeriodo.filter(function (item) {
-      return item.recibo_id && item.whatsapp;
+    const limiteSesion = Math.max(1, parseInt($("#limiteEnvioWhatsApp").val()) || 100);
+    const pendientes = colaPreviewRecibosPeriodo.filter(function (item) {
+      return item.recibo_id && item.whatsapp && !item.whatsapp_enviado_at;
     });
 
-    if (!cola.length) {
-      showPreviewRecibosPeriodoFeedback("warning", "No hay recibos con WhatsApp registrado para enviar.");
+    if (!pendientes.length) {
+      showPreviewRecibosPeriodoFeedback("success", "Todos los recibos con WhatsApp ya fueron enviados.");
       return;
     }
 
-    if (!confirm("Se enviaran " + cola.length + " recibos por WhatsApp con un intervalo de 15 segundos entre cada envio.\n\nRecomendacion: no mas de 100 envios por sesion para evitar bloqueos.\n\n¿Deseas continuar?")) {
+    const yaEnviados = colaPreviewRecibosPeriodo.filter(function (i) { return i.whatsapp_enviado_at; }).length;
+    const estaSession = Math.min(pendientes.length, limiteSesion);
+    const msg = "Pendientes: " + pendientes.length + (yaEnviados ? " | Ya enviados: " + yaEnviados : "") +
+      "\n\nEsta sesion enviara: " + estaSession + " de " + pendientes.length +
+      "\nIntervalo: ~15-21 segundos entre cada mensaje." +
+      (pendientes.length > limiteSesion ? "\n\nQuedan " + (pendientes.length - estaSession) + " para la siguiente sesion." : "") +
+      "\n\n¿Deseas continuar?";
+
+    if (!confirm(msg)) {
       return;
     }
 
@@ -4114,17 +4133,24 @@ $(function () {
   function procesarSiguienteEnvioMasivoWhatsApp() {
     if (!enviandoMasivoWhatsApp) return;
 
+    const limiteSesion = Math.max(1, parseInt($("#limiteEnvioWhatsApp").val()) || 100);
     const cola = colaPreviewRecibosPeriodo.filter(function (item) {
-      return item.recibo_id && item.whatsapp;
+      return item.recibo_id && item.whatsapp && !item.whatsapp_enviado_at;
     });
 
     if (indiceEnvioMasivoWhatsApp >= cola.length) {
-      finalizarEnvioMasivoWhatsApp("success", "Envio masivo completado. Se enviaron " + cola.length + " recibos por WhatsApp.");
+      finalizarEnvioMasivoWhatsApp("success", "Todos los pendientes enviados. Total: " + indiceEnvioMasivoWhatsApp + " recibos.");
+      return;
+    }
+
+    if (indiceEnvioMasivoWhatsApp >= limiteSesion) {
+      finalizarEnvioMasivoWhatsApp("warning",
+        "Sesion completada: " + indiceEnvioMasivoWhatsApp + " enviados. Quedan " + (cola.length - indiceEnvioMasivoWhatsApp) + " pendientes para la siguiente sesion.");
       return;
     }
 
     const item = cola[indiceEnvioMasivoWhatsApp];
-    const progreso = (indiceEnvioMasivoWhatsApp + 1) + " de " + cola.length;
+    const progreso = (indiceEnvioMasivoWhatsApp + 1) + " de " + Math.min(cola.length, limiteSesion);
 
     showPreviewRecibosPeriodoFeedback("info", "Enviando " + progreso + ": " + escapeHtml(item.usuario || "") + "...");
     actualizarEstadoWhatsAppFila(item.recibo_id, "enviando");
@@ -4138,6 +4164,7 @@ $(function () {
         recibo_id: item.recibo_id
       },
       success: function () {
+        item.whatsapp_enviado_at = new Date().toISOString();
         actualizarEstadoWhatsAppFila(item.recibo_id, "enviado");
       },
       error: function (xhr) {
