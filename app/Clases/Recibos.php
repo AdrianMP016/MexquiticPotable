@@ -455,6 +455,9 @@ class Recibos
 
         $envio = $whatsApp->enviarImagen((string) $recibo['whatsapp'], $absolutePath, $caption);
 
+        $stmt = $this->db->prepare("UPDATE recibos SET whatsapp_enviado_at = NOW() WHERE id = ?");
+        $stmt->execute([$reciboId]);
+
         return [
             'recibo_id' => (int) $recibo['recibo_id'],
             'folio' => $recibo['folio'],
@@ -794,7 +797,8 @@ class Recibos
                 p.fecha_vencimiento,
                 r.id AS recibo_id,
                 r.folio,
-                r.imagen_path
+                r.imagen_path,
+                r.whatsapp_enviado_at
              FROM lecturas l
              JOIN medidores m ON m.id = l.medidor_id
              JOIN usuarios_servicio u ON u.id = m.usuario_id
@@ -822,6 +826,8 @@ class Recibos
             'periodo' => (string) ($lectura['periodo'] ?? ''),
             'total' => (float) ($lectura['total'] ?? 0),
             'imagen_path' => (string) ($lectura['imagen_path'] ?? ''),
+            'whatsapp' => (string) ($lectura['whatsapp'] ?? ''),
+            'whatsapp_enviado_at' => $lectura['whatsapp_enviado_at'] ?? null,
             'impresion' => $impresion,
         ];
     }
