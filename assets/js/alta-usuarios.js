@@ -3916,11 +3916,12 @@ $(function () {
   }
 
   function sincronizarConfiguracionPreviewRecibos() {
+    const cobroConfig = obtenerConfiguracionCobroAgua();
     $("#previewPeriodoId").val($("#filtroPeriodoLectura").val() || "");
     $("#previewReciboFechaLimite").val($("#reciboFechaLimite").val() || dateInputValue(addDays(new Date(), 7)));
-    $("#previewReciboCooperaciones").val($("#reciboCooperaciones").val() || "0.00");
-    $("#previewReciboMultas").val($("#reciboMultas").val() || "0.00");
-    $("#previewReciboRecargos").val($("#reciboRecargos").val() || "0.00");
+    $("#previewReciboCooperaciones").val($("#reciboCooperaciones").val() || numberFormat(cobroConfig.cooperacion_default || 0, 2));
+    $("#previewReciboMultas").val($("#reciboMultas").val() || numberFormat(cobroConfig.multa_default || 0, 2));
+    $("#previewReciboRecargos").val($("#reciboRecargos").val() || numberFormat(cobroConfig.recargo_default || 0, 2));
     $("#previewReciboMetodoPago").val($("#reciboMetodoPago").val() || "Caja de cobro del sistema de agua");
     $("#previewReciboReferenciaPago").val($("#reciboReferenciaPago").val() || "Presentar este recibo al realizar el pago");
   }
