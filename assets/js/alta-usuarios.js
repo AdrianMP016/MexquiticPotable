@@ -3917,11 +3917,14 @@ $(function () {
 
   function sincronizarConfiguracionPreviewRecibos() {
     const cobroConfig = obtenerConfiguracionCobroAgua();
+    const valCooperacion = parseFloat($("#reciboCooperaciones").val()) || 0;
+    const valMultas = parseFloat($("#reciboMultas").val()) || 0;
+    const valRecargos = parseFloat($("#reciboRecargos").val()) || 0;
     $("#previewPeriodoId").val($("#filtroPeriodoLectura").val() || "");
     $("#previewReciboFechaLimite").val($("#reciboFechaLimite").val() || dateInputValue(addDays(new Date(), 7)));
-    $("#previewReciboCooperaciones").val($("#reciboCooperaciones").val() || numberFormat(cobroConfig.cooperacion_default || 0, 2));
-    $("#previewReciboMultas").val($("#reciboMultas").val() || numberFormat(cobroConfig.multa_default || 0, 2));
-    $("#previewReciboRecargos").val($("#reciboRecargos").val() || numberFormat(cobroConfig.recargo_default || 0, 2));
+    $("#previewReciboCooperaciones").val(numberFormat(valCooperacion > 0 ? valCooperacion : (cobroConfig.cooperacion_default || 0), 2));
+    $("#previewReciboMultas").val(numberFormat(valMultas > 0 ? valMultas : (cobroConfig.multa_default || 0), 2));
+    $("#previewReciboRecargos").val(numberFormat(valRecargos > 0 ? valRecargos : (cobroConfig.recargo_default || 0), 2));
     $("#previewReciboMetodoPago").val($("#reciboMetodoPago").val() || "Caja de cobro del sistema de agua");
     $("#previewReciboReferenciaPago").val($("#reciboReferenciaPago").val() || "Presentar este recibo al realizar el pago");
   }
