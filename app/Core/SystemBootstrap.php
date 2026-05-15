@@ -169,6 +169,13 @@ class SystemBootstrap
                  ADD COLUMN tarifa_parametros_json LONGTEXT NULL AFTER tarifa_nombre"
             );
         }
+
+        if (!self::columnExists($db, 'recibos', 'whatsapp_enviado_at')) {
+            $db->exec(
+                "ALTER TABLE recibos
+                 ADD COLUMN whatsapp_enviado_at DATETIME NULL DEFAULT NULL AFTER fecha_entrega"
+            );
+        }
     }
 
     private static function ensureCobroAguaConfig(PDO $db): void
