@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../Core/ReciboQr.php';
 require_once __DIR__ . '/CobroAgua.php';
+require_once __DIR__ . '/Periodos.php';
 
 class Recibos
 {
@@ -245,6 +246,7 @@ class Recibos
         }
 
         $lectura = $this->obtenerLectura($data['lectura_id']);
+        $this->validarPeriodoCobroVigente((int) ($lectura['periodo_id'] ?? 0));
         $cobro = $this->calcularCobroRecibo($lectura, $data);
         $subtotal = $cobro['subtotal'];
         $total = $cobro['total'];
@@ -296,6 +298,8 @@ class Recibos
         if (!empty($errors)) {
             throw new InvalidArgumentException(json_encode($errors, JSON_UNESCAPED_UNICODE));
         }
+
+        $this->validarPeriodoCobroVigente($periodoId);
 
         $todasLasLecturas = $this->obtenerLecturasPorPeriodo($periodoId);
         $totalLecturas = count($todasLasLecturas);
@@ -490,6 +494,8 @@ class Recibos
                 JSON_UNESCAPED_UNICODE
             ));
         }
+
+        $this->validarPeriodoCobroVigente($periodoId);
 
         $data   = $this->normalizarRecibo($input);
         $errors = $this->validarRecibo($data, false);
@@ -1030,6 +1036,12 @@ class Recibos
                 'precio_unitario' => $detalle[2],
             ]);
         }
+    }
+
+    private function validarPeriodoCobroVigente(int $periodoId): array
+    {
+        $periodos = new Periodos($this->db);
+        return $periodos->validarPeriodoCobroVigente($periodoId, null, false);
     }
 
     private function generarImagen(array $lectura, array $recibo, array $data, float $subtotal, float $total, string $qrToken, array $cobro): string

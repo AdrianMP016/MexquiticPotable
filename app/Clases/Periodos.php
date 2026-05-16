@@ -90,6 +90,115 @@ class Periodos
         return $periodo;
     }
 
+    public function obtenerPeriodoCobroVigente(?string $fechaBase = null): array
+    {
+        $fechaBase = $this->normalizarFechaBase($fechaBase);
+
+        $stmt = $this->db->prepare(
+            "SELECT
+                id AS periodo_id,
+                anio,
+                bimestre,
+                mes_inicio,
+                mes_fin,
+                nombre,
+                fecha_inicio,
+                fecha_fin,
+                fecha_vencimiento,
+                estado
+             FROM periodos_bimestrales
+             WHERE estado <> 'cancelado'
+               AND fecha_fin < :fecha_base
+             ORDER BY fecha_fin DESC, id DESC
+             LIMIT 1"
+        );
+        $stmt->execute(['fecha_base' => $fechaBase]);
+        $periodo = $stmt->fetch();
+
+        if ($periodo) {
+            return $periodo;
+        }
+
+        $stmt = $this->db->prepare(
+            "SELECT
+                id AS periodo_id,
+                anio,
+                bimestre,
+                mes_inicio,
+                mes_fin,
+                nombre,
+                fecha_inicio,
+                fecha_fin,
+                fecha_vencimiento,
+                estado
+             FROM periodos_bimestrales
+             WHERE estado <> 'cancelado'
+               AND :fecha_base BETWEEN fecha_inicio AND fecha_fin
+             ORDER BY fecha_inicio ASC, id ASC
+             LIMIT 1"
+        );
+        $stmt->execute(['fecha_base' => $fechaBase]);
+        $periodo = $stmt->fetch();
+
+        if ($periodo) {
+            return $periodo;
+        }
+
+        $stmt = $this->db->prepare(
+            "SELECT
+                id AS periodo_id,
+                anio,
+                bimestre,
+                mes_inicio,
+                mes_fin,
+                nombre,
+                fecha_inicio,
+                fecha_fin,
+                fecha_vencimiento,
+                estado
+             FROM periodos_bimestrales
+             WHERE estado <> 'cancelado'
+             ORDER BY fecha_inicio ASC, id ASC
+             LIMIT 1"
+        );
+        $stmt->execute();
+        $periodo = $stmt->fetch();
+
+        if (!$periodo) {
+            throw new RuntimeException('No existe un periodo de cobro disponible.');
+        }
+
+        return $periodo;
+    }
+
+    public function validarPeriodoCobroVigente(int $periodoId, ?string $fechaBase = null, bool $permitirAnteriores = false): array
+    {
+        if ($periodoId <= 0) {
+            throw new RuntimeException('No se recibio el periodo a validar.');
+        }
+
+        $vigente = $this->obtenerPeriodoCobroVigente($fechaBase);
+        $periodo = $this->obtener($periodoId);
+
+        $inicioObjetivo = (string) ($periodo['fecha_inicio'] ?? '');
+        $inicioVigente = (string) ($vigente['fecha_inicio'] ?? '');
+
+        if ($permitirAnteriores) {
+            if ($inicioObjetivo > $inicioVigente) {
+                throw new RuntimeException(
+                    'No se puede cobrar o generar recibos para ' . ($periodo['nombre'] ?? 'ese periodo') .
+                    '. El periodo vigente de cobro es ' . ($vigente['nombre'] ?? 'el correspondiente') . '.'
+                );
+            }
+        } elseif ((int) $periodo['periodo_id'] !== (int) $vigente['periodo_id']) {
+            throw new RuntimeException(
+                'Solo se puede operar el periodo vigente de cobro: ' . ($vigente['nombre'] ?? 'periodo vigente') . '.'
+            );
+        }
+
+        return $vigente;
+    }
+
     public function guardar(array $input): array
     {
         $data = $this->normalizar($input);
@@ -244,5 +353,15 @@ class Periodos
         }
 
         return mb_strtoupper($value, 'UTF-8');
+    }
+
+    private function normalizarFechaBase(?string $fechaBase): string
+    {
+        $fechaBase = trim((string) $fechaBase);
+        if ($fechaBase === '') {
+            return date('Y-m-d');
+        }
+
+        return $this->fechaValida($fechaBase) ? $fechaBase : date('Y-m-d');
     }
 }

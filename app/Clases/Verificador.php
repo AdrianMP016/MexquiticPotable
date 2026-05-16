@@ -1,4 +1,6 @@
-<?php
+﻿<?php
+
+require_once __DIR__ . '/Periodos.php';
 
 class Verificador
 {
@@ -194,7 +196,7 @@ class Verificador
                 $u['lectura_anterior']        = $tieneHistorial ? $ultimaLectura[$mid] : 0;
                 $u['lectura_actual_guardada'] = null;
                 $u['lectura_id_actual']       = null;
-                // Sin ningún historial previo → la captura es solo lectura inicial (sin cobro de consumo)
+                // Sin ningÃºn historial previo â†’ la captura es solo lectura inicial (sin cobro de consumo)
                 $u['es_primera_lectura']      = !$tieneHistorial;
             }
         }
@@ -289,7 +291,7 @@ class Verificador
             $errors['longitud'] = 'Captura la longitud de la lectura.';
         }
 
-        // Foto requerida solo cuando se envía con conexión; offline no incluye archivo
+        // Foto requerida solo cuando se envÃ­a con conexiÃ³n; offline no incluye archivo
 
         // Primera lectura: establecer base sin cobrar consumo
         if ($data['es_primera_lectura']) {
@@ -298,69 +300,10 @@ class Verificador
         $data['consumo_m3'] = max($data['medicion'] - $data['lectura_anterior'], 0);
 
         return $errors;
-    }
-
-    private function obtenerPeriodoActual(): array
+    }    private function obtenerPeriodoActual(): array
     {
-        // 1. Período cuyas fechas engloban hoy (captura en curso)
-        $stmt = $this->db->prepare(
-            "SELECT
-                id AS periodo_id,
-                nombre,
-                fecha_inicio,
-                fecha_fin,
-                fecha_vencimiento
-             FROM periodos_bimestrales
-             WHERE estado <> 'cancelado'
-               AND CURDATE() BETWEEN fecha_inicio AND fecha_fin
-             ORDER BY fecha_inicio ASC, id ASC
-             LIMIT 1"
-        );
-        $stmt->execute();
-        $row = $stmt->fetch();
-
-        // 2. Si hoy no cae dentro de ningún período, usar el más reciente que ya terminó
-        if (!$row) {
-            $stmt = $this->db->prepare(
-                "SELECT
-                    id AS periodo_id,
-                    nombre,
-                    fecha_inicio,
-                    fecha_fin,
-                    fecha_vencimiento
-                 FROM periodos_bimestrales
-                 WHERE estado <> 'cancelado'
-                   AND fecha_fin < CURDATE()
-                 ORDER BY fecha_fin DESC, id DESC
-                 LIMIT 1"
-            );
-            $stmt->execute();
-            $row = $stmt->fetch();
-        }
-
-        // 3. Último recurso: primer período futuro disponible
-        if (!$row) {
-            $stmt = $this->db->prepare(
-                "SELECT
-                    id AS periodo_id,
-                    nombre,
-                    fecha_inicio,
-                    fecha_fin,
-                    fecha_vencimiento
-                 FROM periodos_bimestrales
-                 WHERE estado <> 'cancelado'
-                 ORDER BY fecha_inicio ASC, id ASC
-                 LIMIT 1"
-            );
-            $stmt->execute();
-            $row = $stmt->fetch();
-        }
-
-        if (!$row) {
-            throw new RuntimeException('No existe un periodo disponible para guardar la medicion.');
-        }
-
-        return $row;
+         = new Periodos(->db);
+        return ->obtenerPeriodoCobroVigente();
     }
 
     private function obtenerLecturaDelPeriodo(int $medidorId, int $periodoId): ?array
@@ -526,3 +469,4 @@ class Verificador
         return 'mediciones/' . $filename;
     }
 }
+

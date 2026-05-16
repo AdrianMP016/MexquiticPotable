@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../Core/ReciboQr.php';
+require_once __DIR__ . '/Periodos.php';
 
 class Pagos
 {
@@ -258,6 +259,8 @@ class Pagos
             throw new RuntimeException('No se pueden registrar pagos sobre un recibo cancelado.');
         }
 
+        $this->validarPeriodoCobroPermitido((int) ($recibo['periodo_id'] ?? 0));
+
         if ((float) $recibo['saldo'] <= 0) {
             throw new RuntimeException('Este recibo ya no tiene saldo pendiente.');
         }
@@ -482,6 +485,12 @@ class Pagos
         }
 
         return $this->obtenerRecibo((int) $row['recibo_id']);
+    }
+
+    private function validarPeriodoCobroPermitido(int $periodoId): array
+    {
+        $periodos = new Periodos($this->db);
+        return $periodos->validarPeriodoCobroVigente($periodoId, null, true);
     }
 
     private function boolNullable($value): ?int
