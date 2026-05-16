@@ -300,10 +300,12 @@ class Verificador
         $data['consumo_m3'] = max($data['medicion'] - $data['lectura_anterior'], 0);
 
         return $errors;
-    }    private function obtenerPeriodoActual(): array
+    }
+
+    private function obtenerPeriodoActual(): array
     {
-         = new Periodos(->db);
-        return ->obtenerPeriodoCobroVigente();
+        $periodos = new Periodos($this->db);
+        return $periodos->obtenerPeriodoCobroVigente();
     }
 
     private function obtenerLecturaDelPeriodo(int $medidorId, int $periodoId): ?array
