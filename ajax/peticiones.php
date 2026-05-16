@@ -48,6 +48,7 @@ function mexquiticAllowedModules(string $accion): array
         'lecturas.obtener' => ['plataforma'],
         'recibos.generar' => ['plataforma'],
         'recibos.previsualizarPeriodo' => ['plataforma'],
+        'recibos.pdfMasivoSinFondo' => ['plataforma'],
         'recibos.prepararImpresion' => ['plataforma'],
         'recibos.obtenerImagen' => ['plataforma'],
         'recibos.enviarWhatsApp' => ['plataforma'],
@@ -115,6 +116,7 @@ function mexquiticRegistrarBitacora(Auth $auth, PDO $db, string $accion, $data =
         'verificador.guardarMedicion' => ['modulo' => 'verificador', 'descripcion' => 'Captura o actualización de lectura.'],
         'recibos.generar' => ['modulo' => 'plataforma', 'descripcion' => 'Generación de recibo individual.'],
         'recibos.previsualizarPeriodo' => ['modulo' => 'plataforma', 'descripcion' => 'Preparación de vista previa masiva de recibos.'],
+        'recibos.pdfMasivoSinFondo' => ['modulo' => 'plataforma', 'descripcion' => 'Generación de PDF masivo de recibos sin fondo.'],
         'recibos.enviarWhatsApp' => ['modulo' => 'plataforma', 'descripcion' => 'Envío de recibo por WhatsApp.'],
         'recibos.notificarWhatsApp' => ['modulo' => 'plataforma', 'descripcion' => 'Envío de notificación masiva por WhatsApp.'],
         'pagos.actualizarEntrega' => ['modulo' => 'cobro', 'descripcion' => 'Marcado de entrega de recibo.'],
@@ -543,6 +545,12 @@ try {
             $data = $recibos->previsualizarPeriodo(Request::post());
             mexquiticRegistrarBitacora($auth, $db, $accion, ['periodo_id' => Request::input('periodo_id', 0)] + $data);
             JsonResponse::success('Vista previa de recibos preparada correctamente.', $data);
+            break;
+
+        case 'recibos.pdfMasivoSinFondo':
+            $recibos = new Recibos($db);
+            $data = $recibos->pdfMasivoSinFondo(Request::post());
+            JsonResponse::success('PDF generado correctamente.', $data);
             break;
 
         case 'recibos.prepararImpresion':

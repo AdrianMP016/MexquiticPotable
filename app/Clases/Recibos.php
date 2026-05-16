@@ -468,6 +468,84 @@ class Recibos
         ];
     }
 
+    public function pdfMasivoSinFondo(array $input): array
+    {
+        set_time_limit(0);
+
+        $periodoId = (int) ($input['periodo_id'] ?? 0);
+        if ($periodoId <= 0) {
+            throw new InvalidArgumentException(json_encode(
+                ['periodo_id' => 'Selecciona un periodo.'],
+                JSON_UNESCAPED_UNICODE
+            ));
+        }
+
+        $data   = $this->normalizarRecibo($input);
+        $errors = $this->validarRecibo($data, false);
+        if (!empty($errors)) {
+            throw new InvalidArgumentException(json_encode($errors, JSON_UNESCAPED_UNICODE));
+        }
+
+        $tempDir = $this->rootDir . '/recibos/pdf_temp';
+        if (!is_dir($tempDir)) {
+            mkdir($tempDir, 0755, true);
+        }
+        foreach (glob($tempDir . '/*.pdf') ?: [] as $old) {
+            if (filemtime($old) < time() - 7200) {
+                @unlink($old);
+            }
+        }
+
+        $todasLasLecturas = $this->obtenerLecturasPorPeriodo($periodoId);
+        if (empty($todasLasLecturas)) {
+            throw new RuntimeException('No hay lecturas registradas para este periodo.');
+        }
+
+        $recibosData = [];
+        $periodo     = '';
+
+        foreach ($todasLasLecturas as $fila) {
+            if (empty($fila['recibo_id'])) {
+                continue;
+            }
+            $lecturaId = (int) ($fila['lectura_id'] ?? 0);
+            if ($lecturaId <= 0) {
+                continue;
+            }
+            $lectura = $this->obtenerLectura($lecturaId);
+            if (!$lectura) {
+                continue;
+            }
+
+            $recibo   = ['recibo_id' => (int) $fila['recibo_id'], 'folio' => (string) ($fila['folio'] ?? '')];
+            $cobro    = $this->calcularCobroRecibo($lectura, $data);
+            $subtotal = $cobro['subtotal'];
+            $total    = $cobro['total'];
+            $qrToken  = $this->generarTokenQr($lectura);
+            $periodo  = (string) ($lectura['periodo'] ?? $periodo);
+
+            $recibosData[] = $this->crearPayloadImpresion($lectura, $recibo, $data, $subtotal, $total, $qrToken, $cobro);
+        }
+
+        if (empty($recibosData)) {
+            throw new RuntimeException('No hay recibos generados para este periodo. Usa "Preparar vista previa" primero.');
+        }
+
+        $slug     = preg_replace('/[^a-zA-Z0-9]+/', '_', strtolower($periodo));
+        $fileName = 'recibos_' . $slug . '_' . date('Ymd_His') . '.pdf';
+        $outPath  = $tempDir . '/' . $fileName;
+
+        require_once dirname(__DIR__) . '/Clases/ReciboPdf.php';
+        (new ReciboPdf())->generarPdfMasivo($recibosData, $outPath);
+
+        return [
+            'archivo' => $fileName,
+            'url'     => 'recibos/pdf_temp/' . $fileName,
+            'total'   => count($recibosData),
+            'periodo' => $periodo,
+        ];
+    }
+
     public function listarNotificaciones(array $input): array
     {
         $tipoMensaje = $this->normalizarTipoMensaje(Request::cleanString($input['tipo_mensaje'] ?? 'recordatorio'));

@@ -3936,6 +3936,7 @@ $(function () {
       $tbody.html('<tr><td colspan="5" class="text-center text-muted py-4">Aun no hay recibos preparados para imprimir.</td></tr>');
       $("#btnImprimirTodosRecibosPeriodo").prop("disabled", true);
       $("#btnEnviarTodosWhatsAppPeriodo").prop("disabled", true);
+      $("#btnGenerarPdfSinFondo").prop("disabled", true);
       return;
     }
 
@@ -3966,6 +3967,7 @@ $(function () {
 
     $tbody.html(rows);
     $("#btnImprimirTodosRecibosPeriodo").prop("disabled", false);
+    $("#btnGenerarPdfSinFondo").prop("disabled", false);
     const tienePendientes = items.some(function (i) { return i.whatsapp && i.recibo_id && !i.whatsapp_enviado_at; });
     const totalEnviados = items.filter(function (i) { return i.whatsapp_enviado_at; }).length;
     const totalPendientes = items.filter(function (i) { return i.whatsapp && i.recibo_id && !i.whatsapp_enviado_at; }).length;
@@ -3987,6 +3989,7 @@ $(function () {
     $("#previewRecibosPeriodoResumen").html('<div class="text-muted">Selecciona un periodo en el filtro superior para preparar la impresion masiva.</div>');
     $("#btnDetenerEnvioWhatsAppPeriodo").addClass("d-none");
     $("#btnEnviarTodosWhatsAppPeriodo").removeClass("d-none").prop("disabled", true);
+    $("#btnGenerarPdfSinFondo").prop("disabled", true);
     renderPreviewRecibosPeriodo([]);
   }
 
@@ -4852,6 +4855,54 @@ $(function () {
     if (confirm("¿Deseas detener el envio masivo de recibos por WhatsApp?")) {
       detenerEnvioMasivoWhatsApp();
     }
+  });
+
+  $("#btnGenerarPdfSinFondo").on("click", function () {
+    var periodoId = $("#previewPeriodoId").val();
+    if (!periodoId) {
+      showPreviewRecibosPeriodoFeedback("warning", "Selecciona un periodo primero.");
+      return;
+    }
+    var total = colaPreviewRecibosPeriodo.filter(function (i) { return i.recibo_id; }).length;
+    if (!confirm("Se generara un PDF de " + total + " recibos sin fondo.\n\nEsto puede tardar 1-3 minutos segun la cantidad.\n\n¿Continuar?")) {
+      return;
+    }
+
+    var $btn = $(this);
+    $btn.prop("disabled", true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Generando PDF...');
+    showPreviewRecibosPeriodoFeedback("info", "Generando PDF masivo sin fondo, espera un momento...");
+
+    $.ajax({
+      url: ajaxUrl,
+      method: "POST",
+      dataType: "json",
+      timeout: 300000,
+      data: {
+        accion: "recibos.pdfMasivoSinFondo",
+        periodo_id: periodoId,
+        fecha_limite_pago: $("#previewReciboFechaLimite").val(),
+        cooperaciones: $("#previewReciboCooperaciones").val(),
+        multas: $("#previewReciboMultas").val(),
+        recargos: $("#previewReciboRecargos").val(),
+        metodo_pago_caja: $("#previewReciboMetodoPago").val(),
+        referencia_pago: $("#previewReciboReferenciaPago").val()
+      },
+      success: function (response) {
+        var data = response.data || {};
+        showPreviewRecibosPeriodoFeedback(
+          "success",
+          "PDF generado: " + (data.total || 0) + " recibos. " +
+          '<a href="' + escapeHtml(data.url || "") + '" target="_blank" class="btn btn-sm btn-success ml-2">' +
+          '<i class="fas fa-download mr-1"></i> Descargar PDF</a>'
+        );
+      },
+      error: function (xhr) {
+        showPreviewRecibosPeriodoFeedback("danger", extractAjaxMessage(xhr, "Error al generar el PDF."));
+      },
+      complete: function () {
+        $btn.prop("disabled", false).html('<i class="fas fa-file-pdf mr-1"></i> PDF sin fondo');
+      }
+    });
   });
 
   $(document).on("click", ".btn-registrar-pago", function () {
