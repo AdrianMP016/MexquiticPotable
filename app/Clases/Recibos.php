@@ -82,6 +82,7 @@ class Recibos
                 r.estado AS estado_recibo,
                 r.recibo_entregado,
                 r.fecha_entrega,
+                r.whatsapp_enviado_at,
                 r.imagen_path,
                 COALESCE(pg.total_pagado, 0) AS total_pagado
              FROM lecturas l
