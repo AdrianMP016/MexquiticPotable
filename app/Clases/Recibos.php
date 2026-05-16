@@ -23,7 +23,7 @@ class Recibos
         $this->qrSecret = (string) (getenv('MEXQUITIC_QR_SECRET') ?: 'mexquitic-agua-qr-2026-v1');
     }
 
-    public function listarLecturas(string $termino = '', string $estadoCobro = '', int $periodoId = 0, int $page = 1, int $perPage = 25): array
+    public function listarLecturas(string $termino = '', string $estadoCobro = '', int $periodoId = 0, int $page = 1, int $perPage = 25, string $filtroEntrega = ''): array
     {
         $page = max(1, $page);
         $perPage = (int) $perPage;
@@ -114,7 +114,17 @@ class Recibos
 
         if ($estadoCobro !== '') {
             $rows = array_values(array_filter($rows, function (array $row) use ($estadoCobro): bool {
-            return ($row['estado_cobro'] ?? '') === $estadoCobro;
+                return ($row['estado_cobro'] ?? '') === $estadoCobro;
+            }));
+        }
+
+        if ($filtroEntrega === 'entregado') {
+            $rows = array_values(array_filter($rows, function (array $row): bool {
+                return (int) ($row['recibo_entregado'] ?? 0) === 1;
+            }));
+        } elseif ($filtroEntrega === 'pendiente_entrega') {
+            $rows = array_values(array_filter($rows, function (array $row): bool {
+                return !empty($row['recibo_id']) && (int) ($row['recibo_entregado'] ?? 0) !== 1;
             }));
         }
 

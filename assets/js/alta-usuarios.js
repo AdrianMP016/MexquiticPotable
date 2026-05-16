@@ -2926,7 +2926,8 @@ $(function () {
         per_page: perPage,
         termino: $("#buscarLectura").val(),
         estado_cobro: $("#filtroEstadoRecibo").val(),
-        periodo_id: $("#filtroPeriodoLectura").val()
+        periodo_id: $("#filtroPeriodoLectura").val(),
+        entrega_recibo: $("#filtroEntregaRecibo").val()
       },
       beforeSend: function () {
         $("#lecturasPorPagina").prop("disabled", true);
@@ -4571,6 +4572,11 @@ $(function () {
   });
 
   $("#filtroPeriodoLectura").on("change", function () {
+    lecturasPaginaActual = 1;
+    cargarLecturas(1);
+  });
+
+  $("#filtroEntregaRecibo").on("change", function () {
     lecturasPaginaActual = 1;
     cargarLecturas(1);
   });

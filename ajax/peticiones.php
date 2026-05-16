@@ -517,7 +517,8 @@ try {
             $periodoId = (int) Request::input('periodo_id', 0);
             $page = (int) Request::input('page', 1);
             $perPage = (int) Request::input('per_page', 25);
-            $data = $recibos->listarLecturas($termino, $estadoCobro, $periodoId, $page, $perPage);
+            $filtroEntrega = Request::cleanString(Request::input('entrega_recibo', '')) ?? '';
+            $data = $recibos->listarLecturas($termino, $estadoCobro, $periodoId, $page, $perPage, $filtroEntrega);
             JsonResponse::success('Lecturas consultadas correctamente.', [
                 'lecturas' => $data['lecturas'],
                 'summary' => $data['summary'],
