@@ -1206,7 +1206,7 @@ class Recibos
             'mov5_importe' => $this->moneda($subtotal),
             'mov_total_desc' => '(=) TOTAL A PAGAR',
             'mov_total_importe' => $this->moneda($total),
-            'aviso_fugas' => 'Por favor reportar fugas al 444 131 5689',
+            'aviso_fugas' => 'Por favor reportar fugas al 444 453 7365',
             'observaciones_titulo' => 'OBSERVACIONES:',
             'observaciones' => $rutaObservacion,
             'avisos_importantes_titulo' => 'AVISOS IMPORTANTES',
