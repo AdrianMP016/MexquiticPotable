@@ -21,7 +21,7 @@ class WhatsApp
   {
     $status = $this->status();
     $messages = $this->messages($messageStatus, $limit);
-    $isLinked = in_array($status['status'], ['authenticated', 'standby'], true);
+    $isLinked = $status['status'] === 'authenticated';
     $qrImage = null;
 
     if (!$isLinked) {
