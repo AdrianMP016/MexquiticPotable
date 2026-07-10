@@ -84,12 +84,11 @@ class CobroAgua
         return $this->normalizarParametros($decoded);
     }
 
-    public function calcular(float $consumo, ?array $parametros = null): array
+    public function calcular(float $consumo, ?array $parametros = null, bool $aplicarConsumoMinimo = false): array
     {
         $config = $this->normalizarParametros($parametros ?? $this->parametros());
         $consumoReal = round(max($consumo, 0), 2);
-        // Aplicar consumo mínimo facturable (cargo mínimo de $50)
-        $consumo = max($consumoReal, $config['consumo_minimo_m3']);
+        $consumo = $aplicarConsumoMinimo ? max($consumoReal, $config['consumo_minimo_m3']) : $consumoReal;
         $limiteBase = $config['limite_tramo_base_m3'];
         $consumoBase = round(min($consumo, $limiteBase), 2);
         $consumoExcedente = round(max($consumo - $limiteBase, 0), 2);
@@ -112,7 +111,7 @@ class CobroAgua
                 'importe' => $importeExcedente,
             ];
         } else {
-            $etiqueta = ($consumoReal < $config['consumo_minimo_m3'])
+            $etiqueta = $aplicarConsumoMinimo && $consumoReal < $config['consumo_minimo_m3']
                 ? sprintf('Consumo minimo (%s m3)', $this->formatoNumero($config['consumo_minimo_m3']))
                 : 'Consumo de agua';
             $detalles[] = [

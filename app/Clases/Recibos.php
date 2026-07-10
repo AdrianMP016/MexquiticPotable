@@ -1,7 +1,6 @@
 <?php
 require_once __DIR__ . '/../Core/ReciboQr.php';
 require_once __DIR__ . '/CobroAgua.php';
-require_once __DIR__ . '/Periodos.php';
 
 class Recibos
 {
@@ -24,7 +23,7 @@ class Recibos
         $this->qrSecret = (string) (getenv('MEXQUITIC_QR_SECRET') ?: 'mexquitic-agua-qr-2026-v1');
     }
 
-    public function listarLecturas(string $termino = '', string $estadoCobro = '', int $periodoId = 0, int $page = 1, int $perPage = 25, string $filtroEntrega = ''): array
+    public function listarLecturas(string $termino = '', string $estadoCobro = '', int $periodoId = 0, int $page = 1, int $perPage = 25): array
     {
         $page = max(1, $page);
         $perPage = (int) $perPage;
@@ -83,7 +82,6 @@ class Recibos
                 r.estado AS estado_recibo,
                 r.recibo_entregado,
                 r.fecha_entrega,
-                r.whatsapp_enviado_at,
                 r.imagen_path,
                 COALESCE(pg.total_pagado, 0) AS total_pagado
              FROM lecturas l
@@ -115,17 +113,7 @@ class Recibos
 
         if ($estadoCobro !== '') {
             $rows = array_values(array_filter($rows, function (array $row) use ($estadoCobro): bool {
-                return ($row['estado_cobro'] ?? '') === $estadoCobro;
-            }));
-        }
-
-        if ($filtroEntrega === 'entregado') {
-            $rows = array_values(array_filter($rows, function (array $row): bool {
-                return (int) ($row['recibo_entregado'] ?? 0) === 1;
-            }));
-        } elseif ($filtroEntrega === 'pendiente_entrega') {
-            $rows = array_values(array_filter($rows, function (array $row): bool {
-                return !empty($row['recibo_id']) && (int) ($row['recibo_entregado'] ?? 0) !== 1;
+            return ($row['estado_cobro'] ?? '') === $estadoCobro;
             }));
         }
 
@@ -186,6 +174,7 @@ class Recibos
                 l.latitud,
                 l.longitud,
                 l.observaciones,
+                l.foto_medicion_path,
                 u.id AS usuario_id,
                 u.nombre AS usuario,
                 u.whatsapp,
@@ -246,7 +235,6 @@ class Recibos
         }
 
         $lectura = $this->obtenerLectura($data['lectura_id']);
-        $this->validarPeriodoCobroVigente((int) ($lectura['periodo_id'] ?? 0));
         $cobro = $this->calcularCobroRecibo($lectura, $data);
         $subtotal = $cobro['subtotal'];
         $total = $cobro['total'];
@@ -298,8 +286,6 @@ class Recibos
         if (!empty($errors)) {
             throw new InvalidArgumentException(json_encode($errors, JSON_UNESCAPED_UNICODE));
         }
-
-        $this->validarPeriodoCobroVigente($periodoId);
 
         $todasLasLecturas = $this->obtenerLecturasPorPeriodo($periodoId);
         $totalLecturas = count($todasLasLecturas);
@@ -480,86 +466,6 @@ class Recibos
             'whatsapp' => $envio['to'],
             'imagen_path' => $relativePath,
             'ultramsg' => $envio['response'],
-        ];
-    }
-
-    public function pdfMasivoSinFondo(array $input): array
-    {
-        set_time_limit(0);
-
-        $periodoId = (int) ($input['periodo_id'] ?? 0);
-        if ($periodoId <= 0) {
-            throw new InvalidArgumentException(json_encode(
-                ['periodo_id' => 'Selecciona un periodo.'],
-                JSON_UNESCAPED_UNICODE
-            ));
-        }
-
-        $this->validarPeriodoCobroVigente($periodoId);
-
-        $data   = $this->normalizarRecibo($input);
-        $errors = $this->validarRecibo($data, false);
-        if (!empty($errors)) {
-            throw new InvalidArgumentException(json_encode($errors, JSON_UNESCAPED_UNICODE));
-        }
-
-        $tempDir = $this->rootDir . '/recibos/pdf_temp';
-        if (!is_dir($tempDir)) {
-            mkdir($tempDir, 0755, true);
-        }
-        foreach (glob($tempDir . '/*.pdf') ?: [] as $old) {
-            if (filemtime($old) < time() - 7200) {
-                @unlink($old);
-            }
-        }
-
-        $todasLasLecturas = $this->obtenerLecturasPorPeriodo($periodoId);
-        if (empty($todasLasLecturas)) {
-            throw new RuntimeException('No hay lecturas registradas para este periodo.');
-        }
-
-        $recibosData = [];
-        $periodo     = '';
-
-        foreach ($todasLasLecturas as $fila) {
-            if (empty($fila['recibo_id'])) {
-                continue;
-            }
-            $lecturaId = (int) ($fila['lectura_id'] ?? 0);
-            if ($lecturaId <= 0) {
-                continue;
-            }
-            $lectura = $this->obtenerLectura($lecturaId);
-            if (!$lectura) {
-                continue;
-            }
-
-            $recibo   = ['recibo_id' => (int) $fila['recibo_id'], 'folio' => (string) ($fila['folio'] ?? '')];
-            $cobro    = $this->calcularCobroRecibo($lectura, $data);
-            $subtotal = $cobro['subtotal'];
-            $total    = $cobro['total'];
-            $qrToken  = $this->generarTokenQr($lectura);
-            $periodo  = (string) ($lectura['periodo'] ?? $periodo);
-
-            $recibosData[] = $this->crearPayloadImpresion($lectura, $recibo, $data, $subtotal, $total, $qrToken, $cobro);
-        }
-
-        if (empty($recibosData)) {
-            throw new RuntimeException('No hay recibos generados para este periodo. Usa "Preparar vista previa" primero.');
-        }
-
-        $slug     = preg_replace('/[^a-zA-Z0-9]+/', '_', strtolower($periodo));
-        $fileName = 'recibos_' . $slug . '_' . date('Ymd_His') . '.pdf';
-        $outPath  = $tempDir . '/' . $fileName;
-
-        require_once dirname(__DIR__) . '/Clases/ReciboPdf.php';
-        (new ReciboPdf())->generarPdfMasivo($recibosData, $outPath);
-
-        return [
-            'archivo' => $fileName,
-            'url'     => 'recibos/pdf_temp/' . $fileName,
-            'total'   => count($recibosData),
-            'periodo' => $periodo,
         ];
     }
 
@@ -1038,12 +944,6 @@ class Recibos
         }
     }
 
-    private function validarPeriodoCobroVigente(int $periodoId): array
-    {
-        $periodos = new Periodos($this->db);
-        return $periodos->validarPeriodoCobroVigente($periodoId, null, false);
-    }
-
     private function generarImagen(array $lectura, array $recibo, array $data, float $subtotal, float $total, string $qrToken, array $cobro): string
     {
         if (!extension_loaded('gd')) {
@@ -1372,7 +1272,10 @@ class Recibos
 
     private function calcularCobroRecibo(array $lectura, array $data, ?array $tarifaSnapshot = null): array
     {
-        $calculo = $this->obtenerCobroAgua()->calcular((float) ($lectura['consumo_m3'] ?? 0), $tarifaSnapshot);
+        $lecturaAnterior = (float) ($lectura['lectura_anterior'] ?? 0);
+        $lecturaActual = (float) ($lectura['lectura_actual'] ?? 0);
+        $sinLectura = $lecturaActual <= 0 || abs($lecturaActual - $lecturaAnterior) < 0.00001;
+        $calculo = $this->obtenerCobroAgua()->calcular((float) ($lectura['consumo_m3'] ?? 0), $tarifaSnapshot, $sinLectura);
         $subtotal = (float) ($calculo['subtotal'] ?? 0);
         $extras = (float) $data['cooperaciones'] + (float) $data['multas'] + (float) $data['recargos'];
 

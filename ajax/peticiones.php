@@ -1,5 +1,7 @@
 <?php
 
+
+
 require_once __DIR__ . '/../app/bootstrap.php';
 require_once __DIR__ . '/../app/Clases/Usuarios.php';
 require_once __DIR__ . '/../app/Clases/Medidores.php';

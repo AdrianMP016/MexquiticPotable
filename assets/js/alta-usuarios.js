@@ -2734,15 +2734,14 @@ $(function () {
   function obtenerPeriodoActualIdDesdeBootstrap() {
     var hoy = new Date().toISOString().slice(0, 10);
     var periodos = (bootstrapAdminData.periodos && bootstrapAdminData.periodos.periodos) || [];
-    var pasados = periodos
-      .filter(function (p) { return p.fecha_fin < hoy && String(p.estado || "").toLowerCase() !== "cancelado"; })
-      .sort(function (a, b) { return b.fecha_fin.localeCompare(a.fecha_fin); });
-    if (pasados.length) { return String(pasados[0].periodo_id); }
     var activo = periodos.find(function (p) {
       return p.fecha_inicio <= hoy && p.fecha_fin >= hoy && String(p.estado || "").toLowerCase() !== "cancelado";
     });
     if (activo) { return String(activo.periodo_id); }
-    return "";
+    var pasados = periodos
+      .filter(function (p) { return p.fecha_fin < hoy && String(p.estado || "").toLowerCase() !== "cancelado"; })
+      .sort(function (a, b) { return b.fecha_fin.localeCompare(a.fecha_fin); });
+    return pasados.length ? String(pasados[0].periodo_id) : "";
   }
 
   function cargarFiltroPeriodosLectura(selectedPeriodoId) {
@@ -2927,8 +2926,7 @@ $(function () {
         per_page: perPage,
         termino: $("#buscarLectura").val(),
         estado_cobro: $("#filtroEstadoRecibo").val(),
-        periodo_id: $("#filtroPeriodoLectura").val(),
-        entrega_recibo: $("#filtroEntregaRecibo").val()
+        periodo_id: $("#filtroPeriodoLectura").val()
       },
       beforeSend: function () {
         $("#lecturasPorPagina").prop("disabled", true);
@@ -3585,14 +3583,14 @@ $(function () {
     return $.extend({}, defaultCobroAguaConfig, bootstrapAdminData.cobro_agua || {});
   }
 
-  function calcularSubtotalAgua(consumo) {
+  function calcularSubtotalAgua(consumo, aplicarConsumoMinimo) {
     const config = obtenerConfiguracionCobroAgua();
     const limite = Math.max(Number(config.limite_tramo_base_m3 || 0), 0);
     const precioBase = Math.max(Number(config.precio_tramo_base_m3 || 0), 0);
     const precioExcedente = Math.max(Number(config.precio_excedente_m3 || 0), 0);
     const consumoMinimo = Math.max(Number(config.consumo_minimo_m3 || 0), 0);
     const consumoReal = Math.max(Number(consumo || 0), 0);
-    const consumoEfectivo = Math.max(consumoReal, consumoMinimo);
+    const consumoEfectivo = aplicarConsumoMinimo ? Math.max(consumoReal, consumoMinimo) : consumoReal;
     const consumoBase = Math.min(consumoEfectivo, limite);
     const consumoExcedente = Math.max(consumoEfectivo - limite, 0);
 
@@ -3612,7 +3610,10 @@ $(function () {
 
   function calcularTotalRecibo() {
     const consumo = lecturaReciboActual ? Number(lecturaReciboActual.consumo_m3 || 0) : 0;
-    const subtotalAgua = calcularSubtotalAgua(consumo);
+    const lecturaAnterior = lecturaReciboActual ? Number(lecturaReciboActual.lectura_anterior || 0) : 0;
+    const lecturaActual = lecturaReciboActual ? Number(lecturaReciboActual.lectura_actual || 0) : 0;
+    const sinLectura = lecturaReciboActual ? lecturaActual <= 0 || Math.abs(lecturaActual - lecturaAnterior) < 0.00001 : false;
+    const subtotalAgua = calcularSubtotalAgua(consumo, sinLectura);
     const cooperaciones = Number($("#reciboCooperaciones").val() || 0);
     const multas = Number($("#reciboMultas").val() || 0);
     const recargos = Number($("#reciboRecargos").val() || 0);
@@ -3938,7 +3939,6 @@ $(function () {
       $tbody.html('<tr><td colspan="5" class="text-center text-muted py-4">Aun no hay recibos preparados para imprimir.</td></tr>');
       $("#btnImprimirTodosRecibosPeriodo").prop("disabled", true);
       $("#btnEnviarTodosWhatsAppPeriodo").prop("disabled", true);
-      $("#btnGenerarPdfSinFondo").prop("disabled", true);
       return;
     }
 
@@ -3969,7 +3969,6 @@ $(function () {
 
     $tbody.html(rows);
     $("#btnImprimirTodosRecibosPeriodo").prop("disabled", false);
-    $("#btnGenerarPdfSinFondo").prop("disabled", false);
     const tienePendientes = items.some(function (i) { return i.whatsapp && i.recibo_id && !i.whatsapp_enviado_at; });
     const totalEnviados = items.filter(function (i) { return i.whatsapp_enviado_at; }).length;
     const totalPendientes = items.filter(function (i) { return i.whatsapp && i.recibo_id && !i.whatsapp_enviado_at; }).length;
@@ -3991,7 +3990,6 @@ $(function () {
     $("#previewRecibosPeriodoResumen").html('<div class="text-muted">Selecciona un periodo en el filtro superior para preparar la impresion masiva.</div>');
     $("#btnDetenerEnvioWhatsAppPeriodo").addClass("d-none");
     $("#btnEnviarTodosWhatsAppPeriodo").removeClass("d-none").prop("disabled", true);
-    $("#btnGenerarPdfSinFondo").prop("disabled", true);
     renderPreviewRecibosPeriodo([]);
   }
 
@@ -4232,6 +4230,7 @@ $(function () {
     $("#formGenerarRecibo")[0].reset();
     $("#modalReciboFeedback").addClass("d-none");
     $("#btnAbrirReciboGenerado").addClass("d-none").attr("href", "#");
+    $("#btnVerFotoMedidor").addClass("d-none").removeAttr("data-foto");
     $("#btnImprimirReciboActual").addClass("d-none").prop("disabled", true).removeAttr("data-lectura-id data-folio data-usuario");
     $("#btnEnviarReciboWhatsapp").prop("disabled", true).removeAttr("data-recibo-id").attr("title", "Primero genera la imagen del recibo");
     $("#reciboLecturaId").val(lectura.lectura_id);
@@ -4256,6 +4255,11 @@ $(function () {
       '</div>'
     ].join(""));
 
+      if (lectura.foto_medicion_path) {
+        const fotoUrl = rutaAbsolutaArchivo(lectura.foto_medicion_path) + "?t=" + Date.now();
+        $("#btnVerFotoMedidor").removeClass("d-none").attr("data-foto", fotoUrl);
+      }
+
       if (lectura.imagen_path) {
         const imageUrl = rutaAbsolutaArchivo(lectura.imagen_path) + "?t=" + Date.now();
         $("#reciboPreviewBox").html('<img src="' + escapeHtml(imageUrl) + '" alt="Recibo generado">');
@@ -4269,6 +4273,13 @@ $(function () {
     actualizarBotonImprimirReciboActual();
     $("#modalGenerarRecibo").modal("show");
   }
+
+  $(document).on("click", "#btnVerFotoMedidor", function () {
+    const src = $(this).attr("data-foto");
+    if (!src) { return; }
+    $("#lightboxImg").attr("src", src);
+    $("#lightboxFotoMedidor").addClass("open");
+  });
 
   function abrirGenerarRecibo(lecturaId) {
     $.ajax({
@@ -4577,11 +4588,6 @@ $(function () {
     cargarLecturas(1);
   });
 
-  $("#filtroEntregaRecibo").on("change", function () {
-    lecturasPaginaActual = 1;
-    cargarLecturas(1);
-  });
-
   $("#lecturasPorPagina").on("change", function () {
     lecturasPorPaginaActual = Number($(this).val() || 25);
     lecturasPaginaActual = 1;
@@ -4862,54 +4868,6 @@ $(function () {
     if (confirm("¿Deseas detener el envio masivo de recibos por WhatsApp?")) {
       detenerEnvioMasivoWhatsApp();
     }
-  });
-
-  $("#btnGenerarPdfSinFondo").on("click", function () {
-    var periodoId = $("#previewPeriodoId").val();
-    if (!periodoId) {
-      showPreviewRecibosPeriodoFeedback("warning", "Selecciona un periodo primero.");
-      return;
-    }
-    var total = colaPreviewRecibosPeriodo.filter(function (i) { return i.recibo_id; }).length;
-    if (!confirm("Se generara un PDF de " + total + " recibos sin fondo.\n\nEsto puede tardar 1-3 minutos segun la cantidad.\n\n¿Continuar?")) {
-      return;
-    }
-
-    var $btn = $(this);
-    $btn.prop("disabled", true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Generando PDF...');
-    showPreviewRecibosPeriodoFeedback("info", "Generando PDF masivo sin fondo, espera un momento...");
-
-    $.ajax({
-      url: ajaxUrl,
-      method: "POST",
-      dataType: "json",
-      timeout: 300000,
-      data: {
-        accion: "recibos.pdfMasivoSinFondo",
-        periodo_id: periodoId,
-        fecha_limite_pago: $("#previewReciboFechaLimite").val(),
-        cooperaciones: $("#previewReciboCooperaciones").val(),
-        multas: $("#previewReciboMultas").val(),
-        recargos: $("#previewReciboRecargos").val(),
-        metodo_pago_caja: $("#previewReciboMetodoPago").val(),
-        referencia_pago: $("#previewReciboReferenciaPago").val()
-      },
-      success: function (response) {
-        var data = response.data || {};
-        showPreviewRecibosPeriodoFeedback(
-          "success",
-          "PDF generado: " + (data.total || 0) + " recibos. " +
-          '<a href="' + escapeHtml(data.url || "") + '" target="_blank" class="btn btn-sm btn-success ml-2">' +
-          '<i class="fas fa-download mr-1"></i> Descargar PDF</a>'
-        );
-      },
-      error: function (xhr) {
-        showPreviewRecibosPeriodoFeedback("danger", extractAjaxMessage(xhr, "Error al generar el PDF."));
-      },
-      complete: function () {
-        $btn.prop("disabled", false).html('<i class="fas fa-file-pdf mr-1"></i> PDF sin fondo');
-      }
-    });
   });
 
   $(document).on("click", ".btn-registrar-pago", function () {
