@@ -425,6 +425,106 @@ class Recibos
         ];
     }
 
+    public function buscarPorTelefono(string $telefono): array
+    {
+        $digits = preg_replace('/\D+/', '', $telefono) ?? '';
+        $ultimos10 = substr($digits, -10);
+
+        if (strlen($ultimos10) < 10) {
+            return [];
+        }
+
+        $stmt = $this->db->prepare(
+            "SELECT id AS usuario_id, nombre
+             FROM usuarios_servicio
+             WHERE activo = 1
+               AND (
+                 REPLACE(REPLACE(REPLACE(REPLACE(COALESCE(whatsapp,''),' ',''),'-',''),'+',''),'.','') LIKE :like1
+                 OR REPLACE(REPLACE(REPLACE(REPLACE(COALESCE(telefono,''),' ',''),'-',''),'+',''),'.','') LIKE :like2
+               )
+             ORDER BY nombre ASC"
+        );
+        $stmt->execute([
+            'like1' => '%' . $ultimos10,
+            'like2' => '%' . $ultimos10,
+        ]);
+
+        return $stmt->fetchAll();
+    }
+
+    public function reciboMasRecienteParaUsuario(int $usuarioId): ?array
+    {
+        if ($usuarioId <= 0) {
+            return null;
+        }
+
+        $stmt = $this->db->prepare(
+            "SELECT
+                r.id AS recibo_id,
+                r.folio,
+                r.total,
+                r.estado AS estado_recibo,
+                r.imagen_path,
+                r.lectura_id,
+                u.nombre AS usuario,
+                u.whatsapp,
+                p.nombre AS periodo,
+                p.fecha_vencimiento,
+                COALESCE(pg.total_pagado, 0) AS total_pagado
+             FROM recibos r
+             INNER JOIN usuarios_servicio u ON u.id = r.usuario_id
+             LEFT JOIN periodos_bimestrales p ON p.id = r.periodo_id
+             LEFT JOIN (
+                SELECT recibo_id, SUM(monto) AS total_pagado
+                FROM pagos
+                GROUP BY recibo_id
+             ) pg ON pg.recibo_id = r.id
+             WHERE r.usuario_id = :usuario_id
+             ORDER BY p.fecha_fin DESC, r.id DESC
+             LIMIT 1"
+        );
+        $stmt->execute(['usuario_id' => $usuarioId]);
+        $row = $stmt->fetch();
+
+        return $row ? $this->enriquecerEstadoCobro($row) : null;
+    }
+
+    public function prepararImagenParaBot(array $recibo): ?string
+    {
+        $relativePath = trim((string) ($recibo['imagen_path'] ?? ''));
+
+        if ($relativePath !== '' && is_file($this->rutaAbsolutaRecibo($relativePath))) {
+            return $relativePath;
+        }
+
+        $lecturaId = (int) ($recibo['lectura_id'] ?? 0);
+
+        if ($lecturaId <= 0) {
+            return null;
+        }
+
+        try {
+            $lectura = $this->asegurarImagenRecibo($lecturaId);
+            $relativePath = trim((string) ($lectura['imagen_path'] ?? ''));
+            return $relativePath !== '' ? $relativePath : null;
+        } catch (Throwable $exception) {
+            return null;
+        }
+    }
+
+    public function mensajeEstadoParaBot(array $recibo): string
+    {
+        $tipoMensaje = 'recordatorio';
+
+        if (($recibo['estado_pago'] ?? '') === 'pagado') {
+            $tipoMensaje = 'agradecimiento';
+        } elseif (($recibo['estado_cobro'] ?? '') === 'adeudo') {
+            $tipoMensaje = 'adeudo';
+        }
+
+        return $this->construirMensajeNotificacion($recibo, $tipoMensaje);
+    }
+
     public function enviarWhatsApp(int $reciboId, WhatsApp $whatsApp): array
     {
         if ($reciboId <= 0) {

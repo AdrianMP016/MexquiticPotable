@@ -21,6 +21,7 @@ class SystemBootstrap
         self::ensureCobroAguaConfig($db);
         self::ensureDefaultAdmin($db);
         self::ensureDefaultAccessUsers($db);
+        self::ensureWhatsAppBotSesiones($db);
     }
 
     private static function ensureUsuariosSistema(PDO $db): void
@@ -321,6 +322,18 @@ class SystemBootstrap
             'password_hash' => $passwordHash,
             'rol' => $rol,
         ]);
+    }
+
+    private static function ensureWhatsAppBotSesiones(PDO $db): void
+    {
+        $db->exec(
+            "CREATE TABLE IF NOT EXISTS whatsapp_bot_sesiones (
+                telefono VARCHAR(40) NOT NULL,
+                opciones_json LONGTEXT NOT NULL,
+                created_at DATETIME NOT NULL,
+                PRIMARY KEY (telefono)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+        );
     }
 
     private static function columnExists(PDO $db, string $table, string $column): bool
