@@ -1,4 +1,4 @@
-var CACHE = 'mexquitic-verificador-v2';
+var CACHE = 'mexquitic-verificador-v3';
 
 self.addEventListener('install', function (e) {
   self.skipWaiting();
@@ -29,10 +29,12 @@ self.addEventListener('fetch', function (e) {
   // Todo lo demás: red primero, caché como respaldo
   e.respondWith(
     fetch(e.request).then(function (response) {
-      // Cachear solo respuestas exitosas
+      // Clonar de inmediato: si se clona despues de devolver la respuesta,
+      // el body ya pudo empezar a leerse y truena "Response body is already used".
       if (response && response.status === 200) {
+        var copy = response.clone();
         caches.open(CACHE).then(function (cache) {
-          cache.put(e.request, response.clone());
+          cache.put(e.request, copy);
         });
       }
       return response;
