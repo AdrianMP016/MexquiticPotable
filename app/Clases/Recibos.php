@@ -425,6 +425,48 @@ class Recibos
         ];
     }
 
+    public function sincronizarReciboConLectura(int $lecturaId): ?array
+    {
+        $lectura = $this->obtenerLectura($lecturaId);
+
+        if (empty($lectura['recibo_id'])) {
+            return null;
+        }
+
+        $data = $this->resolverConfiguracionImpresion($lectura, [
+            'lectura_id' => $lecturaId,
+            'cooperaciones' => (float) ($lectura['cooperaciones'] ?? 0),
+            'multas' => (float) ($lectura['multas'] ?? 0),
+            'recargos' => (float) ($lectura['recargos'] ?? 0),
+            'fecha_limite_pago' => (string) ($lectura['fecha_vencimiento'] ?? ''),
+        ]);
+        $cobro = $this->calcularCobroRecibo($lectura, $data, $this->resolverTarifaSnapshotRecibo($lectura));
+
+        $stmt = $this->db->prepare(
+            "UPDATE recibos
+             SET consumo_m3 = :consumo_m3,
+                 subtotal = :subtotal,
+                 total = :total,
+                 imagen_path = NULL,
+                 pendiente_actualizacion = 1
+             WHERE id = :recibo_id"
+        );
+        $stmt->execute([
+            'consumo_m3' => (float) ($lectura['consumo_m3'] ?? 0),
+            'subtotal' => $cobro['subtotal'],
+            'total' => $cobro['total'],
+            'recibo_id' => (int) $lectura['recibo_id'],
+        ]);
+
+        return [
+            'recibo_id' => (int) $lectura['recibo_id'],
+            'folio' => (string) ($lectura['folio'] ?? ''),
+            'consumo_m3' => (float) ($lectura['consumo_m3'] ?? 0),
+            'subtotal' => $cobro['subtotal'],
+            'total' => $cobro['total'],
+        ];
+    }
+
     public function buscarPorTelefono(string $telefono): array
     {
         $digits = preg_replace('/\D+/', '', $telefono) ?? '';
@@ -1132,7 +1174,7 @@ class Recibos
             $cobro
         );
 
-        $stmt = $this->db->prepare('UPDATE recibos SET imagen_path = :imagen_path WHERE id = :recibo_id');
+        $stmt = $this->db->prepare('UPDATE recibos SET imagen_path = :imagen_path, pendiente_actualizacion = 0 WHERE id = :recibo_id');
         $stmt->execute([
             'imagen_path' => $imagenPath,
             'recibo_id' => $recibo['recibo_id'],
@@ -1141,6 +1183,7 @@ class Recibos
         $lectura['imagen_path'] = $imagenPath;
         $lectura['folio'] = $recibo['folio'];
         $lectura['total'] = $cobro['total'];
+        $lectura['pendiente_actualizacion'] = 0;
 
         return $lectura;
     }

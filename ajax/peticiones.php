@@ -48,6 +48,7 @@ function mexquiticAllowedModules(string $accion): array
         'verificador.obtenerUsuario' => ['verificador'],
         'lecturas.listar' => ['plataforma'],
         'lecturas.obtener' => ['plataforma'],
+        'usuarios.actualizarLectura' => ['plataforma'],
         'recibos.generar' => ['plataforma'],
         'recibos.previsualizarPeriodo' => ['plataforma'],
         'recibos.pdfMasivoSinFondo' => ['plataforma'],
@@ -105,6 +106,7 @@ function mexquiticRegistrarBitacora(Auth $auth, PDO $db, string $accion, $data =
     $acciones = [
         'usuarios.guardar' => ['modulo' => 'plataforma', 'descripcion' => 'Alta de usuario de servicio.'],
         'usuarios.actualizar' => ['modulo' => 'plataforma', 'descripcion' => 'Actualización de usuario de servicio.'],
+        'usuarios.actualizarLectura' => ['modulo' => 'plataforma', 'descripcion' => 'Correccion manual de una lectura ya capturada.'],
         'usuarios.baja' => ['modulo' => 'plataforma', 'descripcion' => 'Baja de usuario de servicio.'],
         'medidores.guardar' => ['modulo' => 'plataforma', 'descripcion' => 'Alta de medidor.'],
         'medidores.actualizar' => ['modulo' => 'plataforma', 'descripcion' => 'Actualización de medidor.'],
@@ -278,6 +280,16 @@ try {
             $usuarioId = (int) Request::input('usuario_id', 0);
             $lecturas = $usuarios->ultimasLecturas($usuarioId);
             JsonResponse::success('Lecturas consultadas.', ['lecturas' => $lecturas]);
+            break;
+
+        case 'usuarios.actualizarLectura':
+            $usuarios = new Usuarios($db);
+            $recibos = new Recibos($db);
+            $fotoMedidor = $_FILES['foto_medidor'] ?? null;
+            $data = $usuarios->actualizarLectura(Request::post(), $fotoMedidor);
+            $data['recibo_sincronizado'] = $recibos->sincronizarReciboConLectura((int) $data['lectura_id']);
+            mexquiticRegistrarBitacora($auth, $db, $accion, $data);
+            JsonResponse::success('Lectura corregida correctamente.', $data);
             break;
 
         case 'medidores.listar':

@@ -1738,6 +1738,7 @@ $(function () {
     // Resetear tab lecturas para que cargue al abrirla
     $("#lecturasUsuarioLista").addClass("d-none").empty();
     $("#lecturasUsuarioLoading").removeClass("d-none");
+    $("#editarLecturaBox").addClass("d-none");
     $("#modalEditarUsuario").modal("show");
   }
 
@@ -1755,13 +1756,17 @@ $(function () {
       var obs = l.observaciones
         ? '<div class="lectura-card-observacion"><i class="fas fa-comment-alt mr-1"></i>' + escapeHtml(l.observaciones) + '</div>'
         : '<div class="lectura-card-sin-obs">Sin observaciones</div>';
+      var pendiente = Number(l.pendiente_actualizacion) === 1
+        ? '<span class="badge badge-warning lectura-card-badge"><i class="fas fa-exclamation-triangle mr-1"></i>Recibo modificado, falta reimprimir</span>'
+        : '';
 
       return (
-        '<div class="lectura-card">' +
+        '<div class="lectura-card" data-lectura-id="' + escapeHtml(l.lectura_id) + '">' +
           '<div class="lectura-card-header">' +
             '<span><i class="fas fa-calendar-alt mr-1"></i>' + escapeHtml(l.periodo_nombre || "-") + '</span>' +
             '<span>' + fecha + '</span>' +
           '</div>' +
+          pendiente +
           '<div class="lectura-card-body">' +
             '<div class="lectura-card-foto" data-foto="' + escapeHtml(l.foto_medicion_path || "") + '">' + foto + '</div>' +
             '<div class="lectura-card-datos">' +
@@ -1772,10 +1777,78 @@ $(function () {
               obs +
             '</div>' +
           '</div>' +
+          '<div class="lectura-card-footer text-right">' +
+            '<button type="button" class="btn btn-sm btn-outline-primary btn-editar-lectura" ' +
+              'data-lectura-id="' + escapeHtml(l.lectura_id) + '" ' +
+              'data-lectura-anterior="' + escapeHtml(l.lectura_anterior) + '" ' +
+              'data-lectura-actual="' + escapeHtml(l.lectura_actual) + '" ' +
+              'data-observaciones="' + escapeHtml(l.observaciones || "") + '">' +
+              '<i class="fas fa-pen mr-1"></i>Corregir</button>' +
+          '</div>' +
         '</div>'
       );
     }).join("");
   }
+
+  function abrirEditarLectura($btn) {
+    $("#editarLecturaFeedback").addClass("d-none").text("");
+    $("#formEditarLectura")[0].reset();
+    $("#editLecturaId").val($btn.data("lectura-id"));
+    $("#editLecturaAnterior").val($btn.data("lectura-anterior"));
+    $("#editLecturaActual").val($btn.data("lectura-actual"));
+    $("#editLecturaObservaciones").val($btn.data("observaciones"));
+    $("#lecturasUsuarioLista").addClass("d-none");
+    $("#editarLecturaBox").removeClass("d-none");
+  }
+
+  function cerrarEditarLectura() {
+    $("#editarLecturaBox").addClass("d-none");
+    $("#lecturasUsuarioLista").removeClass("d-none");
+  }
+
+  $(document).on("click", ".btn-editar-lectura", function () {
+    abrirEditarLectura($(this));
+  });
+
+  $(document).on("click", "#btnCancelarEditarLectura", function () {
+    cerrarEditarLectura();
+  });
+
+  $("#formEditarLectura").on("submit", function (event) {
+    event.preventDefault();
+
+    var usuarioId = parseInt($("#editUsuarioId").val(), 10);
+    var $feedback = $("#editarLecturaFeedback");
+    var $btn = $("#btnGuardarEditarLectura");
+    var formData = new FormData(this);
+    formData.append("accion", "usuarios.actualizarLectura");
+
+    $.ajax({
+      url: ajaxUrl,
+      method: "POST",
+      dataType: "json",
+      data: formData,
+      processData: false,
+      contentType: false,
+      beforeSend: function () {
+        $feedback.addClass("d-none").removeClass("alert-danger alert-success").text("");
+        $btn.prop("disabled", true).html('<i class="fas fa-spinner fa-spin mr-1"></i>Guardando');
+      },
+      success: function () {
+        cerrarEditarLectura();
+        cargarUltimasLecturas(usuarioId);
+      },
+      error: function (xhr) {
+        var errores = (xhr.responseJSON && xhr.responseJSON.errors) || {};
+        var mensaje = (xhr.responseJSON && xhr.responseJSON.message) || "No se pudo guardar la correccion.";
+        var detalle = Object.values(errores).join(" ");
+        $feedback.removeClass("d-none").addClass("alert-danger").text(detalle || mensaje);
+      },
+      complete: function () {
+        $btn.prop("disabled", false).html("Guardar correccion");
+      }
+    });
+  });
 
   function cargarUltimasLecturas(usuarioId) {
     $.ajax({

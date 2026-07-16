@@ -177,6 +177,13 @@ class SystemBootstrap
                  ADD COLUMN whatsapp_enviado_at DATETIME NULL DEFAULT NULL AFTER fecha_entrega"
             );
         }
+
+        if (!self::columnExists($db, 'recibos', 'pendiente_actualizacion')) {
+            $db->exec(
+                "ALTER TABLE recibos
+                 ADD COLUMN pendiente_actualizacion TINYINT(1) NOT NULL DEFAULT 0 AFTER imagen_path"
+            );
+        }
     }
 
     private static function ensureCobroAguaConfig(PDO $db): void

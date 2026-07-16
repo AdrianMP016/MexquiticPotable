@@ -739,11 +739,15 @@ class Usuarios
                 l.foto_medicion_path,
                 p.nombre          AS periodo_nombre,
                 p.fecha_inicio,
-                p.fecha_fin
+                p.fecha_fin,
+                r.id              AS recibo_id,
+                r.folio,
+                r.pendiente_actualizacion
              FROM lecturas l
              JOIN medidores m ON m.id = l.medidor_id
              JOIN usuarios_servicio u ON u.id = m.usuario_id
              JOIN periodos_bimestrales p ON p.id = l.periodo_id
+             LEFT JOIN recibos r ON r.lectura_id = l.id
              WHERE u.id = :usuario_id
              ORDER BY l.fecha_captura DESC, l.id DESC
              LIMIT :lim"
@@ -753,5 +757,130 @@ class Usuarios
         $stmt->execute();
 
         return $stmt->fetchAll();
+    }
+
+    public function actualizarLectura(array $input, ?array $foto = null): array
+    {
+        $lecturaId = (int) ($input['lectura_id'] ?? 0);
+        $lecturaAnterior = Request::cleanString($input['lectura_anterior'] ?? '');
+        $lecturaActual = Request::cleanString($input['lectura_actual'] ?? '');
+        $observaciones = Request::cleanString($input['observaciones'] ?? null);
+        $motivo = trim((string) ($input['motivo'] ?? ''));
+
+        $errors = [];
+
+        if ($lecturaId <= 0) {
+            $errors['lectura_id'] = 'No se recibio la lectura a corregir.';
+        }
+
+        if (!is_numeric($lecturaAnterior) || (float) $lecturaAnterior < 0) {
+            $errors['lectura_anterior'] = 'Captura una lectura anterior valida.';
+        }
+
+        if (!is_numeric($lecturaActual) || (float) $lecturaActual < 0) {
+            $errors['lectura_actual'] = 'Captura una lectura actual valida.';
+        }
+
+        if ($motivo === '') {
+            $errors['motivo'] = 'Indica el motivo de la correccion.';
+        }
+
+        if (!empty($errors)) {
+            throw new InvalidArgumentException(json_encode($errors, JSON_UNESCAPED_UNICODE));
+        }
+
+        $stmt = $this->db->prepare(
+            "SELECT id, lectura_anterior, lectura_actual, observaciones, foto_medicion_path
+             FROM lecturas WHERE id = :id LIMIT 1"
+        );
+        $stmt->execute(['id' => $lecturaId]);
+        $anterior = $stmt->fetch();
+
+        if (!$anterior) {
+            throw new RuntimeException('No se encontro la lectura a corregir.');
+        }
+
+        $fotoPath = null;
+        if ($foto && ($foto['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+            $fotoPath = $this->guardarFotoMedicion($foto, $lecturaId);
+        }
+
+        $update = $this->db->prepare(
+            "UPDATE lecturas
+             SET lectura_anterior = :lectura_anterior,
+                 lectura_actual = :lectura_actual,
+                 observaciones = :observaciones"
+            . ($fotoPath !== null ? ', foto_medicion_path = :foto_medicion_path' : '')
+            . " WHERE id = :id"
+        );
+        $params = [
+            'lectura_anterior' => (float) $lecturaAnterior,
+            'lectura_actual' => (float) $lecturaActual,
+            'observaciones' => $observaciones,
+            'id' => $lecturaId,
+        ];
+        if ($fotoPath !== null) {
+            $params['foto_medicion_path'] = $fotoPath;
+        }
+        $update->execute($params);
+
+        return [
+            'lectura_id' => $lecturaId,
+            'motivo' => $motivo,
+            'valores_anteriores' => [
+                'lectura_anterior' => (float) $anterior['lectura_anterior'],
+                'lectura_actual' => (float) $anterior['lectura_actual'],
+                'observaciones' => $anterior['observaciones'],
+            ],
+            'valores_nuevos' => [
+                'lectura_anterior' => (float) $lecturaAnterior,
+                'lectura_actual' => (float) $lecturaActual,
+                'observaciones' => $observaciones,
+            ],
+            'foto_medicion_path' => $fotoPath,
+        ];
+    }
+
+    private function guardarFotoMedicion(array $file, int $lecturaId): string
+    {
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            throw new RuntimeException('No se pudo subir la foto del medidor.');
+        }
+
+        if (($file['size'] ?? 0) > 10 * 1024 * 1024) {
+            throw new RuntimeException('La foto del medidor no debe pesar mas de 10 MB.');
+        }
+
+        $allowed = [
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+        ];
+        $imageInfo = getimagesize($file['tmp_name']);
+        $mime = $imageInfo['mime'] ?? null;
+
+        if (!isset($allowed[$mime])) {
+            throw new RuntimeException('La foto del medidor debe ser JPG, PNG o WEBP.');
+        }
+
+        $uploadDir = dirname(__DIR__, 2) . '/mediciones';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0775, true);
+        }
+
+        $filename = 'lectura_' . $lecturaId . '.' . $allowed[$mime];
+        $destination = $uploadDir . '/' . $filename;
+
+        if (!move_uploaded_file($file['tmp_name'], $destination)) {
+            throw new RuntimeException('No se pudo guardar la foto del medidor.');
+        }
+
+        foreach (glob($uploadDir . '/lectura_' . $lecturaId . '.*') ?: [] as $previousFile) {
+            if (is_file($previousFile) && $previousFile !== $destination) {
+                unlink($previousFile);
+            }
+        }
+
+        return 'mediciones/' . $filename;
     }
 }

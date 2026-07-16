@@ -770,6 +770,23 @@ label {
   font-size: 11px;
   font-style: italic;
 }
+.lectura-card-badge {
+  display: block;
+  border-radius: 0;
+  text-align: left;
+  padding: 6px 14px;
+  font-size: 12px;
+}
+.lectura-card-footer {
+  padding: 8px 14px 12px;
+  border-top: 1px solid var(--agua-border);
+}
+.editar-lectura-box {
+  border: 1px solid var(--agua-border);
+  border-radius: 10px;
+  padding: 16px;
+  background: #fff;
+}
 #lightboxFotoMedidor {
   display: none;
   position: fixed;
