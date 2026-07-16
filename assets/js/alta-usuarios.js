@@ -1792,11 +1792,12 @@ $(function () {
 
   function abrirEditarLectura($btn) {
     $("#editarLecturaFeedback").addClass("d-none").text("");
-    $("#formEditarLectura")[0].reset();
     $("#editLecturaId").val($btn.data("lectura-id"));
     $("#editLecturaAnterior").val($btn.data("lectura-anterior"));
     $("#editLecturaActual").val($btn.data("lectura-actual"));
     $("#editLecturaObservaciones").val($btn.data("observaciones"));
+    $("#editLecturaMotivo").val("");
+    $("#editLecturaFoto").val("");
     $("#lecturasUsuarioLista").addClass("d-none");
     $("#editarLecturaBox").removeClass("d-none");
   }
@@ -1814,14 +1815,33 @@ $(function () {
     cerrarEditarLectura();
   });
 
-  $("#formEditarLectura").on("submit", function (event) {
-    event.preventDefault();
-
+  $(document).on("click", "#btnGuardarEditarLectura", function () {
     var usuarioId = parseInt($("#editUsuarioId").val(), 10);
     var $feedback = $("#editarLecturaFeedback");
-    var $btn = $("#btnGuardarEditarLectura");
-    var formData = new FormData(this);
+    var $btn = $(this);
+
+    var lecturaAnterior = $("#editLecturaAnterior").val();
+    var lecturaActual = $("#editLecturaActual").val();
+    var motivo = $.trim($("#editLecturaMotivo").val());
+
+    if (lecturaAnterior === "" || lecturaActual === "" || motivo === "") {
+      $feedback.removeClass("d-none alert-success").addClass("alert-danger")
+        .text("Captura lectura anterior, lectura actual y el motivo de la correccion.");
+      return;
+    }
+
+    var formData = new FormData();
     formData.append("accion", "usuarios.actualizarLectura");
+    formData.append("lectura_id", $("#editLecturaId").val());
+    formData.append("lectura_anterior", lecturaAnterior);
+    formData.append("lectura_actual", lecturaActual);
+    formData.append("observaciones", $("#editLecturaObservaciones").val());
+    formData.append("motivo", motivo);
+
+    var fotoFile = $("#editLecturaFoto")[0].files[0];
+    if (fotoFile) {
+      formData.append("foto_medidor", fotoFile);
+    }
 
     $.ajax({
       url: ajaxUrl,
