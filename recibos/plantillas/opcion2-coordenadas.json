@@ -160,6 +160,7 @@
     "stub_mov5_importe": { "x": 720, "y": 2212, "width": 170, "fontSize": 16, "align": "right", "color": "#111111" },
     "stub_total_desc": { "x": 420, "y": 2258, "width": 260, "fontSize": 16, "align": "right", "color": "#111111", "bold": true },
     "stub_total_importe": { "x": 720, "y": 2258, "width": 170, "fontSize": 16, "align": "right", "color": "#111111", "bold": true },
-    "stub_tesorero": { "x": 1180, "y": 2480, "width": 320, "fontSize": 18, "align": "center", "color": "#111111" }
+    "stub_tesorero": { "x": 1180, "y": 2480, "width": 320, "fontSize": 18, "align": "center", "color": "#111111" },
+    "qr_token": { "x": 1338, "y": 2506, "width": 300, "fontSize": 8, "align": "center", "color": "#555555", "multiline": true, "lineHeight": 10, "maxLines": 3 }
   }
 }

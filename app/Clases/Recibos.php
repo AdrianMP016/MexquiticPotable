@@ -1071,6 +1071,7 @@ class Recibos
 
         $font = $this->obtenerFuente();
         $valores = $this->construirValoresRecibo($lectura, $recibo, $data, $subtotal, $total, $cobro);
+        $valores['qr_token'] = str_replace('.', ".\n", $qrToken);
 
         foreach ($valores as $field => $value) {
             if (isset($fields[$field])) {
