@@ -108,7 +108,7 @@
     "label_consumo_m3": { "x": 1004, "y": 618, "width": 250, "fontSize": 18, "align": "left", "color": "#111111" },
     "consumo_m3": { "x": 1360, "y": 618, "width": 136, "fontSize": 18, "align": "right", "color": "#111111", "bold": true },
     "label_tarifa": { "x": 1080, "y": 680, "width": 150, "fontSize": 18, "align": "left", "color": "#111111" },
-    "tarifa": { "x": 1260, "y": 680, "width": 235, "fontSize": 18, "align": "center", "color": "#111111" },
+    "tarifa": { "x": 1260, "y": 680, "width": 340, "fontSize": 15, "align": "left", "color": "#111111", "multiline": true, "lineHeight": 17, "maxLines": 2 },
 
     "detalle_movimientos_titulo": { "x": 95, "y": 775, "width": 620, "fontSize": 22, "align": "left", "color": "#111111", "bold": true },
     "mov1_desc": { "x": 95, "y": 824, "width": 570, "fontSize": 17, "align": "left", "color": "#111111" },

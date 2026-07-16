@@ -280,6 +280,7 @@ $(function () {
       if (decodedText === ultimoToken && ahora - ultimoEscaneoMs < 4000) {
         return;
       }
+      ultimoToken = decodedText;
       ultimoEscaneoMs = ahora;
       buscarReciboPorQr(decodedText);
     };
