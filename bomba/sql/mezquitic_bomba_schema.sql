@@ -1,17 +1,18 @@
 -- Esquema de la base de datos para Control de Bomba (proyecto aislado, no toca mezquitic_agua)
 --
+-- Este archivo NO crea la base de datos ni hace USE: se importa directo sobre
+-- la base que ya hayas creado y tengas seleccionada (el nombre puede ser cualquiera,
+-- por ejemplo u922265866_bomba en Hostinger, o mezquitic_bomba en local).
+--
 -- Uso en Hostinger (hPanel):
---   1. Crea una base de datos nueva y un usuario con permisos sobre ella (hPanel > Bases de datos).
---   2. Importa este archivo con phpMyAdmin (o "Importar" en hPanel) sobre esa base vacia.
+--   1. Crea la base de datos nueva y un usuario con permisos sobre ella (hPanel > Bases de datos).
+--   2. Entra a phpMyAdmin, selecciona esa base (vacia) y usa la pestaña "Importar" con este archivo.
 --   3. No hace falta insertar nada mas a mano: la primera vez que cargue cualquier
 --      pagina de bomba/, SystemBootstrap.php crea el usuario admin/admin y los valores
 --      de configuracion por defecto automaticamente.
 --
 -- Uso en local (WAMP):
---   mysql -uroot -padmin < mezquitic_bomba_schema.sql
-
-CREATE DATABASE IF NOT EXISTS mezquitic_bomba CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE mezquitic_bomba;
+--   mysql -uroot -padmin mezquitic_bomba < mezquitic_bomba_schema.sql
 
 -- Evita errores de llave foranea si este archivo se vuelve a importar sobre una base ya existente.
 SET FOREIGN_KEY_CHECKS = 0;
