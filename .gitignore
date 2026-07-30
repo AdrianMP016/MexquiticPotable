@@ -1,6 +1,9 @@
 # Local configuration with secrets
 app/Config/database.php
 app/Config/ultramsg.php
+bomba/app/Config/database.php
+bomba/app/Config/shelly.php
+bomba/app/Config/cron.php
 
 # Generated and user-managed files
 fachadas/

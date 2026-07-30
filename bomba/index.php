@@ -1,0 +1,81 @@
+<?php
+
+require_once __DIR__ . '/app/Core/PageGuard.php';
+
+$currentUser = bombaRequirePageAccess(['admin', 'operador']);
+$pageTitle = 'Panel principal — Control de Bomba';
+$activeView = 'panel';
+$jsFile = 'dashboard.js';
+
+require __DIR__ . '/app/views/_header.php';
+?>
+
+<div class="bomba-card">
+  <h2><i class="fas fa-tint"></i> Estado de la bomba</h2>
+  <div class="bomba-estado">
+    <div class="bomba-led apagada" id="bombaLed"><i class="fas fa-power-off"></i></div>
+    <div>
+      <div class="bomba-estado-texto apagada" id="bombaEstadoTexto">Consultando...</div>
+      <div class="bomba-temperatura" id="bombaTemperatura"><i class="fas fa-thermometer-half"></i> --</div>
+    </div>
+  </div>
+
+  <div id="estadoFeedback" class="alerta peligro oculto"></div>
+
+  <button type="button" class="btn-bomba encender" id="btnEncenderApagar" disabled>
+    <i class="fas fa-power-off"></i> Cargando...
+  </button>
+  <div class="btn-bomba-espera oculto" id="esperaTexto"></div>
+</div>
+
+<div class="bomba-card">
+  <h2><i class="fas fa-stopwatch"></i> Cronometro</h2>
+  <p style="color:var(--agua-muted); margin-top:-8px;">Enciende la bomba ahora por un tiempo determinado; se apaga sola al terminar.</p>
+
+  <div id="cronometroInactivo">
+    <div class="cronometro-selector">
+      <div>
+        <label for="cronHoras">Horas</label>
+        <input type="number" id="cronHoras" min="0" max="23" value="0">
+      </div>
+      <div>
+        <label for="cronMinutos">Minutos</label>
+        <input type="number" id="cronMinutos" min="0" max="59" value="30">
+      </div>
+      <button type="button" class="btn-grande primario" id="btnIniciarCronometro">
+        <i class="fas fa-play"></i> Iniciar
+      </button>
+    </div>
+  </div>
+
+  <div id="cronometroActivoBox" class="oculto">
+    <div class="cronometro-activo" id="cronometroTexto">--</div>
+    <button type="button" class="btn-grande peligro" id="btnCancelarCronometro" style="margin-top:14px; width:100%; justify-content:center;">
+      <i class="fas fa-stop"></i> Cancelar cronometro
+    </button>
+  </div>
+
+  <div id="cronometroFeedback" class="alerta peligro oculto"></div>
+</div>
+
+<div class="bomba-card">
+  <h2><i class="fas fa-chart-bar"></i> Actividad de la bomba</h2>
+  <div class="actividad-tabs">
+    <button type="button" class="activo" data-periodo="dia">Dia</button>
+    <button type="button" data-periodo="semana">Semana</button>
+    <button type="button" data-periodo="mes">Mes</button>
+    <button type="button" data-periodo="anio">Año</button>
+  </div>
+  <div class="actividad-stats">
+    <div class="actividad-stat">
+      <div class="valor" id="actividadHoras">--</div>
+      <div class="etiqueta">Horas encendida</div>
+    </div>
+    <div class="actividad-stat">
+      <div class="valor" id="actividadVeces">--</div>
+      <div class="etiqueta">Veces activada</div>
+    </div>
+  </div>
+</div>
+
+<?php require __DIR__ . '/app/views/_footer.php'; ?>
