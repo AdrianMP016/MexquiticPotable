@@ -25,10 +25,8 @@ if ($isLocal) {
 return [
     'host' => 'localhost',
     'port' => '3306',
-    'database' => 'u922265866_mexquitic',
-    'username' => 'u922265866_mexquitic',
-    'password' => '748159263.Mexquitic',
+    'database' => 'TU_BASE_DE_DATOS',
+    'username' => 'TU_USUARIO',
+    'password' => 'TU_PASSWORD',
     'charset' => 'utf8mb4',
 ];
-
-/*4*/
