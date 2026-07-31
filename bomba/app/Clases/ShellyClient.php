@@ -2,12 +2,19 @@
 
 require_once __DIR__ . '/ConfigBomba.php';
 
+/**
+ * El circuito de la bomba usa 2 canales del Shelly Pro 2 como botones de pulso
+ * (Marcha/Paro), no como un rele que se queda encendido. Por eso esta clase
+ * solo sabe "mandar un pulso", nunca "leer si la bomba esta prendida" — esa
+ * informacion se calcula en Activaciones.php a partir de nuestra propia
+ * bitacora de activaciones, no preguntandole al Shelly.
+ */
 class ShellyClient
 {
     private array $config;
     private string $configSource;
     private bool $modoSimulado;
-    private ?ConfigBomba $configBomba = null;
+    private ConfigBomba $configBomba;
 
     public function __construct(PDO $db)
     {
@@ -19,58 +26,21 @@ class ShellyClient
         $this->config = require $configPath;
         $this->configSource = basename($configPath);
         $this->modoSimulado = !empty($this->config['modo_simulado']);
+        $this->configBomba = new ConfigBomba($db);
 
         if (!$this->modoSimulado) {
             $this->validateConfig();
-        } else {
-            $this->configBomba = new ConfigBomba($db);
         }
     }
 
-    public function obtenerEstadoRelay(): array
+    public function pulsarInicio(): array
     {
-        if ($this->modoSimulado) {
-            return ['encendido' => $this->configBomba->obtener('sim_relay_encendido', '0') === '1'];
-        }
-
-        $respuesta = $this->rpc((string) $this->config['device_id_relay'], 'Switch.GetStatus', [
-            'id' => (int) ($this->config['channel_relay'] ?? 0),
-        ]);
-
-        return [
-            'encendido' => (bool) ($respuesta['output'] ?? false),
-            'raw' => $respuesta,
-        ];
+        return $this->pulsar((int) ($this->config['channel_inicio'] ?? 0), 'marcha');
     }
 
-    public function encenderRelay(): array
+    public function pulsarParo(): array
     {
-        if ($this->modoSimulado) {
-            $this->configBomba->establecer('sim_relay_encendido', '1');
-            return ['encendido' => true];
-        }
-
-        $respuesta = $this->rpc((string) $this->config['device_id_relay'], 'Switch.Set', [
-            'id' => (int) ($this->config['channel_relay'] ?? 0),
-            'on' => true,
-        ]);
-
-        return ['encendido' => true, 'raw' => $respuesta];
-    }
-
-    public function apagarRelay(): array
-    {
-        if ($this->modoSimulado) {
-            $this->configBomba->establecer('sim_relay_encendido', '0');
-            return ['encendido' => false];
-        }
-
-        $respuesta = $this->rpc((string) $this->config['device_id_relay'], 'Switch.Set', [
-            'id' => (int) ($this->config['channel_relay'] ?? 0),
-            'on' => false,
-        ]);
-
-        return ['encendido' => false, 'raw' => $respuesta];
+        return $this->pulsar((int) ($this->config['channel_paro'] ?? 1), 'paro');
     }
 
     public function leerSensorTemperatura(): array
@@ -89,6 +59,23 @@ class ShellyClient
             'humedad_pct' => isset($respuesta['rh']) ? (float) $respuesta['rh'] : null,
             'raw' => $respuesta,
         ];
+    }
+
+    private function pulsar(int $canal, string $tipo): array
+    {
+        $duracion = (int) $this->configBomba->obtenerNumero('proteccion_delay_segundos', 2);
+
+        if ($this->modoSimulado) {
+            return ['pulsado' => true, 'canal' => $canal, 'tipo' => $tipo, 'simulado' => true];
+        }
+
+        $respuesta = $this->rpc((string) $this->config['device_id_relay'], 'Switch.Set', [
+            'id' => $canal,
+            'on' => true,
+            'toggle_after' => $duracion,
+        ]);
+
+        return ['pulsado' => true, 'canal' => $canal, 'tipo' => $tipo, 'raw' => $respuesta];
     }
 
     private function rpc(string $deviceId, string $method, array $params = []): array
