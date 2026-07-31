@@ -17,6 +17,7 @@ require __DIR__ . '/app/views/_header.php';
     <div>
       <div class="bomba-estado-texto apagada" id="bombaEstadoTexto">Consultando...</div>
       <div class="bomba-temperatura" id="bombaTemperatura"><i class="fas fa-thermometer-half"></i> --</div>
+      <div class="sensor-actualizado oculto" id="bombaSensorActualizado"></div>
     </div>
   </div>
 
@@ -26,6 +27,20 @@ require __DIR__ . '/app/views/_header.php';
     <i class="fas fa-power-off"></i> Cargando...
   </button>
   <div class="btn-bomba-espera oculto" id="esperaTexto"></div>
+
+  <button type="button" class="btn-grande secundario" id="btnVerificarConexion" style="width:100%; justify-content:center; margin-top:14px;">
+    <i class="fas fa-satellite-dish"></i> Verificar conexion con el Shelly
+  </button>
+</div>
+
+<div class="bomba-modal-fondo" id="modalConexion">
+  <div class="bomba-modal-caja">
+    <h3><i class="fas fa-satellite-dish"></i> Conexion con el Shelly</h3>
+    <div id="modalConexionContenido">Consultando...</div>
+    <div class="bomba-modal-botones">
+      <button type="button" class="btn-grande secundario" id="btnCerrarModalConexion" style="width:100%;">Cerrar</button>
+    </div>
+  </div>
 </div>
 
 <div class="bomba-card">

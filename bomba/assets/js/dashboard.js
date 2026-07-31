@@ -40,8 +40,15 @@ function bombaPintarEstado(data) {
       partes.push('<i class="fas fa-tint"></i> ' + data.temperatura.humedad_pct.toFixed(0) + '% humedad');
     }
     $("#bombaTemperatura").html(partes.join(' &nbsp;&middot;&nbsp; '));
+
+    if (data.temperatura.actualizado_at) {
+      $("#bombaSensorActualizado").text("Ultimo reporte del sensor: " + bombaFormatoFecha12h(data.temperatura.actualizado_at) + " (el sensor no reporta en vivo, avisa cada varios minutos)").removeClass("oculto");
+    } else {
+      $("#bombaSensorActualizado").addClass("oculto");
+    }
   } else {
     $("#bombaTemperatura").html('<i class="fas fa-thermometer-half"></i> sensor no disponible');
+    $("#bombaSensorActualizado").addClass("oculto");
   }
 
   var espera = data.espera_restante_segundos || 0;
@@ -118,6 +125,21 @@ function bombaRefrescarEstado() {
     data: { accion: "activaciones.estado" },
     success: function (response) {
       bombaPintarEstado(response.data || {});
+    }
+  });
+}
+
+function bombaVerificarConexion(callback) {
+  $.ajax({
+    url: bombaAjaxUrl,
+    method: "POST",
+    dataType: "json",
+    data: { accion: "activaciones.verificarConexion" },
+    success: function (response) {
+      callback(response.data || {}, null);
+    },
+    error: function (xhr) {
+      callback(null, bombaExtraerMensaje(xhr, "No se pudo verificar la conexion."));
     }
   });
 }

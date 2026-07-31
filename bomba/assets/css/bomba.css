@@ -225,6 +225,13 @@ body {
   margin-top: 6px;
 }
 
+.sensor-actualizado {
+  font-size: 13px;
+  color: var(--agua-muted);
+  font-style: italic;
+  margin-top: 4px;
+}
+
 /* Boton grande de encendido/apagado */
 .btn-bomba {
   display: block;

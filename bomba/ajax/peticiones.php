@@ -20,6 +20,7 @@ function bombaAccionesPermitidas(string $accion): array
         'activaciones.estadisticas' => ['admin', 'operador'],
         'activaciones.resumenMensual' => ['admin', 'operador'],
         'activaciones.detalleDia' => ['admin', 'operador'],
+        'activaciones.verificarConexion' => ['admin', 'operador'],
 
         'regla.obtenerActiva' => ['admin', 'operador'],
         'regla.guardar' => ['admin'],
@@ -145,6 +146,11 @@ try {
             $activaciones = new Activaciones($db, new ShellyClient($db));
             $data = $activaciones->detalleDia((string) Request::input('fecha', ''));
             JsonResponse::success('Detalle del dia consultado correctamente.', ['activaciones' => $data]);
+            break;
+
+        case 'activaciones.verificarConexion':
+            $shelly = new ShellyClient($db);
+            JsonResponse::success('Conexion verificada.', $shelly->verificarConexion());
             break;
 
         case 'regla.obtenerActiva':

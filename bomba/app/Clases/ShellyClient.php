@@ -49,6 +49,31 @@ class ShellyClient
         return $this->pulsar((int) ($this->config['channel_paro'] ?? 1), 'paro');
     }
 
+    public function verificarConexion(): array
+    {
+        if ($this->modoSimulado) {
+            return [
+                'conectado' => true,
+                'en_linea' => true,
+                'simulado' => true,
+                'actualizado_at' => date('Y-m-d H:i:s'),
+            ];
+        }
+
+        $respuesta = $this->request('POST', '/device/status', [
+            'id' => $this->config['device_id_relay'],
+            'auth_key' => $this->config['auth_key'],
+        ]);
+
+        $status = (array) ($respuesta['device_status'] ?? []);
+
+        return [
+            'conectado' => (bool) ($status['cloud']['connected'] ?? false),
+            'en_linea' => (bool) ($respuesta['online'] ?? false),
+            'actualizado_at' => isset($status['_updated']) ? (string) $status['_updated'] : null,
+        ];
+    }
+
     public function leerSensorTemperatura(): array
     {
         if ($this->modoSimulado) {
@@ -56,6 +81,7 @@ class ShellyClient
                 'temperatura_c' => $this->configBomba->obtenerNumero('sim_temperatura_c', 22.5),
                 'humedad_pct' => $this->configBomba->obtenerNumero('sim_humedad_pct', 45),
                 'bateria_pct' => 100.0,
+                'actualizado_at' => date('Y-m-d H:i:s'),
             ];
         }
 
@@ -73,6 +99,9 @@ class ShellyClient
             'temperatura_c' => isset($temperatura['tC']) ? (float) $temperatura['tC'] : null,
             'humedad_pct' => isset($humedad['rh']) ? (float) $humedad['rh'] : null,
             'bateria_pct' => isset($bateria['percent']) ? (float) $bateria['percent'] : null,
+            // El H&T reporta cada varios minutos para ahorrar bateria, no en vivo:
+            // esta marca de tiempo es la de su ultimo reporte, no la de "ahora mismo".
+            'actualizado_at' => isset($status['_updated']) ? (string) $status['_updated'] : null,
             'raw' => $respuesta,
         ];
     }
