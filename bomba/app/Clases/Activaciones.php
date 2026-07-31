@@ -278,6 +278,15 @@ class Activaciones
         ];
     }
 
+    public function diagnosticoCron(): array
+    {
+        return [
+            'cron_ultima_ejecucion_at' => ($v = $this->configBomba->obtener('cron_ultima_ejecucion_at', '')) !== '' ? $v : null,
+            'cron_ultimo_resultado' => ($v = $this->configBomba->obtener('cron_ultimo_resultado', '')) !== '' ? $v : null,
+            'hora_servidor_actual' => date('Y-m-d H:i:s'),
+        ];
+    }
+
     public function detalleDia(string $fecha): array
     {
         if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)) {
