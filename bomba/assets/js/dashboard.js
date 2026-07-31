@@ -96,7 +96,13 @@ function bombaActualizarCronometroLocal() {
     return;
   }
 
-  var restanteSegundos = Math.max(0, Math.round((bombaCronometroFinTs - Date.now()) / 1000));
+  var restanteSegundos = Math.round((bombaCronometroFinTs - Date.now()) / 1000);
+
+  if (restanteSegundos <= 0) {
+    $("#cronometroTexto").html('<i class="fas fa-spinner fa-spin"></i> Terminando, apagando la bomba...');
+    return;
+  }
+
   $("#cronometroTexto").text("Faltan " + bombaFormatoRelojCompleto(restanteSegundos));
 }
 

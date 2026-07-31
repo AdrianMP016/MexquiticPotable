@@ -97,7 +97,7 @@ $(function () {
           return (
             '<div class="detalle-dia-item">' +
               '<strong>' + bombaOrigenTexto(a.origen) + '</strong> &middot; ' + duracion + '<br>' +
-              '<span style="color:var(--agua-muted);">' + a.inicio_at + (a.fin_at ? " a " + a.fin_at : "") + '</span>' +
+              '<span style="color:var(--agua-muted);">' + bombaFormatoFecha12h(a.inicio_at) + (a.fin_at ? " a " + bombaFormatoFecha12h(a.fin_at) : "") + '</span>' +
               (a.iniciado_por_nombre ? '<br><span style="color:var(--agua-muted);">Por: ' + a.iniciado_por_nombre + '</span>' : '') +
             '</div>'
           );

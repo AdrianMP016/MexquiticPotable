@@ -380,6 +380,50 @@ body {
   color: var(--agua-muted);
 }
 
+/* Selector de hora en formato 12h */
+.hora-selector-12h {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hora-selector-12h select {
+  font-size: 19px;
+  padding: 12px 8px;
+  border-radius: 10px;
+  border: 2px solid var(--agua-border);
+  flex: 1;
+}
+
+.hora-selector-12h span {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--agua-muted);
+}
+
+.ampm-selector {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.ampm-pastilla {
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 2px solid var(--agua-border);
+  background: #fff;
+  font-weight: 700;
+  cursor: pointer;
+  user-select: none;
+  font-size: 15px;
+}
+
+.ampm-pastilla.activo {
+  background: var(--agua-primary);
+  border-color: var(--agua-primary);
+  color: #fff;
+}
+
 /* Dias de la semana (pastillas) */
 .dias-semana {
   display: flex;
