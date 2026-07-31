@@ -21,12 +21,6 @@ $esAdminHeader = (string) ($currentUser['rol'] ?? '') === 'admin';
   </button>
   <h1><i class="fas fa-faucet"></i> Control de Bomba</h1>
   <div class="bomba-topbar-right">
-    <div class="usuario-info">
-      <span><i class="fas fa-user-circle"></i> <?= htmlspecialchars((string) ($currentUser['nombre'] ?? '')) ?></span>
-      <button type="button" class="btn-grande secundario" id="btnSalir" style="padding:10px 16px;font-size:15px;">
-        <i class="fas fa-sign-out-alt"></i> Salir
-      </button>
-    </div>
     <div class="bomba-cronometro-widget oculto" id="widgetCronometro">
       <i class="fas fa-stopwatch"></i> <span id="widgetCronometroTexto">--</span>
     </div>
@@ -35,17 +29,41 @@ $esAdminHeader = (string) ($currentUser['rol'] ?? '') === 'admin';
 
 <div class="bomba-drawer-backdrop" id="drawerBackdrop"></div>
 <nav class="bomba-drawer" id="drawer">
-  <div class="bomba-drawer-header">
-    <span><i class="fas fa-faucet"></i> Menu</span>
-    <button type="button" id="btnCerrarDrawer" aria-label="Cerrar"><i class="fas fa-times"></i></button>
+  <button type="button" id="btnCerrarDrawer" aria-label="Cerrar" class="bomba-drawer-cerrar"><i class="fas fa-times"></i></button>
+
+  <div class="bomba-drawer-marca">
+    <div class="bomba-drawer-logo">
+      <img src="../assets/img/logo-recibo.png" alt="Logo del sistema">
+    </div>
+    <div class="bomba-drawer-marca-texto">
+      <strong>Sistema de Agua</strong>
+      <small>Control de Bomba &middot; Mexquitic de Carmona</small>
+    </div>
   </div>
-  <a href="index.php" class="<?= ($activeView ?? '') === 'panel' ? 'activo' : '' ?>"><i class="fas fa-tachometer-alt"></i> Panel</a>
-  <a href="programacion.php" class="<?= ($activeView ?? '') === 'programacion' ? 'activo' : '' ?>"><i class="fas fa-clock"></i> Programacion</a>
-  <a href="actividad.php" class="<?= ($activeView ?? '') === 'actividad' ? 'activo' : '' ?>"><i class="fas fa-chart-bar"></i> Actividad</a>
-  <?php if ($esAdminHeader): ?>
-  <a href="usuarios.php" class="<?= ($activeView ?? '') === 'usuarios' ? 'activo' : '' ?>"><i class="fas fa-users-cog"></i> Usuarios</a>
-  <?php endif; ?>
-  <a href="bitacora.php" class="<?= ($activeView ?? '') === 'bitacora' ? 'activo' : '' ?>"><i class="fas fa-history"></i> Bitacora</a>
+
+  <div class="bomba-drawer-divisor"></div>
+
+  <div class="bomba-drawer-sesion">
+    <div class="bomba-drawer-sesion-meta">
+      <span class="bomba-drawer-sesion-label">Sesion activa</span>
+      <strong><?= htmlspecialchars((string) ($currentUser['nombre'] ?? '')) ?></strong>
+      <small>@<?= htmlspecialchars((string) ($currentUser['usuario'] ?? '')) ?></small>
+      <span class="bomba-drawer-rol-badge"><?= $esAdminHeader ? 'Administrador' : 'Operador' ?></span>
+    </div>
+    <button type="button" class="bomba-drawer-salir" id="btnSalir">
+      <i class="fas fa-sign-out-alt"></i> Salir
+    </button>
+  </div>
+
+  <div class="bomba-drawer-links">
+    <a href="index.php" class="<?= ($activeView ?? '') === 'panel' ? 'activo' : '' ?>"><i class="fas fa-tachometer-alt"></i> Panel</a>
+    <a href="programacion.php" class="<?= ($activeView ?? '') === 'programacion' ? 'activo' : '' ?>"><i class="fas fa-clock"></i> Programacion</a>
+    <a href="actividad.php" class="<?= ($activeView ?? '') === 'actividad' ? 'activo' : '' ?>"><i class="fas fa-chart-bar"></i> Actividad</a>
+    <?php if ($esAdminHeader): ?>
+    <a href="usuarios.php" class="<?= ($activeView ?? '') === 'usuarios' ? 'activo' : '' ?>"><i class="fas fa-users-cog"></i> Usuarios</a>
+    <?php endif; ?>
+    <a href="bitacora.php" class="<?= ($activeView ?? '') === 'bitacora' ? 'activo' : '' ?>"><i class="fas fa-history"></i> Bitacora</a>
+  </div>
 </nav>
 
 <div class="bomba-content">
