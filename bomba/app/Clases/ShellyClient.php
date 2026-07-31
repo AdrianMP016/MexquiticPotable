@@ -8,6 +8,12 @@ require_once __DIR__ . '/ConfigBomba.php';
  * solo sabe "mandar un pulso", nunca "leer si la bomba esta prendida" — esa
  * informacion se calcula en Activaciones.php a partir de nuestra propia
  * bitacora de activaciones, no preguntandole al Shelly.
+ *
+ * Nota de integracion: se usa el endpoint clasico de Shelly Cloud
+ * (/device/status, /device/relay/control) con auth_key como campo de
+ * formulario — verificado en vivo contra la cuenta real. El endpoint RPC
+ * mas nuevo (/device/rpc) exige un esquema de autenticacion distinto
+ * (token OAuth, no el "Cloud Key") y no aplica aqui.
  */
 class ShellyClient
 {
@@ -53,14 +59,15 @@ class ShellyClient
             ];
         }
 
-        // Shelly.GetStatus trae todos los componentes del dispositivo en una sola
-        // llamada (temperature:0, humidity:0, devicepower:0), en vez de tener que
-        // pedir cada sensor por separado.
-        $respuesta = $this->rpc((string) $this->config['device_id_sensor'], 'Shelly.GetStatus', []);
+        $respuesta = $this->request('POST', '/device/status', [
+            'id' => $this->config['device_id_sensor'],
+            'auth_key' => $this->config['auth_key'],
+        ]);
 
-        $temperatura = (array) ($respuesta['temperature:0'] ?? []);
-        $humedad = (array) ($respuesta['humidity:0'] ?? []);
-        $bateria = (array) ($respuesta['devicepower:0']['battery'] ?? []);
+        $status = (array) ($respuesta['device_status'] ?? []);
+        $temperatura = (array) ($status['temperature:0'] ?? []);
+        $humedad = (array) ($status['humidity:0'] ?? []);
+        $bateria = (array) ($status['devicepower:0']['battery'] ?? []);
 
         return [
             'temperatura_c' => isset($temperatura['tC']) ? (float) $temperatura['tC'] : null,
@@ -72,36 +79,21 @@ class ShellyClient
 
     private function pulsar(int $canal, string $tipo): array
     {
-        $duracion = (int) $this->configBomba->obtenerNumero('proteccion_delay_segundos', 2);
-
         if ($this->modoSimulado) {
             return ['pulsado' => true, 'canal' => $canal, 'tipo' => $tipo, 'simulado' => true];
         }
 
-        $respuesta = $this->rpc((string) $this->config['device_id_relay'], 'Switch.Set', [
-            'id' => $canal,
-            'on' => true,
-            'toggle_after' => $duracion,
+        $duracion = (int) $this->configBomba->obtenerNumero('proteccion_delay_segundos', 2);
+
+        $respuesta = $this->request('POST', '/device/relay/control', [
+            'id' => $this->config['device_id_relay'],
+            'auth_key' => $this->config['auth_key'],
+            'channel' => $canal,
+            'turn' => 'on',
+            'timer' => $duracion,
         ]);
 
         return ['pulsado' => true, 'canal' => $canal, 'tipo' => $tipo, 'raw' => $respuesta];
-    }
-
-    private function rpc(string $deviceId, string $method, array $params = []): array
-    {
-        $respuesta = $this->request('POST', '/device/rpc', [
-            'id' => $deviceId,
-            'auth_key' => $this->config['auth_key'],
-            'method' => $method,
-            'params' => $params,
-        ]);
-
-        if (isset($respuesta['error'])) {
-            $mensaje = is_array($respuesta['error']) ? json_encode($respuesta['error']) : (string) $respuesta['error'];
-            throw new RuntimeException('Shelly Cloud devolvio un error: ' . $mensaje);
-        }
-
-        return (array) ($respuesta['result'] ?? $respuesta);
     }
 
     private function request(string $method, string $path, array $params = []): array
@@ -116,11 +108,10 @@ class ShellyClient
             CURLOPT_SSL_VERIFYPEER => (bool) ($this->config['verify_ssl'] ?? true),
             CURLOPT_SSL_VERIFYHOST => (bool) ($this->config['verify_ssl'] ?? true) ? 2 : 0,
             CURLOPT_CUSTOMREQUEST => $method,
-            CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
         ]);
 
         if ($method === 'POST') {
-            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($params, JSON_UNESCAPED_UNICODE));
+            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($params));
         }
 
         $body = curl_exec($ch);
@@ -142,7 +133,13 @@ class ShellyClient
             throw new RuntimeException('La respuesta de Shelly Cloud no se pudo interpretar.');
         }
 
-        return $decoded;
+        if (empty($decoded['isok'])) {
+            $errores = $decoded['errors'] ?? [];
+            $mensaje = is_array($errores) ? implode(' | ', $errores) : (string) $errores;
+            throw new RuntimeException('Shelly Cloud devolvio un error: ' . $mensaje);
+        }
+
+        return (array) ($decoded['data'] ?? []);
     }
 
     private function validateConfig(): void
