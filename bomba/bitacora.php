@@ -15,9 +15,15 @@ require __DIR__ . '/app/views/_header.php';
   <div id="bitacoraLista">
     <p style="color:var(--agua-muted);">Cargando...</p>
   </div>
-  <button type="button" class="btn-grande secundario oculto" id="btnCargarMas" style="width:100%; justify-content:center; margin-top:14px;">
-    <i class="fas fa-chevron-down"></i> Cargar mas
-  </button>
+  <div class="bitacora-paginador">
+    <button type="button" class="btn-grande secundario" id="btnPaginaAnterior" disabled>
+      <i class="fas fa-chevron-left"></i> Anterior
+    </button>
+    <span id="bitacoraPaginaTexto">Pagina 1</span>
+    <button type="button" class="btn-grande secundario" id="btnPaginaSiguiente" disabled>
+      Siguiente <i class="fas fa-chevron-right"></i>
+    </button>
+  </div>
 </div>
 
 <?php require __DIR__ . '/app/views/_footer.php'; ?>

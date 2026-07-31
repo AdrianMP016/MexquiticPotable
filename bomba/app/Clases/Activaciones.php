@@ -211,6 +211,86 @@ class Activaciones
         ];
     }
 
+    public function resumenMensual(int $anio, int $mes): array
+    {
+        $anio = max(2020, min(2100, $anio));
+        $mes = max(1, min(12, $mes));
+
+        $desde = sprintf('%04d-%02d-01 00:00:00', $anio, $mes);
+        $hasta = (new DateTime($desde))->modify('first day of next month')->format('Y-m-d 00:00:00');
+
+        $stmt = $this->db->prepare(
+            "SELECT DATE(inicio_at) AS dia, SUM(duracion_segundos) AS segundos, COUNT(*) AS veces
+             FROM bomba_activaciones
+             WHERE fin_at IS NOT NULL AND inicio_at >= :desde AND inicio_at < :hasta
+             GROUP BY DATE(inicio_at)"
+        );
+        $stmt->execute(['desde' => $desde, 'hasta' => $hasta]);
+
+        $porDia = [];
+        foreach ($stmt->fetchAll() as $fila) {
+            $porDia[(string) $fila['dia']] = [
+                'segundos' => (int) $fila['segundos'],
+                'veces' => (int) $fila['veces'],
+            ];
+        }
+
+        $abierta = $this->obtenerActivacionAbierta();
+        if ($abierta && $abierta['inicio_at'] >= $desde && $abierta['inicio_at'] < $hasta) {
+            $dia = substr((string) $abierta['inicio_at'], 0, 10);
+            $segundosAbierta = max(0, time() - strtotime((string) $abierta['inicio_at']));
+            $porDia[$dia] = [
+                'segundos' => ($porDia[$dia]['segundos'] ?? 0) + $segundosAbierta,
+                'veces' => ($porDia[$dia]['veces'] ?? 0) + 1,
+            ];
+        }
+
+        $dias = [];
+        $totalSegundos = 0;
+        $totalVeces = 0;
+        $diasEnMes = (int) (new DateTime($desde))->format('t');
+
+        for ($d = 1; $d <= $diasEnMes; $d++) {
+            $fecha = sprintf('%04d-%02d-%02d', $anio, $mes, $d);
+            $segundos = $porDia[$fecha]['segundos'] ?? 0;
+            $veces = $porDia[$fecha]['veces'] ?? 0;
+            $totalSegundos += $segundos;
+            $totalVeces += $veces;
+
+            $dias[] = [
+                'fecha' => $fecha,
+                'dia' => $d,
+                'horas' => round($segundos / 3600, 1),
+                'veces' => $veces,
+            ];
+        }
+
+        return [
+            'anio' => $anio,
+            'mes' => $mes,
+            'dias' => $dias,
+            'total_horas' => round($totalSegundos / 3600, 1),
+            'total_veces' => $totalVeces,
+        ];
+    }
+
+    public function detalleDia(string $fecha): array
+    {
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)) {
+            throw new InvalidArgumentException(json_encode(['fecha' => 'Fecha invalida.'], JSON_UNESCAPED_UNICODE));
+        }
+
+        $stmt = $this->db->prepare(
+            "SELECT origen, iniciado_por_nombre, inicio_at, fin_at, duracion_segundos, fin_motivo
+             FROM bomba_activaciones
+             WHERE DATE(inicio_at) = :fecha
+             ORDER BY inicio_at ASC"
+        );
+        $stmt->execute(['fecha' => $fecha]);
+
+        return $stmt->fetchAll();
+    }
+
     private function cerrarActivacion(array $abierta, string $finAt, string $finMotivo): void
     {
         $duracion = max(0, strtotime($finAt) - strtotime((string) $abierta['inicio_at']));

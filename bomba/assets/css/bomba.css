@@ -28,9 +28,7 @@ body {
   padding: 14px 20px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 10px;
+  gap: 14px;
 }
 
 .bomba-topbar h1 {
@@ -39,6 +37,30 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex: 1;
+}
+
+.bomba-menu-toggle {
+  background: rgba(255, 255, 255, 0.18);
+  border: none;
+  color: #fff;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  font-size: 20px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.bomba-menu-toggle:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.bomba-topbar-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
 }
 
 .bomba-topbar .usuario-info {
@@ -48,29 +70,87 @@ body {
   font-size: 16px;
 }
 
-.bomba-nav {
-  background: #fff;
-  border-bottom: 1px solid var(--agua-border);
-  display: flex;
-  gap: 6px;
-  padding: 8px 14px;
-  flex-wrap: wrap;
+.bomba-cronometro-widget {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
-.bomba-nav a {
+/* Cajon lateral (menu desplegable) */
+.bomba-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(31, 53, 86, 0.5);
+  display: none;
+  z-index: 900;
+}
+
+.bomba-drawer-backdrop.abierto {
+  display: block;
+}
+
+.bomba-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 280px;
+  max-width: 82vw;
+  background: #fff;
+  z-index: 950;
+  transform: translateX(-100%);
+  transition: transform 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.2);
+}
+
+.bomba-drawer.abierto {
+  transform: translateX(0);
+}
+
+.bomba-drawer-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px 18px;
-  border-radius: 10px;
+  justify-content: space-between;
+  padding: 18px 20px;
+  background: linear-gradient(90deg, var(--agua-primary), var(--agua-cyan));
+  color: #fff;
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.bomba-drawer-header button {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.bomba-drawer a {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 22px;
   color: var(--agua-ink);
   text-decoration: none;
   font-weight: 600;
-  font-size: 17px;
+  font-size: 19px;
+  border-bottom: 1px solid var(--agua-border);
 }
 
-.bomba-nav a.activo,
-.bomba-nav a:hover {
+.bomba-drawer a i {
+  width: 24px;
+  text-align: center;
+  color: var(--agua-primary);
+}
+
+.bomba-drawer a.activo,
+.bomba-drawer a:hover {
   background: var(--agua-bg);
   color: var(--agua-primary-dark);
 }
@@ -420,6 +500,66 @@ body {
   color: #888;
 }
 
+/* Calendario de actividad */
+.calendario-actividad {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.calendario-dia-nombre {
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--agua-muted);
+  padding-bottom: 4px;
+}
+
+.calendario-celda {
+  min-height: 64px;
+  border-radius: 10px;
+  border: 2px solid var(--agua-border);
+  padding: 6px;
+  cursor: default;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.calendario-celda.vacia {
+  border: none;
+}
+
+.calendario-celda.con-actividad {
+  background: #e7f3fd;
+  border-color: var(--agua-primary);
+  cursor: pointer;
+}
+
+.calendario-celda .numero-dia {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--agua-ink);
+}
+
+.calendario-celda .horas-dia {
+  font-size: 12px;
+  color: var(--agua-primary-dark);
+  font-weight: 600;
+}
+
+.detalle-dia-item {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--agua-border);
+  font-size: 15px;
+}
+
+.detalle-dia-item:last-child {
+  border-bottom: none;
+}
+
 /* Bitacora */
 .bitacora-item {
   padding: 14px 16px;
@@ -438,6 +578,28 @@ body {
 .bitacora-item .accion {
   font-weight: 700;
   color: var(--agua-ink);
+}
+
+.bitacora-paginador {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--agua-border);
+  flex-wrap: wrap;
+}
+
+.bitacora-paginador span {
+  color: var(--agua-muted);
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.bitacora-paginador .btn-grande {
+  padding: 12px 18px;
+  font-size: 16px;
 }
 
 /* Login */

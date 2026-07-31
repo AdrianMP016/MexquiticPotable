@@ -18,6 +18,8 @@ function bombaAccionesPermitidas(string $accion): array
         'activaciones.cronometro' => ['admin', 'operador'],
         'activaciones.cancelarCronometro' => ['admin', 'operador'],
         'activaciones.estadisticas' => ['admin', 'operador'],
+        'activaciones.resumenMensual' => ['admin', 'operador'],
+        'activaciones.detalleDia' => ['admin', 'operador'],
 
         'regla.obtenerActiva' => ['admin', 'operador'],
         'regla.guardar' => ['admin'],
@@ -128,6 +130,21 @@ try {
             $periodo = (string) Request::input('periodo', 'dia');
             $activaciones = new Activaciones($db, new ShellyClient($db));
             JsonResponse::success('Estadisticas consultadas correctamente.', $activaciones->estadisticas($periodo));
+            break;
+
+        case 'activaciones.resumenMensual':
+            $activaciones = new Activaciones($db, new ShellyClient($db));
+            $data = $activaciones->resumenMensual(
+                (int) Request::input('anio', date('Y')),
+                (int) Request::input('mes', date('n'))
+            );
+            JsonResponse::success('Resumen mensual consultado correctamente.', $data);
+            break;
+
+        case 'activaciones.detalleDia':
+            $activaciones = new Activaciones($db, new ShellyClient($db));
+            $data = $activaciones->detalleDia((string) Request::input('fecha', ''));
+            JsonResponse::success('Detalle del dia consultado correctamente.', ['activaciones' => $data]);
             break;
 
         case 'regla.obtenerActiva':

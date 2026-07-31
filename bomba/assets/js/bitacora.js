@@ -1,7 +1,7 @@
 let bombaBitacoraPagina = 1;
 
-function bombaRenderBitacora(logs, agregar) {
-  if (!logs.length && !agregar) {
+function bombaRenderBitacora(logs) {
+  if (!logs.length) {
     $("#bitacoraLista").html('<p style="color:var(--agua-muted);">Sin actividad registrada.</p>');
     return;
   }
@@ -15,14 +15,10 @@ function bombaRenderBitacora(logs, agregar) {
     );
   }).join("");
 
-  if (agregar) {
-    $("#bitacoraLista").append(html);
-  } else {
-    $("#bitacoraLista").html(html);
-  }
+  $("#bitacoraLista").html(html);
 }
 
-function bombaCargarBitacora(agregar) {
+function bombaCargarBitacora() {
   $.ajax({
     url: bombaAjaxUrl,
     method: "POST",
@@ -30,23 +26,30 @@ function bombaCargarBitacora(agregar) {
     data: { accion: "bitacora.listar", page: bombaBitacoraPagina, per_page: 25 },
     success: function (response) {
       var data = response.data || {};
-      bombaRenderBitacora(data.logs || [], agregar);
+      bombaRenderBitacora(data.logs || []);
 
-      var pagination = data.pagination || {};
-      if (pagination.page < pagination.total_pages) {
-        $("#btnCargarMas").removeClass("oculto");
-      } else {
-        $("#btnCargarMas").addClass("oculto");
-      }
+      var pagination = data.pagination || { page: 1, total_pages: 1 };
+      bombaBitacoraPagina = pagination.page;
+
+      $("#bitacoraPaginaTexto").text("Pagina " + pagination.page + " de " + pagination.total_pages);
+      $("#btnPaginaAnterior").prop("disabled", pagination.page <= 1);
+      $("#btnPaginaSiguiente").prop("disabled", pagination.page >= pagination.total_pages);
     }
   });
 }
 
 $(function () {
-  bombaCargarBitacora(false);
+  bombaCargarBitacora();
 
-  $("#btnCargarMas").on("click", function () {
+  $("#btnPaginaAnterior").on("click", function () {
+    if (bombaBitacoraPagina > 1) {
+      bombaBitacoraPagina--;
+      bombaCargarBitacora();
+    }
+  });
+
+  $("#btnPaginaSiguiente").on("click", function () {
     bombaBitacoraPagina++;
-    bombaCargarBitacora(true);
+    bombaCargarBitacora();
   });
 });

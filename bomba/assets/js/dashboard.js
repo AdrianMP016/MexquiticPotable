@@ -1,17 +1,23 @@
 let bombaEstadoActual = null;
 let bombaPeriodoActividad = "dia";
-let bombaPollTimer = null;
+let bombaCronometroFinTs = null;
+let bombaCronometroOtroMotivo = null;
 
-function bombaFormatoReloj(segundos) {
+function bombaPlural(cantidad, singular, plural) {
+  return cantidad === 1 ? singular : plural;
+}
+
+function bombaFormatoRelojCompleto(segundos) {
   segundos = Math.max(0, Math.floor(segundos));
   var h = Math.floor(segundos / 3600);
   var m = Math.floor((segundos % 3600) / 60);
   var s = segundos % 60;
-  var partes = [];
-  if (h > 0) { partes.push(h + "h"); }
-  partes.push((m < 10 && h > 0 ? "0" : "") + m + "m");
-  partes.push((s < 10 ? "0" : "") + s + "s");
-  return partes.join(" ");
+
+  return (
+    h + " " + bombaPlural(h, "hora", "horas") + " " +
+    m + " " + bombaPlural(m, "minuto", "minutos") + " " +
+    s + " " + bombaPlural(s, "segundo", "segundos")
+  );
 }
 
 function bombaPintarEstado(data) {
@@ -37,7 +43,9 @@ function bombaPintarEstado(data) {
   var espera = data.espera_restante_segundos || 0;
   if (espera > 0) {
     $btn.prop("disabled", true).html('<i class="fas fa-hourglass-half"></i> Espera...');
-    $espera.removeClass("oculto").text("Espera " + espera + "s antes de otro comando.");
+    $espera.removeClass("oculto").text(
+      "Espera " + espera + " " + bombaPlural(espera, "segundo", "segundos") + " antes de otro comando."
+    );
   } else {
     $btn.prop("disabled", false);
     $espera.addClass("oculto");
@@ -57,21 +65,39 @@ function bombaPintarCronometro(data) {
   if (activa && activa.origen === "cronometro") {
     var inicio = new Date(activa.inicio_at.replace(" ", "T")).getTime();
     var duracionMs = (activa.cronometro_duracion_segundos || 0) * 1000;
-    var restanteSegundos = Math.max(0, Math.round((inicio + duracionMs - Date.now()) / 1000));
+
+    bombaCronometroFinTs = inicio + duracionMs;
+    bombaCronometroOtroMotivo = null;
 
     $("#cronometroInactivo").addClass("oculto");
     $("#cronometroActivoBox").removeClass("oculto");
-    $("#cronometroTexto").text("Faltan " + bombaFormatoReloj(restanteSegundos));
+    $("#btnCancelarCronometro").removeClass("oculto");
+    bombaActualizarCronometroLocal();
   } else if (activa) {
+    bombaCronometroFinTs = null;
+    bombaCronometroOtroMotivo = activa.origen === "automatico" ? "automatica" : "manual";
+
     $("#cronometroInactivo").addClass("oculto");
     $("#cronometroActivoBox").removeClass("oculto");
-    $("#cronometroTexto").text("La bomba ya esta encendida (" + (activa.origen === "automatico" ? "automatica" : "manual") + ")");
+    $("#cronometroTexto").text("La bomba ya esta encendida (" + bombaCronometroOtroMotivo + ")");
     $("#btnCancelarCronometro").addClass("oculto");
   } else {
+    bombaCronometroFinTs = null;
+    bombaCronometroOtroMotivo = null;
+
     $("#cronometroInactivo").removeClass("oculto");
     $("#cronometroActivoBox").addClass("oculto");
     $("#btnCancelarCronometro").removeClass("oculto");
   }
+}
+
+function bombaActualizarCronometroLocal() {
+  if (bombaCronometroFinTs === null) {
+    return;
+  }
+
+  var restanteSegundos = Math.max(0, Math.round((bombaCronometroFinTs - Date.now()) / 1000));
+  $("#cronometroTexto").text("Faltan " + bombaFormatoRelojCompleto(restanteSegundos));
 }
 
 function bombaRefrescarEstado() {
@@ -103,7 +129,8 @@ function bombaRefrescarActividad() {
 $(function () {
   bombaRefrescarEstado();
   bombaRefrescarActividad();
-  bombaPollTimer = setInterval(bombaRefrescarEstado, 4000);
+  setInterval(bombaRefrescarEstado, 4000);
+  setInterval(bombaActualizarCronometroLocal, 1000);
 
   $("#btnEncenderApagar").on("click", function () {
     var accion = bombaEstadoActual && bombaEstadoActual.encendido ? "activaciones.apagar" : "activaciones.encender";

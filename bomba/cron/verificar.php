@@ -50,12 +50,36 @@ try {
     if ($abierta && $abierta['origen'] === 'cronometro') {
         $transcurrido = $ahora->getTimestamp() - strtotime((string) $abierta['inicio_at']);
         if ($transcurrido >= (int) $abierta['cronometro_duracion_segundos']) {
-            $shelly->apagarRelay();
+            $regla = $db->query("SELECT * FROM bomba_regla_automatica WHERE activa = 1 LIMIT 1")->fetch();
+            $sigueRegla = $regla
+                && en_dias($regla['dias_semana'], $diaIso)
+                && $horaActual >= $regla['hora_inicio']
+                && $horaActual < $regla['hora_fin'];
+
             cerrar($db, $abierta, $ahora->format('Y-m-d H:i:s'), 'cronometro_expirado');
-            $bitacora->registrar([
-                'accion' => 'cronometro_expirado',
-                'descripcion' => 'El cronometro termino y la bomba se apago automaticamente.',
-            ]);
+
+            if ($sigueRegla) {
+                // Hay una programacion activa cubriendo este momento: no apagar, solo
+                // transferir el control de la bomba del cronometro a la regla automatica.
+                $stmt = $db->prepare(
+                    "INSERT INTO bomba_activaciones (origen, regla_automatica_id, inicio_at)
+                     VALUES ('automatico', :regla_id, :inicio)"
+                );
+                $stmt->execute([
+                    'regla_id' => (int) $regla['id'],
+                    'inicio' => $ahora->format('Y-m-d H:i:s'),
+                ]);
+                $bitacora->registrar([
+                    'accion' => 'cronometro_expirado',
+                    'descripcion' => 'El cronometro termino, pero la bomba sigue encendida porque hay una programacion activa.',
+                ]);
+            } else {
+                $shelly->apagarRelay();
+                $bitacora->registrar([
+                    'accion' => 'cronometro_expirado',
+                    'descripcion' => 'El cronometro termino y la bomba se apago automaticamente.',
+                ]);
+            }
         }
     } elseif ($abierta && $abierta['origen'] === 'automatico') {
         $regla = $db->query("SELECT * FROM bomba_regla_automatica WHERE activa = 1 LIMIT 1")->fetch();
