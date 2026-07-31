@@ -181,12 +181,57 @@ $(function () {
       success: function (response) {
         bombaPintarEstado(response.data || {});
         bombaRefrescarActividad();
+
+        bombaVerificarConexion(function (data, error) {
+          if (error || !data) {
+            $feedback.removeClass("oculto exito").addClass("peligro")
+              .html('<i class="fas fa-exclamation-triangle"></i> Comando enviado, pero no se pudo confirmar si le llego al Shelly.');
+            return;
+          }
+          if (data.conectado) {
+            $feedback.removeClass("oculto peligro").addClass("exito")
+              .html('<i class="fas fa-check-circle"></i> Comando enviado y el Shelly esta conectado a internet ahora mismo.');
+          } else {
+            $feedback.removeClass("oculto exito").addClass("peligro")
+              .html('<i class="fas fa-exclamation-triangle"></i> Comando enviado, pero el Shelly NO esta conectado a internet ahora mismo — puede que no le haya llegado. Revisa el cable/conexion en el sitio.');
+          }
+        });
       },
       error: function (xhr) {
-        $feedback.removeClass("oculto").text(bombaExtraerMensaje(xhr, "No se pudo enviar el comando."));
+        $feedback.removeClass("oculto exito").addClass("peligro").text(bombaExtraerMensaje(xhr, "No se pudo enviar el comando."));
         bombaRefrescarEstado();
       }
     });
+  });
+
+  $("#btnVerificarConexion").on("click", function () {
+    $("#modalConexionContenido").html('<i class="fas fa-spinner fa-spin"></i> Consultando...');
+    $("#modalConexion").addClass("abierto");
+
+    bombaVerificarConexion(function (data, error) {
+      if (error || !data) {
+        $("#modalConexionContenido").html('<p style="color:var(--agua-red);"><i class="fas fa-times-circle"></i> No se pudo consultar: ' + (error || "error desconocido") + '</p>');
+        return;
+      }
+
+      var icono = data.conectado
+        ? '<i class="fas fa-check-circle" style="color:var(--agua-green);"></i> Conectado a internet ahora mismo.'
+        : '<i class="fas fa-times-circle" style="color:var(--agua-red);"></i> NO conectado a internet ahora mismo.';
+
+      var html = '<p style="font-size:18px;">' + icono + '</p>';
+      if (data.actualizado_at) {
+        html += '<p style="color:var(--agua-muted);">Ultimo reporte del Shelly: ' + bombaFormatoFecha12h(data.actualizado_at) + '</p>';
+      }
+      if (!data.conectado) {
+        html += '<p style="color:var(--agua-muted);">Si mandaste un comando y esto sale "NO conectado", es probable que no le haya llegado. Revisa el cable de red / la energia del Shelly en el sitio.</p>';
+      }
+
+      $("#modalConexionContenido").html(html);
+    });
+  });
+
+  $("#btnCerrarModalConexion").on("click", function () {
+    $("#modalConexion").removeClass("abierto");
   });
 
   $("#btnIniciarCronometro").on("click", function () {
