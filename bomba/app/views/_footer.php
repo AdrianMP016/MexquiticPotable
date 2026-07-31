@@ -4,6 +4,7 @@
  */
 ?>
 </div>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
 <script src="assets/js/bomba-common.js?v=<?= (int) (@filemtime(__DIR__ . '/../../assets/js/bomba-common.js') ?: time()) ?>"></script>
 <?php if (!empty($jsFile)): ?>

@@ -115,14 +115,30 @@ $(function () {
     });
   });
 
-  $("#btnMenuToggle").on("click", function () {
-    $("#drawer").addClass("abierto");
-    $("#drawerBackdrop").addClass("abierto");
+  function bombaActualizarEstadoCortinilla() {
+    var abierto = $("body").hasClass("bomba-sidebar-open");
+    var etiqueta = abierto ? "Contraer menu lateral" : "Expandir menu lateral";
+
+    $("#btnCurtainToggle").attr("aria-label", etiqueta).attr("title", etiqueta);
+    $("#bombaIconoCerrar").toggleClass("oculto", !abierto);
+    $("#bombaIconoAbrir").toggleClass("oculto", abierto);
+  }
+
+  $("#btnCurtainToggle").on("click", function () {
+    $("body").toggleClass("bomba-sidebar-open");
+    bombaActualizarEstadoCortinilla();
   });
 
-  $("#btnCerrarDrawer, #drawerBackdrop").on("click", function () {
-    $("#drawer").removeClass("abierto");
-    $("#drawerBackdrop").removeClass("abierto");
+  $("#drawerBackdrop").on("click", function () {
+    $("body").removeClass("bomba-sidebar-open");
+    bombaActualizarEstadoCortinilla();
+  });
+
+  $(".bomba-drawer-links a").on("click", function () {
+    if (window.innerWidth < 992) {
+      $("body").removeClass("bomba-sidebar-open");
+      bombaActualizarEstadoCortinilla();
+    }
   });
 
   if ($("#widgetCronometro").length) {

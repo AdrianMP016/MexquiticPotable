@@ -8,6 +8,8 @@
   --agua-muted: #6b7c93;
   --agua-bg: #f3f8fc;
   --agua-border: #dbe8f3;
+  --bomba-sidebar-open-space: 312px;
+  --bomba-sidebar-closed-space: 42px;
 }
 
 * {
@@ -20,6 +22,12 @@ body {
   color: var(--agua-ink);
   font-family: "Segoe UI", Arial, sans-serif;
   font-size: 18px;
+  overflow-x: hidden;
+}
+
+.bomba-main {
+  min-height: 100vh;
+  transition: padding-left 0.28s ease;
 }
 
 .bomba-topbar {
@@ -40,22 +48,6 @@ body {
   flex: 1;
 }
 
-.bomba-menu-toggle {
-  background: rgba(255, 255, 255, 0.18);
-  border: none;
-  color: #fff;
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  font-size: 20px;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.bomba-menu-toggle:hover {
-  background: rgba(255, 255, 255, 0.3);
-}
-
 .bomba-topbar-right {
   display: flex;
   flex-direction: column;
@@ -72,17 +64,15 @@ body {
   white-space: nowrap;
 }
 
-/* Cajon lateral (menu desplegable) */
+/* Menu lateral fijo tipo cortinilla (igual comportamiento que el sistema de agua) */
 .bomba-drawer-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(31, 53, 86, 0.5);
-  display: none;
+  background: rgba(15, 43, 82, 0.45);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.24s ease;
   z-index: 900;
-}
-
-.bomba-drawer-backdrop.abierto {
-  display: block;
 }
 
 .bomba-drawer {
@@ -92,29 +82,58 @@ body {
   bottom: 0;
   width: 300px;
   max-width: 86vw;
-  background: linear-gradient(180deg, #163c72 0%, #0f2b52 100%);
+  background: linear-gradient(180deg, #0e5266 0%, #093545 100%);
   z-index: 950;
-  transform: translateX(-100%);
-  transition: transform 0.2s ease;
+  transform: translateX(0);
+  transition: transform 0.28s ease, box-shadow 0.28s ease;
   display: flex;
   flex-direction: column;
   box-shadow: 4px 0 20px rgba(0, 0, 0, 0.2);
+  overflow: visible;
+}
+
+body:not(.bomba-sidebar-open) .bomba-drawer {
+  transform: translateX(calc(-100% + 26px));
+}
+
+body.bomba-sidebar-open .bomba-drawer {
+  box-shadow: 18px 0 34px rgba(10, 29, 54, 0.24);
+}
+
+.bomba-drawer-inner {
   overflow-y: auto;
   padding-bottom: 20px;
 }
 
-.bomba-drawer.abierto {
-  transform: translateX(0);
+.bomba-sidebar-curtain-toggle {
+  align-items: center;
+  appearance: none;
+  background: linear-gradient(180deg, var(--agua-cyan), var(--agua-primary));
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 0 14px 14px 0;
+  box-shadow: 0 12px 24px rgba(10, 29, 54, 0.26);
+  color: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  height: 96px;
+  justify-content: center;
+  position: absolute;
+  right: -22px;
+  top: 50%;
+  transform: translateY(-50%);
+  transition: right 0.2s ease, background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  width: 22px;
+  z-index: 1040;
+  font-size: 16px;
 }
 
-.bomba-drawer-cerrar {
-  align-self: flex-end;
-  background: none;
-  border: none;
-  color: rgba(255, 255, 255, 0.75);
-  font-size: 20px;
-  cursor: pointer;
-  padding: 16px 18px 0;
+.bomba-sidebar-curtain-toggle:hover {
+  box-shadow: 0 14px 28px rgba(10, 29, 54, 0.32);
+  transform: translateY(-50%) translateX(1px);
+}
+
+body:not(.bomba-sidebar-open) .bomba-sidebar-curtain-toggle {
+  right: -20px;
 }
 
 .bomba-drawer-marca {
@@ -625,8 +644,8 @@ body {
   color: #a02626;
 }
 
-.alerta.oculto {
-  display: none;
+.oculto {
+  display: none !important;
 }
 
 /* Tabla / listas simples */
@@ -806,10 +825,23 @@ body {
   margin-bottom: 24px;
 }
 
-.bomba-login-icono {
-  font-size: 52px;
-  color: var(--agua-primary);
-  margin-bottom: 10px;
+.bomba-login-logo {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  background: #eaf7ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  margin: 0 auto 14px;
+}
+
+.bomba-login-logo img {
+  width: 66px;
+  height: 66px;
+  object-fit: contain;
+  display: block;
 }
 
 /* Modal de confirmacion */
@@ -858,5 +890,22 @@ body {
 
   .bomba-topbar h1 {
     font-size: 19px;
+  }
+}
+
+@media (min-width: 992px) {
+  body.bomba-sidebar-open .bomba-main {
+    padding-left: var(--bomba-sidebar-open-space);
+  }
+
+  body:not(.bomba-sidebar-open) .bomba-main {
+    padding-left: var(--bomba-sidebar-closed-space);
+  }
+}
+
+@media (max-width: 991.98px) {
+  body.bomba-sidebar-open .bomba-drawer-backdrop {
+    opacity: 1;
+    pointer-events: auto;
   }
 }

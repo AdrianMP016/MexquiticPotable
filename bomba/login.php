@@ -25,9 +25,11 @@ $next = isset($_GET['next']) ? basename((string) $_GET['next']) : 'index.php';
 </head>
 <body class="bomba-login-body">
   <div class="bomba-login-box">
-    <div class="bomba-login-icono"><i class="fas fa-faucet"></i></div>
+    <div class="bomba-login-logo">
+      <img src="../assets/img/logo-recibo.png" alt="Logo del sistema">
+    </div>
     <h1>Control de Bomba</h1>
-    <p class="subtitulo">Sistema de Agua Potable</p>
+    <p class="subtitulo">Sistema de Agua Potable &middot; Mexquitic de Carmona</p>
 
     <div id="loginFeedback" class="alerta peligro oculto"></div>
 
