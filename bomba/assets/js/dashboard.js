@@ -181,21 +181,6 @@ $(function () {
       success: function (response) {
         bombaPintarEstado(response.data || {});
         bombaRefrescarActividad();
-
-        bombaVerificarConexion(function (data, error) {
-          if (error || !data) {
-            $feedback.removeClass("oculto exito").addClass("peligro")
-              .html('<i class="fas fa-exclamation-triangle"></i> Comando enviado, pero no se pudo confirmar si le llego al Shelly.');
-            return;
-          }
-          if (data.conectado) {
-            $feedback.removeClass("oculto peligro").addClass("exito")
-              .html('<i class="fas fa-check-circle"></i> Comando enviado y el Shelly esta conectado a internet ahora mismo.');
-          } else {
-            $feedback.removeClass("oculto exito").addClass("peligro")
-              .html('<i class="fas fa-exclamation-triangle"></i> Comando enviado, pero el Shelly NO esta conectado a internet ahora mismo — puede que no le haya llegado. Revisa el cable/conexion en el sitio.');
-          }
-        });
       },
       error: function (xhr) {
         $feedback.removeClass("oculto exito").addClass("peligro").text(bombaExtraerMensaje(xhr, "No se pudo enviar el comando."));

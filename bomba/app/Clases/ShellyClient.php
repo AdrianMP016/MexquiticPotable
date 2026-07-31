@@ -85,24 +85,64 @@ class ShellyClient
             ];
         }
 
-        $respuesta = $this->request('POST', '/device/status', [
-            'id' => $this->config['device_id_sensor'],
-            'auth_key' => $this->config['auth_key'],
-        ]);
+        // El sensor solo reporta cada varios minutos y Shelly Cloud tiene limite de
+        // peticiones, asi que aqui NO se pregunta a Shelly cada vez que alguien ve
+        // el panel — se cachea por 30 segundos, sin importar cuantos navegadores
+        // esten viendo la pagina al mismo tiempo.
+        $cacheSegundos = 30;
+        $leidoEn = $this->configBomba->obtener('cache_sensor_leido_en', '');
+
+        if ($leidoEn !== '' && (time() - strtotime($leidoEn)) < $cacheSegundos) {
+            return $this->cacheSensor();
+        }
+
+        try {
+            $respuesta = $this->request('POST', '/device/status', [
+                'id' => $this->config['device_id_sensor'],
+                'auth_key' => $this->config['auth_key'],
+            ]);
+        } catch (Throwable $exception) {
+            // Si Shelly Cloud rechaza la peticion (limite excedido, momentaneamente
+            // caido, etc.) se devuelve la ultima lectura buena conocida en vez de
+            // tronar toda la pantalla.
+            if ($leidoEn !== '') {
+                return $this->cacheSensor();
+            }
+            throw $exception;
+        }
 
         $status = (array) ($respuesta['device_status'] ?? []);
         $temperatura = (array) ($status['temperature:0'] ?? []);
         $humedad = (array) ($status['humidity:0'] ?? []);
         $bateria = (array) ($status['devicepower:0']['battery'] ?? []);
 
-        return [
+        $resultado = [
             'temperatura_c' => isset($temperatura['tC']) ? (float) $temperatura['tC'] : null,
             'humedad_pct' => isset($humedad['rh']) ? (float) $humedad['rh'] : null,
             'bateria_pct' => isset($bateria['percent']) ? (float) $bateria['percent'] : null,
             // El H&T reporta cada varios minutos para ahorrar bateria, no en vivo:
             // esta marca de tiempo es la de su ultimo reporte, no la de "ahora mismo".
             'actualizado_at' => isset($status['_updated']) ? (string) $status['_updated'] : null,
-            'raw' => $respuesta,
+        ];
+
+        $this->configBomba->establecer('cache_sensor_leido_en', date('Y-m-d H:i:s'));
+        $this->configBomba->establecer('cache_sensor_temperatura_c', (string) ($resultado['temperatura_c'] ?? ''));
+        $this->configBomba->establecer('cache_sensor_humedad_pct', (string) ($resultado['humedad_pct'] ?? ''));
+        $this->configBomba->establecer('cache_sensor_bateria_pct', (string) ($resultado['bateria_pct'] ?? ''));
+        $this->configBomba->establecer('cache_sensor_actualizado_at', (string) ($resultado['actualizado_at'] ?? ''));
+
+        $resultado['raw'] = $respuesta;
+
+        return $resultado;
+    }
+
+    private function cacheSensor(): array
+    {
+        return [
+            'temperatura_c' => ($v = $this->configBomba->obtener('cache_sensor_temperatura_c', '')) !== '' ? (float) $v : null,
+            'humedad_pct' => ($v = $this->configBomba->obtener('cache_sensor_humedad_pct', '')) !== '' ? (float) $v : null,
+            'bateria_pct' => ($v = $this->configBomba->obtener('cache_sensor_bateria_pct', '')) !== '' ? (float) $v : null,
+            'actualizado_at' => ($v = $this->configBomba->obtener('cache_sensor_actualizado_at', '')) !== '' ? $v : null,
         ];
     }
 

@@ -52,9 +52,42 @@ function bombaFormatoFecha12h(fechaTexto) {
   return dia + "/" + mes + "/" + anio + " " + h12 + ":" + String(minutos).padStart(2, "0") + ":" + segundos + " " + ampm;
 }
 
-function bombaActualizarWidgetCronometro() {
+function bombaPintarWidgetCronometro(data) {
   var $widget = $("#widgetCronometro");
   if (!$widget.length) {
+    return;
+  }
+
+  var activa = (data || {}).activacion_actual;
+
+  if (activa && activa.origen === "cronometro") {
+    var inicio = new Date(activa.inicio_at.replace(" ", "T")).getTime();
+    var duracionMs = (activa.cronometro_duracion_segundos || 0) * 1000;
+    var restante = Math.round((inicio + duracionMs - Date.now()) / 1000);
+
+    if (restante <= 0) {
+      $("#widgetCronometroTexto").html('<i class="fas fa-spinner fa-spin"></i> Terminando...');
+    } else {
+      var h = Math.floor(restante / 3600);
+      var m = Math.floor((restante % 3600) / 60);
+      var s = restante % 60;
+      $("#widgetCronometroTexto").text(h + "h " + m + "m " + s + "s");
+    }
+
+    $widget.removeClass("oculto");
+  } else {
+    $widget.addClass("oculto");
+  }
+}
+
+function bombaActualizarWidgetCronometro() {
+  if (!$("#widgetCronometro").length) {
+    return;
+  }
+
+  // Si el panel principal ya esta consultando el estado por su cuenta (mismo
+  // dato), no lo volvemos a pedir aqui — evita duplicar peticiones a Shelly.
+  if (window.bombaDashboardActivo) {
     return;
   }
 
@@ -64,27 +97,7 @@ function bombaActualizarWidgetCronometro() {
     dataType: "json",
     data: { accion: "activaciones.estado" },
     success: function (response) {
-      var data = response.data || {};
-      var activa = data.activacion_actual;
-
-      if (activa && activa.origen === "cronometro") {
-        var inicio = new Date(activa.inicio_at.replace(" ", "T")).getTime();
-        var duracionMs = (activa.cronometro_duracion_segundos || 0) * 1000;
-        var restante = Math.round((inicio + duracionMs - Date.now()) / 1000);
-
-        if (restante <= 0) {
-          $("#widgetCronometroTexto").html('<i class="fas fa-spinner fa-spin"></i> Terminando...');
-        } else {
-          var h = Math.floor(restante / 3600);
-          var m = Math.floor((restante % 3600) / 60);
-          var s = restante % 60;
-          $("#widgetCronometroTexto").text(h + "h " + m + "m " + s + "s");
-        }
-
-        $widget.removeClass("oculto");
-      } else {
-        $widget.addClass("oculto");
-      }
+      bombaPintarWidgetCronometro(response.data || {});
     }
   });
 }
@@ -114,6 +127,6 @@ $(function () {
 
   if ($("#widgetCronometro").length) {
     bombaActualizarWidgetCronometro();
-    setInterval(bombaActualizarWidgetCronometro, 5000);
+    setInterval(bombaActualizarWidgetCronometro, 15000);
   }
 });

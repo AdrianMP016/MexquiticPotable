@@ -173,6 +173,36 @@ class SystemBootstrap
                 'tipo' => 'number',
                 'descripcion' => 'Humedad simulada del sensor H&T mientras no hay credenciales reales de Shelly Cloud.',
             ],
+            [
+                'clave' => 'cache_sensor_leido_en',
+                'valor' => '',
+                'tipo' => 'string',
+                'descripcion' => 'Momento en que se consulto realmente Shelly Cloud por ultima vez (para no exceder su limite de peticiones).',
+            ],
+            [
+                'clave' => 'cache_sensor_temperatura_c',
+                'valor' => '',
+                'tipo' => 'number',
+                'descripcion' => 'Ultima temperatura leida de Shelly Cloud (cache).',
+            ],
+            [
+                'clave' => 'cache_sensor_humedad_pct',
+                'valor' => '',
+                'tipo' => 'number',
+                'descripcion' => 'Ultima humedad leida de Shelly Cloud (cache).',
+            ],
+            [
+                'clave' => 'cache_sensor_bateria_pct',
+                'valor' => '',
+                'tipo' => 'number',
+                'descripcion' => 'Ultima bateria leida de Shelly Cloud (cache).',
+            ],
+            [
+                'clave' => 'cache_sensor_actualizado_at',
+                'valor' => '',
+                'tipo' => 'string',
+                'descripcion' => 'Marca de tiempo que reporto el propio sensor Shelly en su ultimo reporte (cache).',
+            ],
         ];
 
         $stmt = $db->prepare(
