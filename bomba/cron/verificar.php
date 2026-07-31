@@ -47,6 +47,15 @@ try {
         "SELECT * FROM bomba_activaciones WHERE fin_at IS NULL ORDER BY id DESC LIMIT 1 FOR UPDATE"
     )->fetch();
 
+    // pulsoPendiente/accion/descripcion se resuelven aqui dentro de la
+    // transaccion (solo lectura/escritura local, rapido), pero el pulso real a
+    // Shelly Cloud se manda YA FUERA de la transaccion (ver abajo): esa llamada
+    // puede tardar varios segundos y no debe dejar bloqueada la conexion a la
+    // base de datos ni el candado de fila mientras espera la respuesta.
+    $pulsoPendiente = null;
+    $accion = null;
+    $descripcion = null;
+
     if ($abierta && $abierta['origen'] === 'cronometro') {
         $transcurrido = $ahora->getTimestamp() - strtotime((string) $abierta['inicio_at']);
         if ($transcurrido >= (int) $abierta['cronometro_duracion_segundos']) {
@@ -69,16 +78,12 @@ try {
                     'regla_id' => (int) $regla['id'],
                     'inicio' => $ahora->format('Y-m-d H:i:s'),
                 ]);
-                $bitacora->registrar([
-                    'accion' => 'cronometro_expirado',
-                    'descripcion' => 'El cronometro termino, pero la bomba sigue encendida porque hay una programacion activa.',
-                ]);
+                $accion = 'cronometro_expirado';
+                $descripcion = 'El cronometro termino, pero la bomba sigue encendida porque hay una programacion activa.';
             } else {
-                $shelly->pulsarParo();
-                $bitacora->registrar([
-                    'accion' => 'cronometro_expirado',
-                    'descripcion' => 'El cronometro termino y la bomba se apago automaticamente.',
-                ]);
+                $pulsoPendiente = 'paro';
+                $accion = 'cronometro_expirado';
+                $descripcion = 'El cronometro termino y la bomba se apago automaticamente.';
             }
         }
     } elseif ($abierta && $abierta['origen'] === 'automatico') {
@@ -89,12 +94,10 @@ try {
             && $horaActual < $regla['hora_fin'];
 
         if (!$sigueEnVentana) {
-            $shelly->pulsarParo();
             cerrar($db, $abierta, $ahora->format('Y-m-d H:i:s'), 'regla_fin');
-            $bitacora->registrar([
-                'accion' => 'automatico_apagado',
-                'descripcion' => 'La regla automatica termino su ventana y la bomba se apago.',
-            ]);
+            $pulsoPendiente = 'paro';
+            $accion = 'automatico_apagado';
+            $descripcion = 'La regla automatica termino su ventana y la bomba se apago.';
         }
     } elseif (!$abierta) {
         $regla = $db->query("SELECT * FROM bomba_regla_automatica WHERE activa = 1 LIMIT 1")->fetch();
@@ -104,7 +107,6 @@ try {
             && $horaActual < $regla['hora_fin'];
 
         if ($debeEncender) {
-            $shelly->pulsarInicio();
             $stmt = $db->prepare(
                 "INSERT INTO bomba_activaciones (origen, regla_automatica_id, inicio_at)
                  VALUES ('automatico', :regla_id, :inicio)"
@@ -113,14 +115,24 @@ try {
                 'regla_id' => (int) $regla['id'],
                 'inicio' => $ahora->format('Y-m-d H:i:s'),
             ]);
-            $bitacora->registrar([
-                'accion' => 'automatico_encendido',
-                'descripcion' => 'La regla automatica encendio la bomba.',
-            ]);
+            $pulsoPendiente = 'inicio';
+            $accion = 'automatico_encendido';
+            $descripcion = 'La regla automatica encendio la bomba.';
         }
     }
 
     $db->commit();
+
+    if ($pulsoPendiente === 'paro') {
+        $shelly->pulsarParo();
+    } elseif ($pulsoPendiente === 'inicio') {
+        $shelly->pulsarInicio();
+    }
+
+    if ($accion !== null) {
+        $bitacora->registrar(['accion' => $accion, 'descripcion' => $descripcion]);
+    }
+
     $configBomba->establecer('cron_ultima_ejecucion_at', $ahora->format('Y-m-d H:i:s'));
     $configBomba->establecer('cron_ultimo_resultado', 'ok');
     salir(['ok' => true]);

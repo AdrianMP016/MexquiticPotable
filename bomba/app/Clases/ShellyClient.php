@@ -185,7 +185,7 @@ class ShellyClient
         $ch = curl_init($url);
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT => 20,
+            CURLOPT_TIMEOUT => 10,
             CURLOPT_SSL_VERIFYPEER => (bool) ($this->config['verify_ssl'] ?? true),
             CURLOPT_SSL_VERIFYHOST => (bool) ($this->config['verify_ssl'] ?? true) ? 2 : 0,
             CURLOPT_CUSTOMREQUEST => $method,

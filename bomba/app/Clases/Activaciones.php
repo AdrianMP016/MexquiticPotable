@@ -53,9 +53,7 @@ class Activaciones
                 throw new HttpException('La bomba ya esta encendida.', 409);
             }
 
-            $this->shelly->pulsarInicio();
             $ahora = date('Y-m-d H:i:s');
-
             $stmt = $this->db->prepare(
                 "INSERT INTO bomba_activaciones (origen, iniciado_por_usuario_id, iniciado_por_nombre, inicio_at)
                  VALUES ('manual', :uid, :nombre, :inicio)"
@@ -65,6 +63,7 @@ class Activaciones
                 'nombre' => (string) $usuario['nombre'],
                 'inicio' => $ahora,
             ]);
+            $nuevaId = (int) $this->db->lastInsertId();
 
             $this->marcarComando();
             $this->db->commit();
@@ -72,6 +71,16 @@ class Activaciones
             if ($this->db->inTransaction()) {
                 $this->db->rollBack();
             }
+            throw $exception;
+        }
+
+        // Hablar con Shelly Cloud puede tardar varios segundos: se hace ya sin
+        // transaccion ni candado de fila abiertos, para no dejar ocupada la
+        // conexion a la base de datos mientras se espera la respuesta.
+        try {
+            $this->shelly->pulsarInicio();
+        } catch (Throwable $exception) {
+            $this->cerrarActivacionPorId($nuevaId, $ahora, date('Y-m-d H:i:s'), 'error');
             throw $exception;
         }
 
@@ -85,23 +94,14 @@ class Activaciones
         $this->verificarProteccion();
 
         $this->db->beginTransaction();
-        try {
-            $abierta = $this->obtenerActivacionAbiertaForUpdate();
+        $abierta = $this->obtenerActivacionAbiertaForUpdate();
+        $this->marcarComando();
+        $this->db->commit();
 
-            $this->shelly->pulsarParo();
-            $ahora = date('Y-m-d H:i:s');
+        $this->shelly->pulsarParo();
 
-            if ($abierta) {
-                $this->cerrarActivacion($abierta, $ahora, 'manual');
-            }
-
-            $this->marcarComando();
-            $this->db->commit();
-        } catch (Throwable $exception) {
-            if ($this->db->inTransaction()) {
-                $this->db->rollBack();
-            }
-            throw $exception;
+        if ($abierta) {
+            $this->cerrarActivacion($abierta, date('Y-m-d H:i:s'), 'manual');
         }
 
         $this->registrarBitacora($usuario, 'apagado_manual', 'Apagado manual de la bomba.');
@@ -127,9 +127,7 @@ class Activaciones
                 throw new HttpException('La bomba ya esta encendida.', 409);
             }
 
-            $this->shelly->pulsarInicio();
             $ahora = date('Y-m-d H:i:s');
-
             $stmt = $this->db->prepare(
                 "INSERT INTO bomba_activaciones
                     (origen, iniciado_por_usuario_id, iniciado_por_nombre, inicio_at, cronometro_duracion_segundos)
@@ -141,6 +139,7 @@ class Activaciones
                 'inicio' => $ahora,
                 'duracion' => $duracionSegundos,
             ]);
+            $nuevaId = (int) $this->db->lastInsertId();
 
             $this->marcarComando();
             $this->db->commit();
@@ -148,6 +147,13 @@ class Activaciones
             if ($this->db->inTransaction()) {
                 $this->db->rollBack();
             }
+            throw $exception;
+        }
+
+        try {
+            $this->shelly->pulsarInicio();
+        } catch (Throwable $exception) {
+            $this->cerrarActivacionPorId($nuevaId, $ahora, date('Y-m-d H:i:s'), 'error');
             throw $exception;
         }
 
@@ -161,25 +167,18 @@ class Activaciones
         $this->verificarProteccion();
 
         $this->db->beginTransaction();
-        try {
-            $abierta = $this->obtenerActivacionAbiertaForUpdate();
+        $abierta = $this->obtenerActivacionAbiertaForUpdate();
 
-            if (!$abierta || $abierta['origen'] !== 'cronometro') {
-                $this->db->rollBack();
-                throw new HttpException('No hay un cronometro activo para cancelar.', 409);
-            }
-
-            $this->shelly->pulsarParo();
-            $this->cerrarActivacion($abierta, date('Y-m-d H:i:s'), 'manual');
-
-            $this->marcarComando();
-            $this->db->commit();
-        } catch (Throwable $exception) {
-            if ($this->db->inTransaction()) {
-                $this->db->rollBack();
-            }
-            throw $exception;
+        if (!$abierta || $abierta['origen'] !== 'cronometro') {
+            $this->db->rollBack();
+            throw new HttpException('No hay un cronometro activo para cancelar.', 409);
         }
+
+        $this->marcarComando();
+        $this->db->commit();
+
+        $this->shelly->pulsarParo();
+        $this->cerrarActivacion($abierta, date('Y-m-d H:i:s'), 'manual');
 
         $this->registrarBitacora($usuario, 'cronometro_cancelado', 'Cronometro cancelado manualmente.');
 
@@ -318,6 +317,23 @@ class Activaciones
             'duracion' => $duracion,
             'fin_motivo' => $finMotivo,
             'id' => $abierta['id'],
+        ]);
+    }
+
+    private function cerrarActivacionPorId(int $id, string $inicioAt, string $finAt, string $finMotivo): void
+    {
+        $duracion = max(0, strtotime($finAt) - strtotime($inicioAt));
+
+        $stmt = $this->db->prepare(
+            "UPDATE bomba_activaciones
+             SET fin_at = :fin_at, duracion_segundos = :duracion, fin_motivo = :fin_motivo
+             WHERE id = :id"
+        );
+        $stmt->execute([
+            'fin_at' => $finAt,
+            'duracion' => $duracion,
+            'fin_motivo' => $finMotivo,
+            'id' => $id,
         ]);
     }
 
