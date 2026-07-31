@@ -1,3 +1,5 @@
+window.bombaDashboardActivo = true;
+
 let bombaEstadoActual = null;
 let bombaPeriodoActividad = "dia";
 let bombaCronometroFinTs = null;
@@ -22,6 +24,7 @@ function bombaFormatoRelojCompleto(segundos) {
 
 function bombaPintarEstado(data) {
   bombaEstadoActual = data;
+  bombaPintarWidgetCronometro(data);
 
   var encendido = !!data.encendido;
   var $led = $("#bombaLed");
@@ -161,7 +164,7 @@ function bombaRefrescarActividad() {
 $(function () {
   bombaRefrescarEstado();
   bombaRefrescarActividad();
-  setInterval(bombaRefrescarEstado, 4000);
+  setInterval(bombaRefrescarEstado, 10000);
   setInterval(bombaActualizarCronometroLocal, 1000);
 
   $("#btnEncenderApagar").on("click", function () {

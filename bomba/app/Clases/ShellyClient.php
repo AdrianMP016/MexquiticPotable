@@ -152,14 +152,26 @@ class ShellyClient
             return ['pulsado' => true, 'canal' => $canal, 'tipo' => $tipo, 'simulado' => true];
         }
 
-        $duracion = (int) $this->configBomba->obtenerNumero('proteccion_delay_segundos', 2);
+        $duracion = max(1, (int) $this->configBomba->obtenerNumero('proteccion_delay_segundos', 2));
+
+        $this->request('POST', '/device/relay/control', [
+            'id' => $this->config['device_id_relay'],
+            'auth_key' => $this->config['auth_key'],
+            'channel' => $canal,
+            'turn' => 'on',
+        ]);
+
+        // El parametro "timer" del endpoint clasico no se esta respitando en
+        // este Shelly Pro 2 (el canal se queda encendido en vez de regresar
+        // solo), asi que el pulso se cierra explicitamente desde aqui en vez
+        // de confiar en que el propio Shelly lo apague solo.
+        sleep($duracion);
 
         $respuesta = $this->request('POST', '/device/relay/control', [
             'id' => $this->config['device_id_relay'],
             'auth_key' => $this->config['auth_key'],
             'channel' => $canal,
-            'turn' => 'on',
-            'timer' => $duracion,
+            'turn' => 'off',
         ]);
 
         return ['pulsado' => true, 'canal' => $canal, 'tipo' => $tipo, 'raw' => $respuesta];
