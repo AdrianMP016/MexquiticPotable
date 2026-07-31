@@ -74,7 +74,7 @@ try {
                     'descripcion' => 'El cronometro termino, pero la bomba sigue encendida porque hay una programacion activa.',
                 ]);
             } else {
-                $shelly->apagarRelay();
+                $shelly->pulsarParo();
                 $bitacora->registrar([
                     'accion' => 'cronometro_expirado',
                     'descripcion' => 'El cronometro termino y la bomba se apago automaticamente.',
@@ -89,7 +89,7 @@ try {
             && $horaActual < $regla['hora_fin'];
 
         if (!$sigueEnVentana) {
-            $shelly->apagarRelay();
+            $shelly->pulsarParo();
             cerrar($db, $abierta, $ahora->format('Y-m-d H:i:s'), 'regla_fin');
             $bitacora->registrar([
                 'accion' => 'automatico_apagado',
@@ -104,7 +104,7 @@ try {
             && $horaActual < $regla['hora_fin'];
 
         if ($debeEncender) {
-            $shelly->encenderRelay();
+            $shelly->pulsarInicio();
             $stmt = $db->prepare(
                 "INSERT INTO bomba_activaciones (origen, regla_automatica_id, inicio_at)
                  VALUES ('automatico', :regla_id, :inicio)"

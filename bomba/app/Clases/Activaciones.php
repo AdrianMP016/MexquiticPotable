@@ -21,8 +21,10 @@ class Activaciones
 
     public function estado(): array
     {
-        $relay = $this->shelly->obtenerEstadoRelay();
-
+        // El circuito es de pulso (Marcha/Paro), no de rele sostenido: el Shelly
+        // no tiene forma de reportar si la bomba esta realmente encendida, asi
+        // que "encendido" se calcula a partir de nuestra propia bitacora de
+        // activaciones (hay o no una fila abierta), no preguntandole al Shelly.
         $temperatura = null;
         try {
             $temperatura = $this->shelly->leerSensorTemperatura();
@@ -30,10 +32,12 @@ class Activaciones
             $temperatura = null;
         }
 
+        $abierta = $this->obtenerActivacionAbierta();
+
         return [
-            'encendido' => (bool) $relay['encendido'],
+            'encendido' => $abierta !== null,
             'temperatura' => $temperatura,
-            'activacion_actual' => $this->obtenerActivacionAbierta(),
+            'activacion_actual' => $abierta,
             'espera_restante_segundos' => $this->esperaRestante(),
         ];
     }
@@ -49,7 +53,7 @@ class Activaciones
                 throw new HttpException('La bomba ya esta encendida.', 409);
             }
 
-            $this->shelly->encenderRelay();
+            $this->shelly->pulsarInicio();
             $ahora = date('Y-m-d H:i:s');
 
             $stmt = $this->db->prepare(
@@ -84,7 +88,7 @@ class Activaciones
         try {
             $abierta = $this->obtenerActivacionAbiertaForUpdate();
 
-            $this->shelly->apagarRelay();
+            $this->shelly->pulsarParo();
             $ahora = date('Y-m-d H:i:s');
 
             if ($abierta) {
@@ -123,7 +127,7 @@ class Activaciones
                 throw new HttpException('La bomba ya esta encendida.', 409);
             }
 
-            $this->shelly->encenderRelay();
+            $this->shelly->pulsarInicio();
             $ahora = date('Y-m-d H:i:s');
 
             $stmt = $this->db->prepare(
@@ -165,7 +169,7 @@ class Activaciones
                 throw new HttpException('No hay un cronometro activo para cancelar.', 409);
             }
 
-            $this->shelly->apagarRelay();
+            $this->shelly->pulsarParo();
             $this->cerrarActivacion($abierta, date('Y-m-d H:i:s'), 'manual');
 
             $this->marcarComando();
