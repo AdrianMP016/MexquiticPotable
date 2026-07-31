@@ -62,6 +62,12 @@ function bombaCargarDiagnosticoCron() {
     data: { accion: "activaciones.diagnosticoCron" },
     success: function (response) {
       bombaRenderDiagnosticoCron(response.data || {});
+    },
+    error: function (xhr) {
+      $("#diagnosticoCronBox").html(
+        '<p style="color:var(--agua-red);"><i class="fas fa-times-circle"></i> No se pudo consultar: ' +
+        bombaExtraerMensaje(xhr, "error desconocido") + '</p>'
+      );
     }
   });
 }
