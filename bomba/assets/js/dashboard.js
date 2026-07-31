@@ -4,6 +4,7 @@ let bombaEstadoActual = null;
 let bombaPeriodoActividad = "dia";
 let bombaCronometroFinTs = null;
 let bombaCronometroOtroMotivo = null;
+let bombaCronometroCierreSolicitado = false;
 
 function bombaPlural(cantidad, singular, plural) {
   return cantidad === 1 ? singular : plural;
@@ -82,6 +83,7 @@ function bombaPintarCronometro(data) {
 
     bombaCronometroFinTs = inicio + duracionMs;
     bombaCronometroOtroMotivo = null;
+    bombaCronometroCierreSolicitado = false;
 
     $("#cronometroInactivo").addClass("oculto");
     $("#cronometroActivoBox").removeClass("oculto");
@@ -114,6 +116,13 @@ function bombaActualizarCronometroLocal() {
 
   if (restanteSegundos <= 0) {
     $("#cronometroTexto").html('<i class="fas fa-spinner fa-spin"></i> Terminando, apagando la bomba...');
+    if (!bombaCronometroCierreSolicitado) {
+      // No esperamos al siguiente ciclo de 10s ni al cron: en cuanto la cuenta
+      // regresiva local llega a cero pedimos el estado ya mismo, para que se
+      // sienta instantaneo mientras alguien tiene la pantalla abierta.
+      bombaCronometroCierreSolicitado = true;
+      bombaRefrescarEstado();
+    }
     return;
   }
 

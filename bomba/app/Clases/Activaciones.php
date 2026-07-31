@@ -21,6 +21,13 @@ class Activaciones
 
     public function estado(): array
     {
+        // El cron de Hostinger es el respaldo que siempre cierra un cronometro
+        // vencido (por si nadie tiene la pantalla abierta), pero aqui tambien lo
+        // revisamos en cada consulta de estado: asi, mientras alguien esta viendo
+        // el panel (que refresca cada pocos segundos), el apagado se siente casi
+        // instantaneo en vez de esperar al siguiente tick del cron (hasta 1 min).
+        $this->cerrarCronometroSiVencido();
+
         // El circuito es de pulso (Marcha/Paro), no de rele sostenido: el Shelly
         // no tiene forma de reportar si la bomba esta realmente encendida, asi
         // que "encendido" se calcula a partir de nuestra propia bitacora de
@@ -40,6 +47,63 @@ class Activaciones
             'activacion_actual' => $abierta,
             'espera_restante_segundos' => $this->esperaRestante(),
         ];
+    }
+
+    private function cerrarCronometroSiVencido(): void
+    {
+        $this->db->beginTransaction();
+        $abierta = $this->obtenerActivacionAbiertaForUpdate();
+
+        if (!$abierta || $abierta['origen'] !== 'cronometro') {
+            $this->db->rollBack();
+            return;
+        }
+
+        $transcurrido = time() - strtotime((string) $abierta['inicio_at']);
+        if ($transcurrido < (int) $abierta['cronometro_duracion_segundos']) {
+            $this->db->rollBack();
+            return;
+        }
+
+        $ahora = new DateTime('now');
+        $diaIso = (int) $ahora->format('N');
+        $horaActual = $ahora->format('H:i:s');
+
+        $regla = $this->db->query("SELECT * FROM bomba_regla_automatica WHERE activa = 1 LIMIT 1")->fetch();
+        $sigueRegla = $regla
+            && in_array($diaIso, array_map('intval', explode(',', (string) $regla['dias_semana'])), true)
+            && $horaActual >= $regla['hora_inicio']
+            && $horaActual < $regla['hora_fin'];
+
+        $finAt = $ahora->format('Y-m-d H:i:s');
+        $this->cerrarActivacion($abierta, $finAt, 'cronometro_expirado');
+
+        if ($sigueRegla) {
+            $stmt = $this->db->prepare(
+                "INSERT INTO bomba_activaciones (origen, regla_automatica_id, inicio_at)
+                 VALUES ('automatico', :regla_id, :inicio)"
+            );
+            $stmt->execute([
+                'regla_id' => (int) $regla['id'],
+                'inicio' => $finAt,
+            ]);
+        }
+
+        $this->db->commit();
+
+        if ($sigueRegla) {
+            $this->bitacora->registrar([
+                'accion' => 'cronometro_expirado',
+                'descripcion' => 'El cronometro termino, pero la bomba sigue encendida porque hay una programacion activa.',
+            ]);
+            return;
+        }
+
+        $this->shelly->pulsarParo();
+        $this->bitacora->registrar([
+            'accion' => 'cronometro_expirado',
+            'descripcion' => 'El cronometro termino y la bomba se apago automaticamente.',
+        ]);
     }
 
     public function encenderManual(array $usuario): array
