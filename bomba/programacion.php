@@ -83,6 +83,16 @@ function bombaSelectorHora12h(string $prefijo, string $etiqueta, string $opcione
 </div>
 <?php endif; ?>
 
+<?php if ($esAdmin): ?>
+<div class="bomba-card">
+  <h2><i class="fas fa-heartbeat"></i> Diagnostico del verificador automatico</h2>
+  <p style="color:var(--agua-muted); margin-top:-8px;">Esta tarea corre en el servidor cada cierto tiempo (configurado en el cron de Hostinger) y es la que enciende/apaga la bomba por la regla automatica y cierra el cronometro cuando termina. Si la fecha de abajo esta muy atrasada, esa tarea no esta corriendo.</p>
+  <div id="diagnosticoCronBox">
+    <p style="color:var(--agua-muted);">Consultando...</p>
+  </div>
+</div>
+<?php endif; ?>
+
 <div class="bomba-modal-fondo" id="modalConfirmarRegla">
   <div class="bomba-modal-caja">
     <h3><i class="fas fa-exclamation-triangle"></i> Ya existe una regla activa</h3>

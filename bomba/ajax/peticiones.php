@@ -154,6 +154,11 @@ try {
             JsonResponse::success('Conexion verificada.', $shelly->verificarConexion());
             break;
 
+        case 'activaciones.diagnosticoCron':
+            $activaciones = new Activaciones($db, new ShellyClient($db));
+            JsonResponse::success('Diagnostico consultado correctamente.', $activaciones->diagnosticoCron());
+            break;
+
         case 'regla.obtenerActiva':
             $regla = new ReglaAutomatica($db);
             JsonResponse::success('Regla consultada correctamente.', ['regla' => $regla->obtenerActiva()]);

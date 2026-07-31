@@ -120,14 +120,29 @@ function bombaActualizarCronometroLocal() {
   $("#cronometroTexto").text("Faltan " + bombaFormatoRelojCompleto(restanteSegundos));
 }
 
+var bombaEstadoEnCurso = false;
+
 function bombaRefrescarEstado() {
+  // Si una consulta anterior todavia no responde (por ejemplo, se colgo
+  // hablando con Shelly), no lanzamos otra encima: solo se acumularian
+  // peticiones y nunca se libera la pantalla.
+  if (bombaEstadoEnCurso) {
+    return;
+  }
+
+  bombaEstadoEnCurso = true;
+
   $.ajax({
     url: bombaAjaxUrl,
     method: "POST",
     dataType: "json",
     data: { accion: "activaciones.estado" },
+    timeout: 25000,
     success: function (response) {
       bombaPintarEstado(response.data || {});
+    },
+    complete: function () {
+      bombaEstadoEnCurso = false;
     }
   });
 }
@@ -177,6 +192,7 @@ $(function () {
       method: "POST",
       dataType: "json",
       data: { accion: accion },
+      timeout: 25000,
       beforeSend: function () {
         $feedback.addClass("oculto");
         $btn.prop("disabled", true);
@@ -187,6 +203,7 @@ $(function () {
       },
       error: function (xhr) {
         $feedback.removeClass("oculto exito").addClass("peligro").text(bombaExtraerMensaje(xhr, "No se pudo enviar el comando."));
+        $btn.prop("disabled", false);
         bombaRefrescarEstado();
       }
     });
@@ -237,6 +254,7 @@ $(function () {
       method: "POST",
       dataType: "json",
       data: { accion: "activaciones.cronometro", horas: horas, minutos: minutos },
+      timeout: 25000,
       beforeSend: function () {
         $feedback.addClass("oculto");
       },
@@ -246,6 +264,7 @@ $(function () {
       },
       error: function (xhr) {
         $feedback.removeClass("oculto").text(bombaExtraerMensaje(xhr, "No se pudo iniciar el cronometro."));
+        bombaRefrescarEstado();
       }
     });
   });

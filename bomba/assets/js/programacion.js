@@ -24,6 +24,48 @@ function bombaCargarRegla() {
   });
 }
 
+function bombaRenderDiagnosticoCron(data) {
+  var $box = $("#diagnosticoCronBox");
+  if (!$box.length) {
+    return;
+  }
+
+  if (!data.cron_ultima_ejecucion_at) {
+    $box.html(
+      '<p style="color:var(--agua-red);"><i class="fas fa-times-circle"></i> Todavia no se ha registrado ninguna corrida. Es probable que el cron no este configurado en Hostinger o nunca se haya ejecutado.</p>'
+    );
+    return;
+  }
+
+  var segundosDesde = Math.max(0, Math.round((new Date(data.hora_servidor_actual.replace(" ", "T")).getTime() - new Date(data.cron_ultima_ejecucion_at.replace(" ", "T")).getTime()) / 1000));
+  var atrasado = segundosDesde > 600;
+
+  var html = '<p><i class="fas ' + (atrasado ? 'fa-exclamation-triangle" style="color:var(--agua-red);"' : 'fa-check-circle" style="color:var(--agua-green);"') + '></i> ';
+  html += 'Ultima corrida: ' + bombaFormatoFecha12h(data.cron_ultima_ejecucion_at) + ' (hace ' + segundosDesde + ' segundos)</p>';
+  html += '<p style="color:var(--agua-muted);">Resultado: ' + (data.cron_ultimo_resultado || '--') + '</p>';
+  if (atrasado) {
+    html += '<p style="color:var(--agua-red);">Han pasado mas de 10 minutos desde la ultima corrida: revisa que el cron de "bomba/cron/verificar.php" siga activo en hPanel.</p>';
+  }
+
+  $box.html(html);
+}
+
+function bombaCargarDiagnosticoCron() {
+  if (!$("#diagnosticoCronBox").length) {
+    return;
+  }
+
+  $.ajax({
+    url: bombaAjaxUrl,
+    method: "POST",
+    dataType: "json",
+    data: { accion: "activaciones.diagnosticoCron" },
+    success: function (response) {
+      bombaRenderDiagnosticoCron(response.data || {});
+    }
+  });
+}
+
 function bombaHoraSelectorA24h(prefijo) {
   var h12 = parseInt($("#" + prefijo + "H").val(), 10);
   var m = parseInt($("#" + prefijo + "M").val(), 10);
@@ -84,6 +126,8 @@ function bombaEnviarRegla(forzar) {
 
 $(function () {
   bombaCargarRegla();
+  bombaCargarDiagnosticoCron();
+  setInterval(bombaCargarDiagnosticoCron, 30000);
 
   $(document).on("click", ".dia-pastilla", function () {
     $(this).toggleClass("activo");
