@@ -35,7 +35,11 @@ function bombaPintarEstado(data) {
   $led.html('<i class="fas fa-power-off"></i>');
 
   if (data.temperatura && typeof data.temperatura.temperatura_c === "number") {
-    $("#bombaTemperatura").html('<i class="fas fa-thermometer-half"></i> ' + data.temperatura.temperatura_c.toFixed(1) + ' &deg;C');
+    var partes = ['<i class="fas fa-thermometer-half"></i> ' + data.temperatura.temperatura_c.toFixed(1) + ' &deg;C'];
+    if (typeof data.temperatura.humedad_pct === "number") {
+      partes.push('<i class="fas fa-tint"></i> ' + data.temperatura.humedad_pct.toFixed(0) + '% humedad');
+    }
+    $("#bombaTemperatura").html(partes.join(' &nbsp;&middot;&nbsp; '));
   } else {
     $("#bombaTemperatura").html('<i class="fas fa-thermometer-half"></i> sensor no disponible');
   }

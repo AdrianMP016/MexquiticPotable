@@ -167,6 +167,12 @@ class SystemBootstrap
                 'tipo' => 'number',
                 'descripcion' => 'Temperatura simulada del sensor H&T mientras no hay credenciales reales de Shelly Cloud.',
             ],
+            [
+                'clave' => 'sim_humedad_pct',
+                'valor' => '45',
+                'tipo' => 'number',
+                'descripcion' => 'Humedad simulada del sensor H&T mientras no hay credenciales reales de Shelly Cloud.',
+            ],
         ];
 
         $stmt = $db->prepare(

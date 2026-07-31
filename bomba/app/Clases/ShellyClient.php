@@ -48,15 +48,24 @@ class ShellyClient
         if ($this->modoSimulado) {
             return [
                 'temperatura_c' => $this->configBomba->obtenerNumero('sim_temperatura_c', 22.5),
-                'humedad_pct' => null,
+                'humedad_pct' => $this->configBomba->obtenerNumero('sim_humedad_pct', 45),
+                'bateria_pct' => 100.0,
             ];
         }
 
-        $respuesta = $this->rpc((string) $this->config['device_id_sensor'], 'Temperature.GetStatus', ['id' => 0]);
+        // Shelly.GetStatus trae todos los componentes del dispositivo en una sola
+        // llamada (temperature:0, humidity:0, devicepower:0), en vez de tener que
+        // pedir cada sensor por separado.
+        $respuesta = $this->rpc((string) $this->config['device_id_sensor'], 'Shelly.GetStatus', []);
+
+        $temperatura = (array) ($respuesta['temperature:0'] ?? []);
+        $humedad = (array) ($respuesta['humidity:0'] ?? []);
+        $bateria = (array) ($respuesta['devicepower:0']['battery'] ?? []);
 
         return [
-            'temperatura_c' => isset($respuesta['tC']) ? (float) $respuesta['tC'] : null,
-            'humedad_pct' => isset($respuesta['rh']) ? (float) $respuesta['rh'] : null,
+            'temperatura_c' => isset($temperatura['tC']) ? (float) $temperatura['tC'] : null,
+            'humedad_pct' => isset($humedad['rh']) ? (float) $humedad['rh'] : null,
+            'bateria_pct' => isset($bateria['percent']) ? (float) $bateria['percent'] : null,
             'raw' => $respuesta,
         ];
     }
