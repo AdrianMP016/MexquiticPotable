@@ -61,6 +61,25 @@ class Activaciones
         ];
     }
 
+    /**
+     * Regresa la regla automatica activa si su ventana (dias + horario) cubre
+     * el momento actual, o null si no hay ninguna o no aplica ahora mismo.
+     */
+    private function reglaQueAplicaAhora(): ?array
+    {
+        $ahora = new DateTime('now');
+        $diaIso = (int) $ahora->format('N');
+        $horaActual = $ahora->format('H:i:s');
+
+        $regla = $this->db->query("SELECT * FROM bomba_regla_automatica WHERE activa = 1 LIMIT 1")->fetch();
+        $aplica = $regla
+            && in_array($diaIso, array_map('intval', explode(',', (string) $regla['dias_semana'])), true)
+            && $horaActual >= $regla['hora_inicio']
+            && $horaActual < $regla['hora_fin'];
+
+        return $aplica ? $regla : null;
+    }
+
     private function cerrarCronometroSiVencido(): void
     {
         $this->db->beginTransaction();
@@ -78,14 +97,8 @@ class Activaciones
         }
 
         $ahora = new DateTime('now');
-        $diaIso = (int) $ahora->format('N');
-        $horaActual = $ahora->format('H:i:s');
-
-        $regla = $this->db->query("SELECT * FROM bomba_regla_automatica WHERE activa = 1 LIMIT 1")->fetch();
-        $sigueRegla = $regla
-            && in_array($diaIso, array_map('intval', explode(',', (string) $regla['dias_semana'])), true)
-            && $horaActual >= $regla['hora_inicio']
-            && $horaActual < $regla['hora_fin'];
+        $regla = $this->reglaQueAplicaAhora();
+        $sigueRegla = $regla !== null;
 
         $finAt = $ahora->format('Y-m-d H:i:s');
         $this->cerrarActivacion($abierta, $finAt, 'cronometro_expirado');
@@ -131,13 +144,23 @@ class Activaciones
             }
 
             $ahora = date('Y-m-d H:i:s');
+
+            // Si en este momento hay una regla automatica que deberia estar
+            // controlando la bomba, un encendido manual le devuelve el control
+            // a esa regla (en vez de quedar "suelto" como manual) para que el
+            // verificador la siga apagando sola a la hora que corresponde.
+            $reglaActiva = $this->reglaQueAplicaAhora();
+
             $stmt = $this->db->prepare(
-                "INSERT INTO bomba_activaciones (origen, iniciado_por_usuario_id, iniciado_por_nombre, inicio_at)
-                 VALUES ('manual', :uid, :nombre, :inicio)"
+                "INSERT INTO bomba_activaciones
+                    (origen, iniciado_por_usuario_id, iniciado_por_nombre, regla_automatica_id, inicio_at)
+                 VALUES (:origen, :uid, :nombre, :regla_id, :inicio)"
             );
             $stmt->execute([
+                'origen' => $reglaActiva !== null ? 'automatico' : 'manual',
                 'uid' => (int) $usuario['id'],
                 'nombre' => (string) $usuario['nombre'],
+                'regla_id' => $reglaActiva !== null ? (int) $reglaActiva['id'] : null,
                 'inicio' => $ahora,
             ]);
             $nuevaId = (int) $this->db->lastInsertId();
@@ -161,7 +184,10 @@ class Activaciones
             throw $exception;
         }
 
-        $this->registrarBitacora($usuario, 'encendido_manual', 'Encendido manual de la bomba.');
+        $descripcionEncendido = $reglaActiva !== null
+            ? 'Encendido manual de la bomba (dentro del horario de la regla automatica: se le devuelve el control a la programacion).'
+            : 'Encendido manual de la bomba.';
+        $this->registrarBitacora($usuario, 'encendido_manual', $descripcionEncendido);
         $this->notificarPush('Bomba encendida', (string) $usuario['nombre'] . ' encendio la bomba manualmente.');
 
         return $this->estado();
