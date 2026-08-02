@@ -246,4 +246,14 @@ $(function () {
     bombaActualizarWidgetCronometro();
     setInterval(bombaActualizarWidgetCronometro, 15000);
   }
+
+  $("#btnPushToggle").on("click", function () {
+    if ($(this).hasClass("activo")) {
+      bombaPushDesactivar();
+    } else {
+      bombaPushActivar();
+    }
+  });
+
+  bombaPushInicializar();
 });
