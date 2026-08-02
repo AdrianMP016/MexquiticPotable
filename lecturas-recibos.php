@@ -13,5 +13,6 @@ mexquiticRenderAdminPage([
         'modals/modal-preview-recibos-periodo.html',
         'modals/modal-notificacion-masiva.html',
         'modals/modal-lightbox-foto.html',
+        'modals/modal-registrar-pago.html',
     ],
 ]);
