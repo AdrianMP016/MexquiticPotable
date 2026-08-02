@@ -33,6 +33,17 @@ require __DIR__ . '/app/views/_header.php';
   </button>
 </div>
 
+<div class="bomba-modal-fondo" id="modalConfirmarEncendido">
+  <div class="bomba-modal-caja">
+    <h3><i class="fas fa-exclamation-triangle"></i> <span id="modalConfirmarEncendidoTitulo">Confirmar accion</span></h3>
+    <p id="modalConfirmarEncendidoTexto">¿Seguro que quieres continuar?</p>
+    <div class="bomba-modal-botones">
+      <button type="button" class="btn-grande secundario" id="btnCancelarConfirmarEncendido">Cancelar</button>
+      <button type="button" class="btn-grande primario" id="btnConfirmarEncendido">Confirmar</button>
+    </div>
+  </div>
+</div>
+
 <div class="bomba-modal-fondo" id="modalConexion">
   <div class="bomba-modal-caja">
     <h3><i class="fas fa-satellite-dish"></i> Conexion con el Shelly</h3>

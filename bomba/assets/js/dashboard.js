@@ -191,10 +191,10 @@ $(function () {
   setInterval(bombaRefrescarEstado, 10000);
   setInterval(bombaActualizarCronometroLocal, 1000);
 
-  $("#btnEncenderApagar").on("click", function () {
+  function bombaEjecutarEncenderApagar() {
     var accion = bombaEstadoActual && bombaEstadoActual.encendido ? "activaciones.apagar" : "activaciones.encender";
     var $feedback = $("#estadoFeedback");
-    var $btn = $(this);
+    var $btn = $("#btnEncenderApagar");
 
     $.ajax({
       url: bombaAjaxUrl,
@@ -216,6 +216,28 @@ $(function () {
         bombaRefrescarEstado();
       }
     });
+  }
+
+  $("#btnEncenderApagar").on("click", function () {
+    var encendiendo = !(bombaEstadoActual && bombaEstadoActual.encendido);
+
+    $("#modalConfirmarEncendidoTitulo").text(encendiendo ? "Confirmar encendido" : "Confirmar apagado");
+    $("#modalConfirmarEncendidoTexto").text(
+      encendiendo
+        ? "¿Seguro que quieres encender la bomba?"
+        : "¿Seguro que quieres apagar la bomba?"
+    );
+    $("#btnConfirmarEncendido").removeClass("peligro primario").addClass(encendiendo ? "primario" : "peligro");
+    $("#modalConfirmarEncendido").addClass("abierto");
+  });
+
+  $("#btnCancelarConfirmarEncendido").on("click", function () {
+    $("#modalConfirmarEncendido").removeClass("abierto");
+  });
+
+  $("#btnConfirmarEncendido").on("click", function () {
+    $("#modalConfirmarEncendido").removeClass("abierto");
+    bombaEjecutarEncenderApagar();
   });
 
   $("#btnVerificarConexion").on("click", function () {
