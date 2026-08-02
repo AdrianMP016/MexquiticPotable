@@ -102,6 +102,107 @@ function bombaActualizarWidgetCronometro() {
   });
 }
 
+function bombaUrlBase64ToUint8Array(base64String) {
+  var padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  var base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  var rawData = window.atob(base64);
+  var outputArray = new Uint8Array(rawData.length);
+
+  for (var i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+
+  return outputArray;
+}
+
+function bombaPushSoportado() {
+  return "serviceWorker" in navigator && "PushManager" in window;
+}
+
+function bombaPushActualizarBoton(activo) {
+  $("#btnPushToggle").toggleClass("activo", activo);
+  $("#btnPushToggleTexto").text(activo ? "Notificaciones activadas" : "Activar notificaciones");
+}
+
+function bombaPushInicializar() {
+  if (!bombaPushSoportado() || !$("#btnPushToggle").length) {
+    return;
+  }
+
+  $("#btnPushToggle").removeClass("oculto");
+
+  navigator.serviceWorker.register("sw-push.js").then(function (registro) {
+    registro.pushManager.getSubscription().then(function (suscripcion) {
+      bombaPushActualizarBoton(!!suscripcion);
+    });
+  }).catch(function () {
+    $("#btnPushToggle").addClass("oculto");
+  });
+}
+
+function bombaPushActivar() {
+  navigator.serviceWorker.ready.then(function (registro) {
+    return registro.pushManager.getSubscription().then(function (existente) {
+      if (existente) {
+        return existente;
+      }
+
+      return $.ajax({
+        url: bombaAjaxUrl,
+        method: "POST",
+        dataType: "json",
+        data: { accion: "push.clavePublica" }
+      }).then(function (response) {
+        var clave = (response.data || {}).clave_publica;
+        return registro.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: bombaUrlBase64ToUint8Array(clave)
+        });
+      });
+    });
+  }).then(function (suscripcion) {
+    var json = suscripcion.toJSON();
+    return $.ajax({
+      url: bombaAjaxUrl,
+      method: "POST",
+      dataType: "json",
+      data: {
+        accion: "push.suscribir",
+        endpoint: json.endpoint,
+        p256dh: json.keys.p256dh,
+        auth: json.keys.auth
+      }
+    });
+  }).then(function () {
+    bombaPushActualizarBoton(true);
+  }).catch(function () {
+    bombaPushActualizarBoton(false);
+    alert("No se pudo activar las notificaciones. Revisa que el navegador tenga permiso para mostrarlas.");
+  });
+}
+
+function bombaPushDesactivar() {
+  navigator.serviceWorker.ready.then(function (registro) {
+    return registro.pushManager.getSubscription();
+  }).then(function (suscripcion) {
+    if (!suscripcion) {
+      bombaPushActualizarBoton(false);
+      return;
+    }
+
+    var endpoint = suscripcion.endpoint;
+    suscripcion.unsubscribe().then(function () {
+      $.ajax({
+        url: bombaAjaxUrl,
+        method: "POST",
+        dataType: "json",
+        data: { accion: "push.desuscribir", endpoint: endpoint }
+      });
+      bombaPushActualizarBoton(false);
+    });
+  });
+}
+
 $(function () {
   $("#btnSalir").on("click", function () {
     $.ajax({
