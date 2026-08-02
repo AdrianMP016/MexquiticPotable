@@ -4,6 +4,7 @@ require_once __DIR__ . '/../app/bootstrap.php';
 require_once __DIR__ . '/../app/Clases/ShellyClient.php';
 require_once __DIR__ . '/../app/Clases/BitacoraBomba.php';
 require_once __DIR__ . '/../app/Clases/ConfigBomba.php';
+require_once __DIR__ . '/../app/Clases/WebPushClient.php';
 
 $esCli = PHP_SAPI === 'cli';
 
@@ -29,6 +30,7 @@ global $__bombaDb;
 $db = $__bombaDb;
 $bitacora = new BitacoraBomba($db);
 $configBomba = new ConfigBomba($db);
+$webPush = new WebPushClient($db);
 
 $bloqueado = $db->query("SELECT GET_LOCK('bomba_cron_verificar', 0) AS ok")->fetch();
 if (!$bloqueado || (int) $bloqueado['ok'] !== 1) {
