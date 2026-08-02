@@ -4,6 +4,7 @@ require_once __DIR__ . '/../app/bootstrap.php';
 require_once __DIR__ . '/../app/Clases/Activaciones.php';
 require_once __DIR__ . '/../app/Clases/ReglaAutomatica.php';
 require_once __DIR__ . '/../app/Clases/UsuariosBomba.php';
+require_once __DIR__ . '/../app/Clases/WebPushClient.php';
 
 function bombaAccionesPermitidas(string $accion): array
 {
@@ -34,6 +35,10 @@ function bombaAccionesPermitidas(string $accion): array
         'usuarios.baja' => ['admin'],
 
         'bitacora.listar' => ['admin', 'operador'],
+
+        'push.clavePublica' => ['admin', 'operador'],
+        'push.suscribir' => ['admin', 'operador'],
+        'push.desuscribir' => ['admin', 'operador'],
     ];
 
     return $map[$accion] ?? [];
@@ -220,6 +225,29 @@ try {
                 (int) Request::input('per_page', 25)
             );
             JsonResponse::success('Bitacora consultada correctamente.', $data);
+            break;
+
+        case 'push.clavePublica':
+            $webPush = new WebPushClient($db);
+            JsonResponse::success('Clave publica consultada.', ['clave_publica' => $webPush->clavePublica()]);
+            break;
+
+        case 'push.suscribir':
+            $webPush = new WebPushClient($db);
+            $webPush->suscribir(
+                (int) ($currentUser['id'] ?? 0) ?: null,
+                (string) Request::input('endpoint', ''),
+                (string) Request::input('p256dh', ''),
+                (string) Request::input('auth', ''),
+                (string) ($_SERVER['HTTP_USER_AGENT'] ?? '')
+            );
+            JsonResponse::success('Suscripcion guardada.', []);
+            break;
+
+        case 'push.desuscribir':
+            $webPush = new WebPushClient($db);
+            $webPush->desuscribir((string) Request::input('endpoint', ''));
+            JsonResponse::success('Suscripcion eliminada.', []);
             break;
 
         default:
