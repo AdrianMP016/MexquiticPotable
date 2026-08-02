@@ -51,6 +51,10 @@ $esAdminHeader = (string) ($currentUser['rol'] ?? '') === 'admin';
     <?php endif; ?>
     <a href="bitacora.php" class="<?= ($activeView ?? '') === 'bitacora' ? 'activo' : '' ?>"><i class="fas fa-history"></i> Bitacora</a>
   </div>
+
+  <button type="button" class="bomba-drawer-push oculto" id="btnPushToggle">
+    <i class="fas fa-bell"></i> <span id="btnPushToggleTexto">Activar notificaciones</span>
+  </button>
 </div>
 
   <button type="button" class="bomba-sidebar-curtain-toggle" id="btnCurtainToggle" aria-label="Contraer menu lateral" title="Contraer menu lateral">
