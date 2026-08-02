@@ -16,6 +16,7 @@ class SystemBootstrap
         self::ensureReglaAutomatica($db);
         self::ensureActivaciones($db);
         self::ensureConfig($db);
+        self::ensurePushSubscripciones($db);
         self::ensureDefaultAdmin($db);
     }
 
@@ -216,6 +217,27 @@ class SystemBootstrap
         foreach ($seeds as $seed) {
             $stmt->execute($seed);
         }
+    }
+
+    private static function ensurePushSubscripciones(PDO $db): void
+    {
+        $db->exec(
+            "CREATE TABLE IF NOT EXISTS bomba_push_subscripciones (
+                id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                usuario_bomba_id INT UNSIGNED NULL,
+                endpoint TEXT NOT NULL,
+                endpoint_hash CHAR(64) NOT NULL,
+                p256dh_key VARCHAR(255) NOT NULL,
+                auth_key VARCHAR(255) NOT NULL,
+                user_agent VARCHAR(255) NULL,
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                UNIQUE KEY uk_push_endpoint_hash (endpoint_hash),
+                CONSTRAINT fk_push_usuario
+                    FOREIGN KEY (usuario_bomba_id) REFERENCES usuarios_bomba (id)
+                    ON DELETE SET NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+        );
     }
 
     private static function ensureDefaultAdmin(PDO $db): void

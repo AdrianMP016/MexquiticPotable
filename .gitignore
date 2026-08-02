@@ -4,6 +4,7 @@ app/Config/ultramsg.php
 bomba/app/Config/database.php
 bomba/app/Config/shelly.php
 bomba/app/Config/cron.php
+bomba/app/Config/webpush.php
 
 # Generated and user-managed files
 fachadas/
