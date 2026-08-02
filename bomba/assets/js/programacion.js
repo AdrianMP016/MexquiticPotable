@@ -31,20 +31,18 @@ function bombaRenderDiagnosticoCron(data) {
   }
 
   if (!data.cron_ultima_ejecucion_at) {
-    $box.html(
-      '<p style="color:var(--agua-red);"><i class="fas fa-times-circle"></i> Todavia no se ha registrado ninguna corrida. Es probable que el cron no este configurado en Hostinger o nunca se haya ejecutado.</p>'
-    );
+    $box.html('<p style="color:var(--agua-red);"><i class="fas fa-times-circle"></i> Sin corridas todavia.</p>');
     return;
   }
 
   var segundosDesde = Math.max(0, Math.round((new Date(data.hora_servidor_actual.replace(" ", "T")).getTime() - new Date(data.cron_ultima_ejecucion_at.replace(" ", "T")).getTime()) / 1000));
   var atrasado = segundosDesde > 600;
 
-  var html = '<p><i class="fas ' + (atrasado ? 'fa-exclamation-triangle" style="color:var(--agua-red);"' : 'fa-check-circle" style="color:var(--agua-green);"') + '></i> ';
-  html += 'Ultima corrida: ' + bombaFormatoFecha12h(data.cron_ultima_ejecucion_at) + ' (hace ' + segundosDesde + ' segundos)</p>';
-  html += '<p style="color:var(--agua-muted);">Resultado: ' + (data.cron_ultimo_resultado || '--') + '</p>';
+  var html;
   if (atrasado) {
-    html += '<p style="color:var(--agua-red);">Han pasado mas de 10 minutos desde la ultima corrida: revisa que el cron de "bomba/cron/verificar.php" siga activo en hPanel.</p>';
+    html = '<p style="color:var(--agua-red);"><i class="fas fa-exclamation-triangle"></i> Sin corridas hace mas de 10 min. Revisa el cron en hPanel.</p>';
+  } else {
+    html = '<p style="color:var(--agua-green);"><i class="fas fa-check-circle"></i> Activo (hace ' + segundosDesde + 's)</p>';
   }
 
   $box.html(html);
