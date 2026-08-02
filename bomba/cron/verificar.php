@@ -135,6 +135,20 @@ try {
         $bitacora->registrar(['accion' => $accion, 'descripcion' => $descripcion]);
     }
 
+    if ($pulsoPendiente === 'paro') {
+        try {
+            $webPush->enviarATodos('Bomba apagada', (string) $descripcion);
+        } catch (Throwable $exception) {
+            // Un push fallido no debe afectar el resultado del cron.
+        }
+    } elseif ($pulsoPendiente === 'inicio') {
+        try {
+            $webPush->enviarATodos('Bomba encendida', (string) $descripcion);
+        } catch (Throwable $exception) {
+            // Un push fallido no debe afectar el resultado del cron.
+        }
+    }
+
     $configBomba->establecer('cron_ultima_ejecucion_at', $ahora->format('Y-m-d H:i:s'));
     $configBomba->establecer('cron_ultimo_resultado', 'ok');
     salir(['ok' => true]);
