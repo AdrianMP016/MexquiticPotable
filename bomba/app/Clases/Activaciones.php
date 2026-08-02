@@ -3,6 +3,7 @@
 require_once __DIR__ . '/ShellyClient.php';
 require_once __DIR__ . '/BitacoraBomba.php';
 require_once __DIR__ . '/ConfigBomba.php';
+require_once __DIR__ . '/WebPushClient.php';
 
 class Activaciones
 {
@@ -10,6 +11,7 @@ class Activaciones
     private ShellyClient $shelly;
     private BitacoraBomba $bitacora;
     private ConfigBomba $configBomba;
+    private WebPushClient $webPush;
 
     public function __construct(PDO $db, ShellyClient $shelly)
     {
@@ -17,6 +19,16 @@ class Activaciones
         $this->shelly = $shelly;
         $this->bitacora = new BitacoraBomba($db);
         $this->configBomba = new ConfigBomba($db);
+        $this->webPush = new WebPushClient($db);
+    }
+
+    private function notificarPush(string $titulo, string $cuerpo): void
+    {
+        try {
+            $this->webPush->enviarATodos($titulo, $cuerpo);
+        } catch (Throwable $exception) {
+            // Un push que falla no debe tumbar la accion real de la bomba.
+        }
     }
 
     public function estado(): array
@@ -104,6 +116,7 @@ class Activaciones
             'accion' => 'cronometro_expirado',
             'descripcion' => 'El cronometro termino y la bomba se apago automaticamente.',
         ]);
+        $this->notificarPush('Bomba apagada', 'El cronometro termino y la bomba se apago sola.');
     }
 
     public function encenderManual(array $usuario): array
@@ -149,6 +162,7 @@ class Activaciones
         }
 
         $this->registrarBitacora($usuario, 'encendido_manual', 'Encendido manual de la bomba.');
+        $this->notificarPush('Bomba encendida', (string) $usuario['nombre'] . ' encendio la bomba manualmente.');
 
         return $this->estado();
     }
@@ -169,6 +183,7 @@ class Activaciones
         }
 
         $this->registrarBitacora($usuario, 'apagado_manual', 'Apagado manual de la bomba.');
+        $this->notificarPush('Bomba apagada', (string) $usuario['nombre'] . ' apago la bomba manualmente.');
 
         return $this->estado();
     }
@@ -222,6 +237,7 @@ class Activaciones
         }
 
         $this->registrarBitacora($usuario, 'cronometro_iniciado', 'Cronometro iniciado por ' . $duracionSegundos . ' segundos.');
+        $this->notificarPush('Bomba encendida', (string) $usuario['nombre'] . ' inicio un cronometro.');
 
         return $this->estado();
     }
@@ -245,6 +261,7 @@ class Activaciones
         $this->cerrarActivacion($abierta, date('Y-m-d H:i:s'), 'manual');
 
         $this->registrarBitacora($usuario, 'cronometro_cancelado', 'Cronometro cancelado manualmente.');
+        $this->notificarPush('Bomba apagada', (string) $usuario['nombre'] . ' cancelo el cronometro.');
 
         return $this->estado();
     }
