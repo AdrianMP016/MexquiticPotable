@@ -22,6 +22,26 @@ class Activaciones
         $this->webPush = new WebPushClient($db);
     }
 
+    private static function formatoHorasMinutos(int $segundos): string
+    {
+        $horas = intdiv($segundos, 3600);
+        $minutos = intdiv($segundos % 3600, 60);
+
+        if ($horas <= 0 && $minutos <= 0) {
+            return '0 minutos';
+        }
+
+        $partes = [];
+        if ($horas > 0) {
+            $partes[] = $horas . ' ' . ($horas === 1 ? 'hora' : 'horas');
+        }
+        if ($minutos > 0 || $horas <= 0) {
+            $partes[] = $minutos . ' ' . ($minutos === 1 ? 'minuto' : 'minutos');
+        }
+
+        return implode(' ', $partes);
+    }
+
     private function notificarPush(string $titulo, string $cuerpo): void
     {
         try {
@@ -262,7 +282,7 @@ class Activaciones
             throw $exception;
         }
 
-        $this->registrarBitacora($usuario, 'cronometro_iniciado', 'Cronometro iniciado por ' . $duracionSegundos . ' segundos.');
+        $this->registrarBitacora($usuario, 'cronometro_iniciado', 'Cronometro iniciado por ' . self::formatoHorasMinutos($duracionSegundos) . '.');
         $this->notificarPush('Bomba encendida', (string) $usuario['nombre'] . ' inicio un cronometro.');
 
         return $this->estado();

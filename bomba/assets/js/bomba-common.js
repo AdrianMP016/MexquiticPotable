@@ -80,6 +80,25 @@ function bombaFormatoFecha12h(fechaTexto) {
   return dia + "/" + mes + "/" + anio + " " + h12 + ":" + String(minutos).padStart(2, "0") + ":" + segundos + " " + ampm;
 }
 
+// Igual que bombaFormatoFecha12h pero sin segundos, para listas donde el
+// segundo exacto no aporta y solo genera ruido visual (ej. la Bitacora).
+function bombaFormatoFechaCorta12h(fechaTexto) {
+  if (!fechaTexto) { return ""; }
+  var partes = fechaTexto.split(/[- :]/);
+  if (partes.length < 5) { return fechaTexto; }
+
+  var anio = partes[0];
+  var mes = partes[1];
+  var dia = partes[2];
+  var horas24 = parseInt(partes[3], 10);
+  var minutos = partes[4];
+  var ampm = horas24 >= 12 ? "p.m." : "a.m.";
+  var h12 = horas24 % 12;
+  if (h12 === 0) { h12 = 12; }
+
+  return dia + "/" + mes + "/" + anio + " " + h12 + ":" + String(minutos).padStart(2, "0") + " " + ampm;
+}
+
 function bombaPintarWidgetCronometro(data) {
   var $widget = $("#widgetCronometro");
   if (!$widget.length) {

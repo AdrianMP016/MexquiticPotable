@@ -35,6 +35,9 @@ require __DIR__ . '/app/views/_header.php';
   <div class="calendario-actividad" id="calendarioActividad" style="margin-top:20px;">
     <p style="color:var(--agua-muted);">Cargando...</p>
   </div>
+  <p style="color:var(--agua-muted); font-size:14px; margin-top:10px;">
+    En cada día: tiempo total encendida &middot; número de veces que se activó (por ejemplo, <strong>3x</strong> = se activó 3 veces). Toca un día para ver el detalle completo.
+  </p>
 </div>
 
 <div class="bomba-modal-fondo" id="modalDetalleDia">

@@ -12,7 +12,7 @@ function bombaRenderBitacora(logs) {
   var html = logs.map(function (log) {
     return (
       '<div class="bitacora-item">' +
-        '<div class="fecha">' + bombaFormatoFecha12h(log.created_at) + ' &middot; ' + (log.nombre_usuario || "Sistema") + '</div>' +
+        '<div class="fecha">' + bombaFormatoFechaCorta12h(log.created_at) + ' &middot; ' + (log.nombre_usuario || "Sistema") + '</div>' +
         '<div class="accion">' + (log.descripcion || log.accion) + '</div>' +
       '</div>'
     );
