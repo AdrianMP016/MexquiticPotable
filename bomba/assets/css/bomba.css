@@ -537,7 +537,7 @@ body:not(.bomba-sidebar-open) .bomba-sidebar-curtain-toggle {
 
 .actividad-stat {
   flex: 1;
-  min-width: 140px;
+  min-width: 160px;
   background: var(--agua-bg);
   border-radius: 12px;
   padding: 16px;
@@ -545,9 +545,10 @@ body:not(.bomba-sidebar-open) .bomba-sidebar-curtain-toggle {
 }
 
 .actividad-stat .valor {
-  font-size: 28px;
+  font-size: 22px;
   font-weight: 700;
   color: var(--agua-primary-dark);
+  line-height: 1.25;
 }
 
 .actividad-stat .etiqueta {
@@ -780,6 +781,43 @@ body:not(.bomba-sidebar-open) .bomba-sidebar-curtain-toggle {
 }
 
 /* Bitacora */
+.bitacora-filtro {
+  background: var(--agua-bg);
+  border: 1px solid var(--agua-border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+}
+
+.bitacora-filtro-tipos {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.bitacora-filtro-tipos .dia-pastilla {
+  padding: 9px 16px;
+  font-size: 15px;
+}
+
+.bitacora-filtro-valor {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.bitacora-filtro-valor input,
+.bitacora-filtro-valor select {
+  font-size: 17px;
+  padding: 11px 12px;
+  border-radius: 10px;
+  border: 2px solid var(--agua-border);
+  flex: 1;
+  min-width: 160px;
+}
+
 .bitacora-item {
   padding: 14px 16px;
   border-bottom: 1px solid var(--agua-border);

@@ -34,6 +34,20 @@ class BitacoraBomba
         ]);
     }
 
+    /**
+     * Borra las entradas de bitacora mas viejas que $meses meses, para que la
+     * tabla no crezca sin limite. Se llama desde el cron una vez al dia.
+     */
+    public function limpiarAntiguos(int $meses): int
+    {
+        $stmt = $this->db->prepare(
+            "DELETE FROM bitacora_bomba WHERE created_at < DATE_SUB(NOW(), INTERVAL :meses MONTH)"
+        );
+        $stmt->execute(['meses' => $meses]);
+
+        return $stmt->rowCount();
+    }
+
     public function listar(array $filters = [], int $page = 1, int $perPage = 25): array
     {
         $page = max(1, $page);

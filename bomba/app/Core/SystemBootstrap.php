@@ -204,6 +204,12 @@ class SystemBootstrap
                 'tipo' => 'string',
                 'descripcion' => 'Marca de tiempo que reporto el propio sensor Shelly en su ultimo reporte (cache).',
             ],
+            [
+                'clave' => 'bitacora_limpieza_ultima_at',
+                'valor' => '',
+                'tipo' => 'string',
+                'descripcion' => 'Ultima vez que se borraron registros viejos de la bitacora (una vez al dia).',
+            ],
         ];
 
         $stmt = $db->prepare(

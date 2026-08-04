@@ -12,6 +12,25 @@ require __DIR__ . '/app/views/_header.php';
 
 <div class="bomba-card">
   <h2><i class="fas fa-history"></i> Bitacora de actividad</h2>
+
+  <div class="bitacora-filtro">
+    <div class="bitacora-filtro-tipos" id="bitacoraFiltroTipos">
+      <span class="dia-pastilla activo" data-tipo="todo">Todo</span>
+      <span class="dia-pastilla" data-tipo="dia">Dia</span>
+      <span class="dia-pastilla" data-tipo="mes">Mes</span>
+      <span class="dia-pastilla" data-tipo="anio">Año</span>
+    </div>
+
+    <div class="bitacora-filtro-valor">
+      <input type="date" id="bitacoraFiltroDia" class="oculto">
+      <input type="month" id="bitacoraFiltroMes" class="oculto">
+      <select id="bitacoraFiltroAnio" class="oculto"></select>
+      <button type="button" class="btn-grande primario" id="btnBitacoraFiltrar" style="padding:10px 18px;">
+        <i class="fas fa-filter"></i> Filtrar
+      </button>
+    </div>
+  </div>
+
   <div id="bitacoraLista">
     <p style="color:var(--agua-muted);">Cargando...</p>
   </div>

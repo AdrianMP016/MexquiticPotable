@@ -20,7 +20,7 @@ $esAdminHeader = (string) ($currentUser['rol'] ?? '') === 'admin';
 <div class="bomba-drawer-inner">
   <div class="bomba-drawer-marca">
     <div class="bomba-drawer-logo">
-      <img src="../assets/img/logo-recibo.png" alt="Logo del sistema">
+      <img src="assets/img/logo.jpeg" alt="Logo del sistema">
     </div>
     <div class="bomba-drawer-marca-texto">
       <strong>Sistema de Agua</strong>

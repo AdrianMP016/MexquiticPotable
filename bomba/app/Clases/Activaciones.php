@@ -370,6 +370,7 @@ class Activaciones
             $dias[] = [
                 'fecha' => $fecha,
                 'dia' => $d,
+                'segundos' => $segundos,
                 'horas' => round($segundos / 3600, 1),
                 'veces' => $veces,
             ];
@@ -379,6 +380,7 @@ class Activaciones
             'anio' => $anio,
             'mes' => $mes,
             'dias' => $dias,
+            'total_segundos' => $totalSegundos,
             'total_horas' => round($totalSegundos / 3600, 1),
             'total_veces' => $totalVeces,
         ];

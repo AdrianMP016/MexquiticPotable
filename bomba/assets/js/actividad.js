@@ -15,7 +15,7 @@ function bombaPrimerDiaSemanaIso(anio, mes) {
 
 function bombaRenderCalendario(data) {
   $("#actividadMesTitulo").html('<i class="fas fa-calendar-alt"></i> ' + bombaMeses[data.mes] + ' ' + data.anio);
-  $("#actividadMesHoras").text(data.total_horas || 0);
+  $("#actividadMesHoras").text(bombaFormatoHorasMinutos(data.total_segundos || 0));
   $("#actividadMesVeces").text(data.total_veces || 0);
 
   var html = bombaDiasNombre.map(function (n) {
@@ -33,7 +33,7 @@ function bombaRenderCalendario(data) {
       '<div class="calendario-celda ' + (conActividad ? "con-actividad" : "") + '" ' +
         (conActividad ? 'data-fecha="' + dia.fecha + '"' : '') + '>' +
         '<div class="numero-dia">' + dia.dia + '</div>' +
-        (conActividad ? '<div class="horas-dia">' + dia.horas + 'h &middot; ' + dia.veces + 'x</div>' : '') +
+        (conActividad ? '<div class="horas-dia">' + bombaFormatoHorasMinutosCorto(dia.segundos) + ' &middot; ' + dia.veces + 'x</div>' : '') +
       '</div>'
     );
   });
@@ -92,7 +92,7 @@ $(function () {
         var lista = (response.data || {}).activaciones || [];
         var html = lista.map(function (a) {
           var duracion = a.duracion_segundos
-            ? Math.round(a.duracion_segundos / 60) + " min"
+            ? bombaFormatoHorasMinutos(a.duracion_segundos)
             : "en curso";
           return (
             '<div class="detalle-dia-item">' +

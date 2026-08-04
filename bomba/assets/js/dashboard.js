@@ -179,7 +179,7 @@ function bombaRefrescarActividad() {
     data: { accion: "activaciones.estadisticas", periodo: bombaPeriodoActividad },
     success: function (response) {
       var data = response.data || {};
-      $("#actividadHoras").text((data.horas || 0).toFixed(1));
+      $("#actividadHoras").text(bombaFormatoHorasMinutos(data.segundos || 0));
       $("#actividadVeces").text(data.veces || 0);
     }
   });

@@ -10,8 +10,8 @@ self.addEventListener("push", function (event) {
   var titulo = datos.titulo || "Control de Bomba";
   var opciones = {
     body: datos.cuerpo || "",
-    icon: "../assets/img/logo-recibo.png",
-    badge: "../assets/img/logo-recibo.png",
+    icon: "assets/img/logo.jpeg",
+    badge: "assets/img/logo.jpeg",
     data: datos.datos || {}
   };
 

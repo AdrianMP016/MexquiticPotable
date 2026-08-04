@@ -17,6 +17,34 @@ function bombaPluralComun(cantidad, singular, plural) {
   return cantidad === 1 ? singular : plural;
 }
 
+// "X horas Y minutos", completo, sin redondear a decimales de hora.
+function bombaFormatoHorasMinutos(segundos) {
+  segundos = Math.max(0, Math.round(segundos || 0));
+  var horas = Math.floor(segundos / 3600);
+  var minutos = Math.floor((segundos % 3600) / 60);
+
+  if (horas <= 0 && minutos <= 0) {
+    return "0 minutos";
+  }
+
+  var partes = [];
+  if (horas > 0) {
+    partes.push(horas + " " + bombaPluralComun(horas, "hora", "horas"));
+  }
+  if (minutos > 0 || horas <= 0) {
+    partes.push(minutos + " " + bombaPluralComun(minutos, "minuto", "minutos"));
+  }
+  return partes.join(" ");
+}
+
+// Version corta ("2h 18m") para espacios chicos, como las celdas del calendario.
+function bombaFormatoHorasMinutosCorto(segundos) {
+  segundos = Math.max(0, Math.round(segundos || 0));
+  var horas = Math.floor(segundos / 3600);
+  var minutos = Math.floor((segundos % 3600) / 60);
+  return horas + "h " + minutos + "m";
+}
+
 function bombaHora12(horas24, minutos) {
   var ampm = horas24 >= 12 ? "p.m." : "a.m.";
   var h12 = horas24 % 12;

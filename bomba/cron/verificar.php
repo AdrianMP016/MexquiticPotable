@@ -149,6 +149,18 @@ try {
         }
     }
 
+    // La bitacora se limpia solo una vez al dia (no en cada tick del cron),
+    // para que la tabla no crezca sin limite sin recargar el servidor.
+    $ultimaLimpieza = $configBomba->obtener('bitacora_limpieza_ultima_at', '');
+    if (substr($ultimaLimpieza, 0, 10) !== $ahora->format('Y-m-d')) {
+        try {
+            $bitacora->limpiarAntiguos(6);
+        } catch (Throwable $exception) {
+            // No debe afectar el resultado del cron si la limpieza falla.
+        }
+        $configBomba->establecer('bitacora_limpieza_ultima_at', $ahora->format('Y-m-d H:i:s'));
+    }
+
     $configBomba->establecer('cron_ultima_ejecucion_at', $ahora->format('Y-m-d H:i:s'));
     $configBomba->establecer('cron_ultimo_resultado', 'ok');
     salir(['ok' => true]);
