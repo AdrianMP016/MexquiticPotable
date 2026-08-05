@@ -108,20 +108,24 @@ class Activaciones
      */
     private function reglaTemporalQueAplicaAhora(): ?array
     {
-        $ahora = new DateTime('now');
-        $fechaHoy = $ahora->format('Y-m-d');
-        $horaActual = $ahora->format('H:i:s');
+        // Un solo rango continuo de fecha+hora (no una hora que se repite
+        // cada dia), asi que si cruza la medianoche funciona bien.
+        $ahoraTexto = date('Y-m-d H:i:s');
 
         $regla = $this->db->query(
-            "SELECT * FROM bomba_regla_temporal WHERE activa = 1 AND fecha_fin >= CURDATE() ORDER BY id DESC LIMIT 1"
+            "SELECT * FROM bomba_regla_temporal
+             WHERE activa = 1 AND TIMESTAMP(fecha_fin, hora_fin) >= NOW()
+             ORDER BY id DESC LIMIT 1"
         )->fetch();
-        $aplica = $regla
-            && $fechaHoy >= $regla['fecha_inicio']
-            && $fechaHoy <= $regla['fecha_fin']
-            && $horaActual >= $regla['hora_inicio']
-            && $horaActual < $regla['hora_fin'];
 
-        return $aplica ? $regla : null;
+        if (!$regla) {
+            return null;
+        }
+
+        $inicioDt = $regla['fecha_inicio'] . ' ' . $regla['hora_inicio'];
+        $finDt = $regla['fecha_fin'] . ' ' . $regla['hora_fin'];
+
+        return ($ahoraTexto >= $inicioDt && $ahoraTexto < $finDt) ? $regla : null;
     }
 
     private function cerrarCronometroSiVencido(): void

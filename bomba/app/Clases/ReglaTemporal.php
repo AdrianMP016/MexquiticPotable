@@ -3,11 +3,14 @@
 require_once __DIR__ . '/BitacoraBomba.php';
 
 /**
- * Regla temporal: un horario extra por un rango de fechas especifico (ej.
- * compensar un dia sin luz), independiente de la regla automatica permanente.
- * No la reemplaza ni entra en conflicto con ella - el verificador (cron)
- * revisa ambas por separado y enciende la bomba si cualquiera de las dos
- * aplica en ese momento.
+ * Regla temporal: UN SOLO periodo continuo (de fecha+hora de inicio a
+ * fecha+hora de fin), ej. "hoy 11pm a mañana 3am" para compensar un dia sin
+ * luz. Es independiente de la regla automatica permanente: no la reemplaza
+ * ni entra en conflicto con ella - el verificador (cron) revisa ambas por
+ * separado y enciende la bomba si cualquiera de las dos aplica en ese
+ * momento. A diferencia de la regla permanente (que se repite por dias de la
+ * semana), esta SI cruza la medianoche sin problema porque se evalua como un
+ * solo rango de fecha+hora, no como una hora que se repite cada dia.
  */
 class ReglaTemporal
 {
@@ -22,10 +25,11 @@ class ReglaTemporal
 
     public function obtenerActiva(): ?array
     {
-        // Auto-limpieza: si ya paso su fecha de fin, se desactiva sola aqui
-        // mismo, sin que nadie tenga que acordarse de borrarla a mano.
+        // Auto-limpieza: si ya paso su fecha+hora de fin, se desactiva sola
+        // aqui mismo, sin que nadie tenga que acordarse de borrarla a mano.
         $this->db->exec(
-            "UPDATE bomba_regla_temporal SET activa = 0 WHERE activa = 1 AND fecha_fin < CURDATE()"
+            "UPDATE bomba_regla_temporal SET activa = 0
+             WHERE activa = 1 AND TIMESTAMP(fecha_fin, hora_fin) < NOW()"
         );
 
         $stmt = $this->db->query("SELECT * FROM bomba_regla_temporal WHERE activa = 1 ORDER BY id DESC LIMIT 1");
@@ -60,16 +64,15 @@ class ReglaTemporal
             $errors['hora_fin'] = 'Captura una hora de fin valida.';
         }
 
-        if (empty($errors) && $fechaInicio > $fechaFin) {
-            $errors['fecha_fin'] = 'La fecha de fin debe ser igual o despues de la fecha de inicio.';
+        $inicioDt = $fechaInicio . ' ' . $horaInicio;
+        $finDt = $fechaFin . ' ' . $horaFin;
+
+        if (empty($errors) && $inicioDt >= $finDt) {
+            $errors['fecha_fin'] = 'La fecha y hora de fin deben ser despues del inicio.';
         }
 
-        if (empty($errors) && $fechaInicio === $fechaFin && $horaInicio >= $horaFin) {
-            $errors['hora_fin'] = 'La hora de fin debe ser despues de la hora de inicio.';
-        }
-
-        if (empty($errors) && $fechaFin < date('Y-m-d')) {
-            $errors['fecha_fin'] = 'La fecha de fin ya paso.';
+        if (empty($errors) && $finDt < date('Y-m-d H:i:s')) {
+            $errors['fecha_fin'] = 'Esa fecha y hora ya pasaron.';
         }
 
         if (!empty($errors)) {
@@ -79,7 +82,9 @@ class ReglaTemporal
         $this->db->beginTransaction();
         try {
             $stmt = $this->db->query(
-                "SELECT * FROM bomba_regla_temporal WHERE activa = 1 AND fecha_fin >= CURDATE() ORDER BY id DESC LIMIT 1 FOR UPDATE"
+                "SELECT * FROM bomba_regla_temporal
+                 WHERE activa = 1 AND TIMESTAMP(fecha_fin, hora_fin) >= NOW()
+                 ORDER BY id DESC LIMIT 1 FOR UPDATE"
             );
             $actual = $stmt->fetch();
 

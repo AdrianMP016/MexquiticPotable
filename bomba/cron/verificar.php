@@ -63,7 +63,7 @@ try {
     // mismo, la bomba debe estar encendida. Solo se apaga cuando ninguna
     // de las dos aplica.
     $reglaPermanente = regla_permanente_aplica($db, $diaIso, $horaActual);
-    $reglaTemporal = regla_temporal_aplica($db, $ahora->format('Y-m-d'), $horaActual);
+    $reglaTemporal = regla_temporal_aplica($db, $ahora->format('Y-m-d H:i:s'));
     $algunaReglaAplica = $reglaPermanente !== null || $reglaTemporal !== null;
 
     if ($abierta && $abierta['origen'] === 'cronometro') {
@@ -197,25 +197,27 @@ function regla_permanente_aplica(PDO $db, int $diaIso, string $horaActual): ?arr
     return null;
 }
 
-function regla_temporal_aplica(PDO $db, string $fechaHoy, string $horaActual): ?array
+function regla_temporal_aplica(PDO $db, string $ahoraTexto): ?array
 {
     // No se hace auto-limpieza aqui (eso lo hace ReglaTemporal::obtenerActiva
     // cuando alguien ve la pantalla); esta consulta solo revisa si aplica
     // ahora mismo, sin importar si el flag "activa" ya quedo desactualizado.
+    // Un solo rango continuo de fecha+hora (no una hora que se repite cada
+    // dia), asi que si cruza la medianoche funciona bien.
     $regla = $db->query(
-        "SELECT * FROM bomba_regla_temporal WHERE activa = 1 AND fecha_fin >= CURDATE() ORDER BY id DESC LIMIT 1"
+        "SELECT * FROM bomba_regla_temporal
+         WHERE activa = 1 AND TIMESTAMP(fecha_fin, hora_fin) >= NOW()
+         ORDER BY id DESC LIMIT 1"
     )->fetch();
 
-    if ($regla
-        && $fechaHoy >= $regla['fecha_inicio']
-        && $fechaHoy <= $regla['fecha_fin']
-        && $horaActual >= $regla['hora_inicio']
-        && $horaActual < $regla['hora_fin']
-    ) {
-        return $regla;
+    if (!$regla) {
+        return null;
     }
 
-    return null;
+    $inicioDt = $regla['fecha_inicio'] . ' ' . $regla['hora_inicio'];
+    $finDt = $regla['fecha_fin'] . ' ' . $regla['hora_fin'];
+
+    return ($ahoraTexto >= $inicioDt && $ahoraTexto < $finDt) ? $regla : null;
 }
 
 function cerrar(PDO $db, array $abierta, string $finAt, string $finMotivo): void
