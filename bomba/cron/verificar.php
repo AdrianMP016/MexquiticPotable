@@ -58,30 +58,34 @@ try {
     $accion = null;
     $descripcion = null;
 
+    // La regla permanente y la regla temporal se evaluan por separado y
+    // nunca se pisan entre ellas: si cualquiera de las dos aplica ahora
+    // mismo, la bomba debe estar encendida. Solo se apaga cuando ninguna
+    // de las dos aplica.
+    $reglaPermanente = regla_permanente_aplica($db, $diaIso, $horaActual);
+    $reglaTemporal = regla_temporal_aplica($db, $ahora->format('Y-m-d'), $horaActual);
+    $algunaReglaAplica = $reglaPermanente !== null || $reglaTemporal !== null;
+
     if ($abierta && $abierta['origen'] === 'cronometro') {
         $transcurrido = $ahora->getTimestamp() - strtotime((string) $abierta['inicio_at']);
         if ($transcurrido >= (int) $abierta['cronometro_duracion_segundos']) {
-            $regla = $db->query("SELECT * FROM bomba_regla_automatica WHERE activa = 1 LIMIT 1")->fetch();
-            $sigueRegla = $regla
-                && en_dias($regla['dias_semana'], $diaIso)
-                && $horaActual >= $regla['hora_inicio']
-                && $horaActual < $regla['hora_fin'];
-
             cerrar($db, $abierta, $ahora->format('Y-m-d H:i:s'), 'cronometro_expirado');
 
-            if ($sigueRegla) {
-                // Hay una programacion activa cubriendo este momento: no apagar, solo
-                // transferir el control de la bomba del cronometro a la regla automatica.
+            if ($algunaReglaAplica) {
+                // Hay una programacion (permanente o temporal) cubriendo este
+                // momento: no apagar, solo transferir el control del cronometro
+                // a la regla automatica.
                 $stmt = $db->prepare(
                     "INSERT INTO bomba_activaciones (origen, regla_automatica_id, inicio_at)
                      VALUES ('automatico', :regla_id, :inicio)"
                 );
                 $stmt->execute([
-                    'regla_id' => (int) $regla['id'],
+                    'regla_id' => $reglaPermanente ? (int) $reglaPermanente['id'] : null,
                     'inicio' => $ahora->format('Y-m-d H:i:s'),
                 ]);
                 $accion = 'cronometro_expirado';
-                $descripcion = 'El cronometro termino, pero la bomba sigue encendida porque hay una programacion activa.';
+                $descripcion = 'El cronometro termino, pero la bomba sigue encendida porque hay una programacion activa'
+                    . ($reglaTemporal ? ' (regla temporal)' : '') . '.';
             } else {
                 $pulsoPendiente = 'paro';
                 $accion = 'cronometro_expirado';
@@ -89,37 +93,27 @@ try {
             }
         }
     } elseif ($abierta && $abierta['origen'] === 'automatico') {
-        $regla = $db->query("SELECT * FROM bomba_regla_automatica WHERE activa = 1 LIMIT 1")->fetch();
-        $sigueEnVentana = $regla
-            && en_dias($regla['dias_semana'], $diaIso)
-            && $horaActual >= $regla['hora_inicio']
-            && $horaActual < $regla['hora_fin'];
-
-        if (!$sigueEnVentana) {
+        if (!$algunaReglaAplica) {
             cerrar($db, $abierta, $ahora->format('Y-m-d H:i:s'), 'regla_fin');
             $pulsoPendiente = 'paro';
             $accion = 'automatico_apagado';
             $descripcion = 'La regla automatica termino su ventana y la bomba se apago.';
         }
     } elseif (!$abierta) {
-        $regla = $db->query("SELECT * FROM bomba_regla_automatica WHERE activa = 1 LIMIT 1")->fetch();
-        $debeEncender = $regla
-            && en_dias($regla['dias_semana'], $diaIso)
-            && $horaActual >= $regla['hora_inicio']
-            && $horaActual < $regla['hora_fin'];
-
-        if ($debeEncender) {
+        if ($algunaReglaAplica) {
             $stmt = $db->prepare(
                 "INSERT INTO bomba_activaciones (origen, regla_automatica_id, inicio_at)
                  VALUES ('automatico', :regla_id, :inicio)"
             );
             $stmt->execute([
-                'regla_id' => (int) $regla['id'],
+                'regla_id' => $reglaPermanente ? (int) $reglaPermanente['id'] : null,
                 'inicio' => $ahora->format('Y-m-d H:i:s'),
             ]);
             $pulsoPendiente = 'inicio';
             $accion = 'automatico_encendido';
-            $descripcion = 'La regla automatica encendio la bomba.';
+            $descripcion = $reglaTemporal && !$reglaPermanente
+                ? 'La regla temporal encendio la bomba.'
+                : 'La regla automatica encendio la bomba.';
         }
     }
 
@@ -186,6 +180,42 @@ function en_dias(string $diasCsv, int $diaIso): bool
 {
     $dias = array_map('intval', explode(',', $diasCsv));
     return in_array($diaIso, $dias, true);
+}
+
+function regla_permanente_aplica(PDO $db, int $diaIso, string $horaActual): ?array
+{
+    $regla = $db->query("SELECT * FROM bomba_regla_automatica WHERE activa = 1 LIMIT 1")->fetch();
+
+    if ($regla
+        && en_dias($regla['dias_semana'], $diaIso)
+        && $horaActual >= $regla['hora_inicio']
+        && $horaActual < $regla['hora_fin']
+    ) {
+        return $regla;
+    }
+
+    return null;
+}
+
+function regla_temporal_aplica(PDO $db, string $fechaHoy, string $horaActual): ?array
+{
+    // No se hace auto-limpieza aqui (eso lo hace ReglaTemporal::obtenerActiva
+    // cuando alguien ve la pantalla); esta consulta solo revisa si aplica
+    // ahora mismo, sin importar si el flag "activa" ya quedo desactualizado.
+    $regla = $db->query(
+        "SELECT * FROM bomba_regla_temporal WHERE activa = 1 AND fecha_fin >= CURDATE() ORDER BY id DESC LIMIT 1"
+    )->fetch();
+
+    if ($regla
+        && $fechaHoy >= $regla['fecha_inicio']
+        && $fechaHoy <= $regla['fecha_fin']
+        && $horaActual >= $regla['hora_inicio']
+        && $horaActual < $regla['hora_fin']
+    ) {
+        return $regla;
+    }
+
+    return null;
 }
 
 function cerrar(PDO $db, array $abierta, string $finAt, string $finMotivo): void

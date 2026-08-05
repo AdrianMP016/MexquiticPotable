@@ -641,6 +641,7 @@ body:not(.bomba-sidebar-open) .bomba-sidebar-curtain-toggle {
 .campo-grande input[type="text"],
 .campo-grande input[type="password"],
 .campo-grande input[type="time"],
+.campo-grande input[type="date"],
 .campo-grande select,
 .campo-grande textarea {
   width: 100%;

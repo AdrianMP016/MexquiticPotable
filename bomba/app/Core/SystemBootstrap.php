@@ -14,6 +14,7 @@ class SystemBootstrap
         self::ensureUsuariosBomba($db);
         self::ensureBitacoraBomba($db);
         self::ensureReglaAutomatica($db);
+        self::ensureReglaTemporal($db);
         self::ensureActivaciones($db);
         self::ensureConfig($db);
         self::ensurePushSubscripciones($db);
@@ -83,6 +84,29 @@ class SystemBootstrap
                 PRIMARY KEY (id),
                 KEY idx_regla_activa (activa),
                 CONSTRAINT fk_regla_usuario
+                    FOREIGN KEY (creado_por_usuario_id) REFERENCES usuarios_bomba (id)
+                    ON DELETE SET NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+        );
+    }
+
+    private static function ensureReglaTemporal(PDO $db): void
+    {
+        $db->exec(
+            "CREATE TABLE IF NOT EXISTS bomba_regla_temporal (
+                id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                fecha_inicio DATE NOT NULL,
+                fecha_fin DATE NOT NULL,
+                hora_inicio TIME NOT NULL,
+                hora_fin TIME NOT NULL,
+                activa TINYINT(1) NOT NULL DEFAULT 1,
+                creado_por_usuario_id INT UNSIGNED NULL,
+                creado_por_nombre VARCHAR(120) NOT NULL,
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                reemplazada_at DATETIME NULL,
+                PRIMARY KEY (id),
+                KEY idx_regla_temporal_activa (activa),
+                CONSTRAINT fk_regla_temporal_usuario
                     FOREIGN KEY (creado_por_usuario_id) REFERENCES usuarios_bomba (id)
                     ON DELETE SET NULL
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"

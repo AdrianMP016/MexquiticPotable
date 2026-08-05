@@ -3,6 +3,7 @@
 require_once __DIR__ . '/../app/bootstrap.php';
 require_once __DIR__ . '/../app/Clases/Activaciones.php';
 require_once __DIR__ . '/../app/Clases/ReglaAutomatica.php';
+require_once __DIR__ . '/../app/Clases/ReglaTemporal.php';
 require_once __DIR__ . '/../app/Clases/UsuariosBomba.php';
 require_once __DIR__ . '/../app/Clases/WebPushClient.php';
 
@@ -26,6 +27,10 @@ function bombaAccionesPermitidas(string $accion): array
 
         'regla.obtenerActiva' => ['admin', 'operador'],
         'regla.guardar' => ['admin'],
+
+        'reglaTemporal.obtenerActiva' => ['admin', 'operador'],
+        'reglaTemporal.guardar' => ['admin'],
+        'reglaTemporal.cancelar' => ['admin'],
 
         'usuarios.listar' => ['admin'],
         'usuarios.obtener' => ['admin'],
@@ -173,6 +178,23 @@ try {
             $regla = new ReglaAutomatica($db);
             $data = $regla->guardar($currentUser, Request::post());
             JsonResponse::success('Regla procesada correctamente.', $data);
+            break;
+
+        case 'reglaTemporal.obtenerActiva':
+            $reglaTemporal = new ReglaTemporal($db);
+            JsonResponse::success('Regla temporal consultada correctamente.', ['regla' => $reglaTemporal->obtenerActiva()]);
+            break;
+
+        case 'reglaTemporal.guardar':
+            $reglaTemporal = new ReglaTemporal($db);
+            $data = $reglaTemporal->guardar($currentUser, Request::post());
+            JsonResponse::success('Regla temporal procesada correctamente.', $data);
+            break;
+
+        case 'reglaTemporal.cancelar':
+            $reglaTemporal = new ReglaTemporal($db);
+            $reglaTemporal->cancelar($currentUser);
+            JsonResponse::success('Regla temporal cancelada.', []);
             break;
 
         case 'usuarios.listar':

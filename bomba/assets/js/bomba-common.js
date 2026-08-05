@@ -45,6 +45,14 @@ function bombaFormatoHorasMinutosCorto(segundos) {
   return horas + "h " + minutos + "m";
 }
 
+// Convierte "YYYY-MM-DD" a "DD/MM/AAAA", sin hora.
+function bombaFormatoFechaSolo(fechaTexto) {
+  if (!fechaTexto) { return ""; }
+  var partes = fechaTexto.split("-");
+  if (partes.length < 3) { return fechaTexto; }
+  return partes[2] + "/" + partes[1] + "/" + partes[0];
+}
+
 function bombaHora12(horas24, minutos) {
   var ampm = horas24 >= 12 ? "p.m." : "a.m.";
   var h12 = horas24 % 12;

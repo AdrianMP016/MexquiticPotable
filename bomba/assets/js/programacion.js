@@ -24,6 +24,42 @@ function bombaCargarRegla() {
   });
 }
 
+function bombaRenderReglaTemporal(regla) {
+  if (!regla) {
+    $("#reglaTemporalActualBox").html('<p style="color:var(--agua-muted);"><i class="fas fa-info-circle"></i> No hay ninguna regla temporal activa.</p>');
+    return;
+  }
+
+  var esAdmin = $("#btnGuardarReglaTemporal").length > 0;
+  var fechas = regla.fecha_inicio === regla.fecha_fin
+    ? bombaFormatoFechaSolo(regla.fecha_inicio)
+    : bombaFormatoFechaSolo(regla.fecha_inicio) + ' al ' + bombaFormatoFechaSolo(regla.fecha_fin);
+
+  $("#reglaTemporalActualBox").html(
+    '<p style="font-size:20px; font-weight:700; color:var(--agua-primary-dark); margin-bottom:6px;">' +
+      bombaFormatoHora12h(regla.hora_inicio) + ' - ' + bombaFormatoHora12h(regla.hora_fin) + ' (' + fechas + ')' +
+    '</p>' +
+    '<p style="color:var(--agua-muted); margin:0 0 10px;">Configurada por ' + regla.creado_por_nombre + ' el ' + bombaFormatoFecha12h(regla.created_at) + '</p>' +
+    (esAdmin ? '<button type="button" class="btn-grande peligro" id="btnCancelarReglaTemporal" style="width:100%; justify-content:center;"><i class="fas fa-times"></i> Cancelar regla temporal</button>' : '')
+  );
+}
+
+function bombaCargarReglaTemporal() {
+  if (!$("#reglaTemporalActualBox").length) {
+    return;
+  }
+
+  $.ajax({
+    url: bombaAjaxUrl,
+    method: "POST",
+    dataType: "json",
+    data: { accion: "reglaTemporal.obtenerActiva" },
+    success: function (response) {
+      bombaRenderReglaTemporal((response.data || {}).regla);
+    }
+  });
+}
+
 function bombaRenderDiagnosticoCron(data) {
   var $box = $("#diagnosticoCronBox");
   if (!$box.length) {
@@ -128,8 +164,54 @@ function bombaEnviarRegla(forzar) {
   });
 }
 
+function bombaEnviarReglaTemporal(forzar) {
+  var $feedback = $("#reglaTemporalFeedback");
+  var payload = {
+    accion: "reglaTemporal.guardar",
+    fecha_inicio: $("#reglaTemporalFechaInicio").val(),
+    fecha_fin: $("#reglaTemporalFechaFin").val(),
+    hora_inicio: bombaHoraSelectorA24h("reglaTemporalHoraInicio"),
+    hora_fin: bombaHoraSelectorA24h("reglaTemporalHoraFin"),
+    forzar: forzar ? 1 : 0
+  };
+
+  $.ajax({
+    url: bombaAjaxUrl,
+    method: "POST",
+    dataType: "json",
+    data: payload,
+    beforeSend: function () {
+      $feedback.addClass("oculto");
+    },
+    success: function (response) {
+      var data = response.data || {};
+
+      if (data.requiere_confirmacion) {
+        var actual = data.regla_actual;
+        var fechasActual = actual.fecha_inicio === actual.fecha_fin
+          ? bombaFormatoFechaSolo(actual.fecha_inicio)
+          : bombaFormatoFechaSolo(actual.fecha_inicio) + " al " + bombaFormatoFechaSolo(actual.fecha_fin);
+        $("#modalConfirmarReglaTemporalTexto").text(
+          "Actualmente configurada por " + actual.creado_por_nombre + " el " + bombaFormatoFecha12h(actual.created_at) + ": " +
+          fechasActual + " de " + bombaFormatoHora12h(actual.hora_inicio) + " a " + bombaFormatoHora12h(actual.hora_fin) + ". ¿Quieres reemplazarla?"
+        );
+        $("#modalConfirmarReglaTemporal").addClass("abierto");
+        return;
+      }
+
+      $("#modalConfirmarReglaTemporal").removeClass("abierto");
+      bombaRenderReglaTemporal(data.regla);
+      $feedback.removeClass("oculto peligro").addClass("exito").text("Regla temporal guardada correctamente.");
+    },
+    error: function (xhr) {
+      $feedback.removeClass("oculto exito").addClass("peligro").text(bombaExtraerMensaje(xhr, "No se pudo guardar la regla temporal."));
+    }
+  });
+}
+
 $(function () {
   bombaCargarRegla();
+  bombaCargarReglaTemporal();
   bombaCargarDiagnosticoCron();
   setInterval(bombaCargarDiagnosticoCron, 30000);
 
@@ -157,5 +239,29 @@ $(function () {
 
   $("#btnCancelarReemplazo").on("click", function () {
     $("#modalConfirmarRegla").removeClass("abierto");
+  });
+
+  $("#btnGuardarReglaTemporal").on("click", function () {
+    bombaEnviarReglaTemporal(false);
+  });
+
+  $("#btnConfirmarReemplazoTemporal").on("click", function () {
+    bombaEnviarReglaTemporal(true);
+  });
+
+  $("#btnCancelarReemplazoTemporal").on("click", function () {
+    $("#modalConfirmarReglaTemporal").removeClass("abierto");
+  });
+
+  $(document).on("click", "#btnCancelarReglaTemporal", function () {
+    $.ajax({
+      url: bombaAjaxUrl,
+      method: "POST",
+      dataType: "json",
+      data: { accion: "reglaTemporal.cancelar" },
+      success: function () {
+        bombaCargarReglaTemporal();
+      }
+    });
   });
 });

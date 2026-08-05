@@ -83,6 +83,44 @@ function bombaSelectorHora12h(string $prefijo, string $etiqueta, string $opcione
 </div>
 <?php endif; ?>
 
+<div class="bomba-card">
+  <h2><i class="fas fa-bolt"></i> Regla temporal</h2>
+  <p style="color:var(--agua-muted); margin-top:-8px;">Un horario extra por un rango de fechas especifico (por ejemplo, para compensar un dia sin luz) — no reemplaza ni afecta la regla automatica de arriba. Mientras esta vigente, la bomba enciende si cualquiera de las dos reglas aplica.</p>
+  <div id="reglaTemporalActualBox">
+    <p style="color:var(--agua-muted);">Consultando...</p>
+  </div>
+</div>
+
+<?php if ($esAdmin): ?>
+<div class="bomba-card">
+  <h2><i class="fas fa-pen"></i> Agregar regla temporal</h2>
+
+  <div style="display:flex; gap:16px; flex-wrap:wrap;">
+    <div class="campo-grande" style="flex:1; min-width:180px;">
+      <label>Fecha de inicio</label>
+      <input type="date" id="reglaTemporalFechaInicio">
+    </div>
+    <div class="campo-grande" style="flex:1; min-width:180px;">
+      <label>Fecha de fin</label>
+      <input type="date" id="reglaTemporalFechaFin">
+    </div>
+  </div>
+
+  <div style="display:flex; gap:16px; flex-wrap:wrap;">
+    <?php
+    bombaSelectorHora12h('reglaTemporalHoraInicio', 'Hora de inicio', $opcionesHora, $opcionesMinuto);
+    bombaSelectorHora12h('reglaTemporalHoraFin', 'Hora de fin', $opcionesHora, $opcionesMinuto);
+    ?>
+  </div>
+
+  <div id="reglaTemporalFeedback" class="alerta peligro oculto"></div>
+
+  <button type="button" class="btn-grande primario" id="btnGuardarReglaTemporal" style="width:100%; justify-content:center;">
+    <i class="fas fa-save"></i> Guardar regla temporal
+  </button>
+</div>
+<?php endif; ?>
+
 <?php if ($esAdmin): ?>
 <div class="bomba-card">
   <h2><i class="fas fa-heartbeat"></i> Diagnostico del verificador automatico</h2>
@@ -99,6 +137,17 @@ function bombaSelectorHora12h(string $prefijo, string $etiqueta, string $opcione
     <div class="bomba-modal-botones">
       <button type="button" class="btn-grande secundario" id="btnCancelarReemplazo">Cancelar</button>
       <button type="button" class="btn-grande peligro" id="btnConfirmarReemplazo">Reemplazar</button>
+    </div>
+  </div>
+</div>
+
+<div class="bomba-modal-fondo" id="modalConfirmarReglaTemporal">
+  <div class="bomba-modal-caja">
+    <h3><i class="fas fa-exclamation-triangle"></i> Ya existe una regla temporal activa</h3>
+    <p id="modalConfirmarReglaTemporalTexto"></p>
+    <div class="bomba-modal-botones">
+      <button type="button" class="btn-grande secundario" id="btnCancelarReemplazoTemporal">Cancelar</button>
+      <button type="button" class="btn-grande peligro" id="btnConfirmarReemplazoTemporal">Reemplazar</button>
     </div>
   </div>
 </div>

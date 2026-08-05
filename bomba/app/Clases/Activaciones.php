@@ -82,8 +82,9 @@ class Activaciones
     }
 
     /**
-     * Regresa la regla automatica activa si su ventana (dias + horario) cubre
-     * el momento actual, o null si no hay ninguna o no aplica ahora mismo.
+     * Regresa la regla automatica PERMANENTE activa si su ventana (dias +
+     * horario) cubre el momento actual, o null si no hay ninguna o no aplica
+     * ahora mismo.
      */
     private function reglaQueAplicaAhora(): ?array
     {
@@ -94,6 +95,29 @@ class Activaciones
         $regla = $this->db->query("SELECT * FROM bomba_regla_automatica WHERE activa = 1 LIMIT 1")->fetch();
         $aplica = $regla
             && in_array($diaIso, array_map('intval', explode(',', (string) $regla['dias_semana'])), true)
+            && $horaActual >= $regla['hora_inicio']
+            && $horaActual < $regla['hora_fin'];
+
+        return $aplica ? $regla : null;
+    }
+
+    /**
+     * Regresa la regla TEMPORAL activa si su rango de fechas + horario cubre
+     * el momento actual, o null si no hay ninguna o no aplica ahora mismo.
+     * Es independiente de la regla permanente: nunca se reemplazan entre si.
+     */
+    private function reglaTemporalQueAplicaAhora(): ?array
+    {
+        $ahora = new DateTime('now');
+        $fechaHoy = $ahora->format('Y-m-d');
+        $horaActual = $ahora->format('H:i:s');
+
+        $regla = $this->db->query(
+            "SELECT * FROM bomba_regla_temporal WHERE activa = 1 AND fecha_fin >= CURDATE() ORDER BY id DESC LIMIT 1"
+        )->fetch();
+        $aplica = $regla
+            && $fechaHoy >= $regla['fecha_inicio']
+            && $fechaHoy <= $regla['fecha_fin']
             && $horaActual >= $regla['hora_inicio']
             && $horaActual < $regla['hora_fin'];
 
@@ -118,7 +142,8 @@ class Activaciones
 
         $ahora = new DateTime('now');
         $regla = $this->reglaQueAplicaAhora();
-        $sigueRegla = $regla !== null;
+        $reglaTemporal = $this->reglaTemporalQueAplicaAhora();
+        $sigueRegla = $regla !== null || $reglaTemporal !== null;
 
         $finAt = $ahora->format('Y-m-d H:i:s');
         $this->cerrarActivacion($abierta, $finAt, 'cronometro_expirado');
@@ -129,7 +154,7 @@ class Activaciones
                  VALUES ('automatico', :regla_id, :inicio)"
             );
             $stmt->execute([
-                'regla_id' => (int) $regla['id'],
+                'regla_id' => $regla !== null ? (int) $regla['id'] : null,
                 'inicio' => $finAt,
             ]);
         }
@@ -165,11 +190,14 @@ class Activaciones
 
             $ahora = date('Y-m-d H:i:s');
 
-            // Si en este momento hay una regla automatica que deberia estar
-            // controlando la bomba, un encendido manual le devuelve el control
-            // a esa regla (en vez de quedar "suelto" como manual) para que el
-            // verificador la siga apagando sola a la hora que corresponde.
+            // Si en este momento hay una regla automatica (permanente o
+            // temporal) que deberia estar controlando la bomba, un encendido
+            // manual le devuelve el control a esa regla (en vez de quedar
+            // "suelto" como manual) para que el verificador la siga apagando
+            // sola a la hora que corresponde.
             $reglaActiva = $this->reglaQueAplicaAhora();
+            $reglaTemporalActiva = $this->reglaTemporalQueAplicaAhora();
+            $algunaReglaAplica = $reglaActiva !== null || $reglaTemporalActiva !== null;
 
             $stmt = $this->db->prepare(
                 "INSERT INTO bomba_activaciones
@@ -177,7 +205,7 @@ class Activaciones
                  VALUES (:origen, :uid, :nombre, :regla_id, :inicio)"
             );
             $stmt->execute([
-                'origen' => $reglaActiva !== null ? 'automatico' : 'manual',
+                'origen' => $algunaReglaAplica ? 'automatico' : 'manual',
                 'uid' => (int) $usuario['id'],
                 'nombre' => (string) $usuario['nombre'],
                 'regla_id' => $reglaActiva !== null ? (int) $reglaActiva['id'] : null,
@@ -204,8 +232,9 @@ class Activaciones
             throw $exception;
         }
 
-        $descripcionEncendido = $reglaActiva !== null
-            ? 'Encendido manual de la bomba (dentro del horario de la regla automatica: se le devuelve el control a la programacion).'
+        $descripcionEncendido = $algunaReglaAplica
+            ? 'Encendido manual de la bomba (dentro del horario de la programacion: se le devuelve el control a la regla'
+                . ($reglaTemporalActiva !== null && $reglaActiva === null ? ' temporal' : '') . ').'
             : 'Encendido manual de la bomba.';
         $this->registrarBitacora($usuario, 'encendido_manual', $descripcionEncendido);
         $this->notificarPush('Bomba encendida', (string) $usuario['nombre'] . ' encendio la bomba manualmente.');
