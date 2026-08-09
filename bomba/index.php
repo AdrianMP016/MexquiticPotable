@@ -10,6 +10,19 @@ $jsFile = 'dashboard.js';
 require __DIR__ . '/app/views/_header.php';
 ?>
 
+<div class="bomba-card oculto" id="emergenciaBanner">
+  <div class="emergencia-banner">
+    <i class="fas fa-triangle-exclamation"></i>
+    <div>
+      <strong>Apagado de emergencia activo</strong>
+      <p id="emergenciaBannerTexto" style="margin:4px 0 0;"></p>
+    </div>
+  </div>
+  <button type="button" class="btn-grande primario" id="btnReanudarOperacion" style="width:100%; justify-content:center; margin-top:14px;">
+    <i class="fas fa-play"></i> Reanudar operacion normal
+  </button>
+</div>
+
 <div class="bomba-card">
   <h2><i class="fas fa-tint"></i> Estado de la bomba</h2>
   <div class="bomba-estado">
@@ -31,6 +44,10 @@ require __DIR__ . '/app/views/_header.php';
   <button type="button" class="btn-grande secundario" id="btnVerificarConexion" style="width:100%; justify-content:center; margin-top:14px;">
     <i class="fas fa-satellite-dish"></i> Verificar conexion con el Shelly
   </button>
+
+  <button type="button" class="btn-grande peligro" id="btnApagadoEmergencia" style="width:100%; justify-content:center; margin-top:14px;">
+    <i class="fas fa-triangle-exclamation"></i> Apagado de emergencia
+  </button>
 </div>
 
 <div class="bomba-modal-fondo" id="modalConfirmarEncendido">
@@ -40,6 +57,17 @@ require __DIR__ . '/app/views/_header.php';
     <div class="bomba-modal-botones">
       <button type="button" class="btn-grande secundario" id="btnCancelarConfirmarEncendido">Cancelar</button>
       <button type="button" class="btn-grande primario" id="btnConfirmarEncendido">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<div class="bomba-modal-fondo" id="modalConfirmarEmergencia">
+  <div class="bomba-modal-caja">
+    <h3><i class="fas fa-triangle-exclamation"></i> Confirmar apagado de emergencia</h3>
+    <p>La bomba se apagara de inmediato y <strong>no va a volver a encender sola</strong> (ni por cronometro ni por ninguna regla programada) hasta que alguien la reanude manualmente. Usalo solo para mantenimiento o una necesidad real de dejarla apagada.</p>
+    <div class="bomba-modal-botones">
+      <button type="button" class="btn-grande secundario" id="btnCancelarEmergencia">Cancelar</button>
+      <button type="button" class="btn-grande peligro" id="btnConfirmarEmergencia">Si, apagar de emergencia</button>
     </div>
   </div>
 </div>

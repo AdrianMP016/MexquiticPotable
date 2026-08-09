@@ -469,6 +469,37 @@ body:not(.bomba-sidebar-open) .bomba-sidebar-curtain-toggle {
   cursor: not-allowed;
 }
 
+/* Apagado de emergencia */
+#emergenciaBanner {
+  background: var(--agua-red);
+  color: #fff;
+}
+
+.emergencia-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.emergencia-banner i {
+  font-size: 26px;
+  margin-top: 2px;
+}
+
+.emergencia-banner strong {
+  font-size: 19px;
+}
+
+.emergencia-banner p {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 16px;
+}
+
+#emergenciaBanner .btn-grande.primario {
+  background: #fff;
+  color: var(--agua-red);
+}
+
 /* Cronometro */
 .cronometro-selector {
   display: flex;

@@ -171,6 +171,18 @@ try {
             JsonResponse::success('Diagnostico consultado correctamente.', $activaciones->diagnosticoCron());
             break;
 
+        case 'activaciones.apagadoEmergencia':
+            $activaciones = new Activaciones($db, new ShellyClient($db));
+            $data = $activaciones->apagadoEmergencia($currentUser);
+            JsonResponse::success('Apagado de emergencia activado.', $data);
+            break;
+
+        case 'activaciones.reanudarOperacion':
+            $activaciones = new Activaciones($db, new ShellyClient($db));
+            $data = $activaciones->reanudarOperacion($currentUser);
+            JsonResponse::success('Operacion normal reanudada.', $data);
+            break;
+
         case 'regla.obtenerActiva':
             $regla = new ReglaAutomatica($db);
             JsonResponse::success('Regla consultada correctamente.', ['regla' => $regla->obtenerActiva()]);
