@@ -255,6 +255,50 @@ $(function () {
     $("#modalConfirmarEncendido").removeClass("abierto");
   });
 
+  $("#btnApagadoEmergencia").on("click", function () {
+    $("#modalConfirmarEmergencia").addClass("abierto");
+  });
+
+  $("#btnCancelarEmergencia").on("click", function () {
+    $("#modalConfirmarEmergencia").removeClass("abierto");
+  });
+
+  $("#btnConfirmarEmergencia").on("click", function () {
+    $("#modalConfirmarEmergencia").removeClass("abierto");
+
+    $.ajax({
+      url: bombaAjaxUrl,
+      method: "POST",
+      dataType: "json",
+      data: { accion: "activaciones.apagadoEmergencia" },
+      timeout: 25000,
+      success: function (response) {
+        bombaPintarEstado(response.data || {});
+        bombaRefrescarActividad();
+      },
+      error: function (xhr) {
+        $("#estadoFeedback").removeClass("oculto exito").addClass("peligro").text(bombaExtraerMensaje(xhr, "No se pudo activar el apagado de emergencia."));
+        bombaRefrescarEstado();
+      }
+    });
+  });
+
+  $("#btnReanudarOperacion").on("click", function () {
+    $.ajax({
+      url: bombaAjaxUrl,
+      method: "POST",
+      dataType: "json",
+      data: { accion: "activaciones.reanudarOperacion" },
+      success: function (response) {
+        bombaPintarEstado(response.data || {});
+        bombaRefrescarActividad();
+      },
+      error: function (xhr) {
+        $("#estadoFeedback").removeClass("oculto exito").addClass("peligro").text(bombaExtraerMensaje(xhr, "No se pudo reanudar la operacion."));
+      }
+    });
+  });
+
   $("#btnConfirmarEncendido").on("click", function () {
     $("#modalConfirmarEncendido").removeClass("abierto");
     bombaEjecutarEncenderApagar();
