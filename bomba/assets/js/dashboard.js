@@ -23,9 +23,27 @@ function bombaFormatoRelojCompleto(segundos) {
   );
 }
 
+function bombaPintarEmergencia(data) {
+  var emergencia = data.emergencia || { activa: false };
+  var $banner = $("#emergenciaBanner");
+
+  $banner.toggleClass("oculto", !emergencia.activa);
+  $("#btnEncenderApagar").prop("disabled", emergencia.activa);
+  $("#btnIniciarCronometro").prop("disabled", emergencia.activa);
+  $("#btnApagadoEmergencia").toggleClass("oculto", emergencia.activa);
+
+  if (emergencia.activa) {
+    $("#emergenciaBannerTexto").text(
+      "Activado por " + (emergencia.activada_por || "alguien") + " el " + bombaFormatoFecha12h(emergencia.activada_en) +
+      ". La bomba no va a encender (ni manual ni por programacion) hasta que reanudes la operacion normal."
+    );
+  }
+}
+
 function bombaPintarEstado(data) {
   bombaEstadoActual = data;
   bombaPintarWidgetCronometro(data);
+  bombaPintarEmergencia(data);
 
   var encendido = !!data.encendido;
   var $led = $("#bombaLed");
