@@ -234,6 +234,24 @@ class SystemBootstrap
                 'tipo' => 'string',
                 'descripcion' => 'Ultima vez que se borraron registros viejos de la bitacora (una vez al dia).',
             ],
+            [
+                'clave' => 'emergencia_activa',
+                'valor' => '0',
+                'tipo' => 'bool',
+                'descripcion' => 'Apagado de emergencia: mientras esta en 1, nada (ni la regla ni el cronometro ni encender manual) puede prender la bomba.',
+            ],
+            [
+                'clave' => 'emergencia_activada_por',
+                'valor' => '',
+                'tipo' => 'string',
+                'descripcion' => 'Nombre de quien activo el apagado de emergencia.',
+            ],
+            [
+                'clave' => 'emergencia_activada_en',
+                'valor' => '',
+                'tipo' => 'string',
+                'descripcion' => 'Momento en que se activo el apagado de emergencia.',
+            ],
         ];
 
         $stmt = $db->prepare(

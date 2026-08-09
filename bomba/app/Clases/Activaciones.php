@@ -78,7 +78,61 @@ class Activaciones
             'temperatura' => $temperatura,
             'activacion_actual' => $abierta,
             'espera_restante_segundos' => $this->esperaRestante(),
+            'emergencia' => [
+                'activa' => $this->configBomba->obtenerBool('emergencia_activa'),
+                'activada_por' => $this->configBomba->obtener('emergencia_activada_por'),
+                'activada_en' => $this->configBomba->obtener('emergencia_activada_en'),
+            ],
         ];
+    }
+
+    /**
+     * Apaga la bomba de inmediato y bloquea cualquier encendido (manual,
+     * cronometro, regla permanente o temporal) hasta que alguien reanude la
+     * operacion normal explicitamente. Pensado para mantenimiento o cualquier
+     * necesidad de dejarla apagada sin que la programacion la vuelva a
+     * levantar sola.
+     */
+    public function apagadoEmergencia(array $usuario): array
+    {
+        $this->db->beginTransaction();
+        $abierta = $this->obtenerActivacionAbiertaForUpdate();
+        $this->configBomba->establecer('emergencia_activa', '1');
+        $this->configBomba->establecer('emergencia_activada_por', (string) $usuario['nombre']);
+        $this->configBomba->establecer('emergencia_activada_en', date('Y-m-d H:i:s'));
+        $this->marcarComando();
+        $this->db->commit();
+
+        $this->shelly->pulsarParo();
+
+        if ($abierta) {
+            $this->cerrarActivacion($abierta, date('Y-m-d H:i:s'), 'forzado');
+        }
+
+        $this->registrarBitacora(
+            $usuario,
+            'apagado_emergencia',
+            (string) $usuario['nombre'] . ' activo el apagado de emergencia. La bomba no encendera (ni manual ni por programacion) hasta que se reanude la operacion normal.'
+        );
+        $this->notificarPush('Apagado de emergencia', (string) $usuario['nombre'] . ' activo el apagado de emergencia. La bomba no encendera hasta reanudar la operacion normal.');
+
+        return $this->estado();
+    }
+
+    public function reanudarOperacion(array $usuario): array
+    {
+        $this->configBomba->establecer('emergencia_activa', '0');
+        $this->configBomba->establecer('emergencia_activada_por', '');
+        $this->configBomba->establecer('emergencia_activada_en', '');
+
+        $this->registrarBitacora(
+            $usuario,
+            'operacion_reanudada',
+            (string) $usuario['nombre'] . ' reanudo la operacion normal de la bomba.'
+        );
+        $this->notificarPush('Operacion normal reanudada', (string) $usuario['nombre'] . ' reanudo la operacion normal de la bomba.');
+
+        return $this->estado();
     }
 
     /**
@@ -185,6 +239,10 @@ class Activaciones
     {
         $this->verificarProteccion();
 
+        if ($this->configBomba->obtenerBool('emergencia_activa')) {
+            throw new HttpException('La bomba esta en apagado de emergencia. Reanuda la operacion normal antes de encenderla.', 409);
+        }
+
         $this->db->beginTransaction();
         try {
             if ($this->obtenerActivacionAbiertaForUpdate()) {
@@ -277,6 +335,10 @@ class Activaciones
         }
 
         $this->verificarProteccion();
+
+        if ($this->configBomba->obtenerBool('emergencia_activa')) {
+            throw new HttpException('La bomba esta en apagado de emergencia. Reanuda la operacion normal antes de usar el cronometro.', 409);
+        }
 
         $this->db->beginTransaction();
         try {

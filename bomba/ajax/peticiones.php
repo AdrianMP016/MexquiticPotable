@@ -24,6 +24,8 @@ function bombaAccionesPermitidas(string $accion): array
         'activaciones.detalleDia' => ['admin', 'operador'],
         'activaciones.verificarConexion' => ['admin', 'operador'],
         'activaciones.diagnosticoCron' => ['admin'],
+        'activaciones.apagadoEmergencia' => ['admin', 'operador'],
+        'activaciones.reanudarOperacion' => ['admin', 'operador'],
 
         'regla.obtenerActiva' => ['admin', 'operador'],
         'regla.guardar' => ['admin'],

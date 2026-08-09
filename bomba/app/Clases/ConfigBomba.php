@@ -24,6 +24,12 @@ class ConfigBomba
         return is_numeric($valor) ? (float) $valor : $default;
     }
 
+    public function obtenerBool(string $clave, bool $default = false): bool
+    {
+        $valor = $this->obtener($clave, $default ? '1' : '0');
+        return $valor === '1';
+    }
+
     public function establecer(string $clave, string $valor): void
     {
         $stmt = $this->db->prepare(
