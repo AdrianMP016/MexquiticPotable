@@ -43,7 +43,6 @@ function bombaPintarEmergencia(data) {
 function bombaPintarEstado(data) {
   bombaEstadoActual = data;
   bombaPintarWidgetCronometro(data);
-  bombaPintarEmergencia(data);
 
   var encendido = !!data.encendido;
   var $led = $("#bombaLed");
@@ -90,6 +89,9 @@ function bombaPintarEstado(data) {
   }
 
   bombaPintarCronometro(data);
+  // Al final, para que gane sobre cualquier "disabled: false" de arriba: si
+  // hay una emergencia activa, nada de lo anterior debe dejar el boton usable.
+  bombaPintarEmergencia(data);
 }
 
 function bombaPintarCronometro(data) {
