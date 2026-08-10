@@ -252,6 +252,24 @@ class SystemBootstrap
                 'tipo' => 'string',
                 'descripcion' => 'Momento en que se activo el apagado de emergencia.',
             ],
+            [
+                'clave' => 'mantenimiento_activo',
+                'valor' => '0',
+                'tipo' => 'bool',
+                'descripcion' => 'Apagado por mantenimiento: independiente del apagado de emergencia, tambien bloquea todo hasta que alguien lo reactive desde la pantalla de Mantenimiento.',
+            ],
+            [
+                'clave' => 'mantenimiento_activado_por',
+                'valor' => '',
+                'tipo' => 'string',
+                'descripcion' => 'Nombre de quien activo el apagado por mantenimiento.',
+            ],
+            [
+                'clave' => 'mantenimiento_activado_en',
+                'valor' => '',
+                'tipo' => 'string',
+                'descripcion' => 'Momento en que se activo el apagado por mantenimiento.',
+            ],
         ];
 
         $stmt = $db->prepare(

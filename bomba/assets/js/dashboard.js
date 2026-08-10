@@ -25,17 +25,26 @@ function bombaFormatoRelojCompleto(segundos) {
 
 function bombaPintarEmergencia(data) {
   var emergencia = data.emergencia || { activa: false };
-  var $banner = $("#emergenciaBanner");
+  var mantenimiento = data.mantenimiento || { activo: false };
+  var bloqueado = emergencia.activa || mantenimiento.activo;
 
-  $banner.toggleClass("oculto", !emergencia.activa);
-  $("#btnEncenderApagar").prop("disabled", emergencia.activa);
-  $("#btnIniciarCronometro").prop("disabled", emergencia.activa);
-  $("#btnApagadoEmergencia").toggleClass("oculto", emergencia.activa);
+  $("#emergenciaBanner").toggleClass("oculto", !emergencia.activa);
+  $("#mantenimientoBanner").toggleClass("oculto", !mantenimiento.activo);
+  $("#btnEncenderApagar").prop("disabled", bloqueado);
+  $("#btnIniciarCronometro").prop("disabled", bloqueado);
+  $("#btnApagadoEmergencia").toggleClass("oculto", bloqueado);
 
   if (emergencia.activa) {
     $("#emergenciaBannerTexto").text(
       "Activado por " + (emergencia.activada_por || "alguien") + " el " + bombaFormatoFecha12h(emergencia.activada_en) +
       ". La bomba no va a encender (ni manual ni por programacion) hasta que reanudes la operacion normal."
+    );
+  }
+
+  if (mantenimiento.activo) {
+    $("#mantenimientoBannerTexto").text(
+      "Activado por " + (mantenimiento.activado_por || "alguien") + " el " + bombaFormatoFecha12h(mantenimiento.activado_en) +
+      ". No va a encender hasta que se reactive desde Mantenimiento."
     );
   }
 }

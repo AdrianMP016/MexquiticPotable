@@ -26,6 +26,8 @@ function bombaAccionesPermitidas(string $accion): array
         'activaciones.diagnosticoCron' => ['admin'],
         'activaciones.apagadoEmergencia' => ['admin', 'operador'],
         'activaciones.reanudarOperacion' => ['admin', 'operador'],
+        'activaciones.activarMantenimiento' => ['admin', 'operador'],
+        'activaciones.desactivarMantenimiento' => ['admin', 'operador'],
 
         'regla.obtenerActiva' => ['admin', 'operador'],
         'regla.guardar' => ['admin'],
@@ -181,6 +183,18 @@ try {
             $activaciones = new Activaciones($db, new ShellyClient($db));
             $data = $activaciones->reanudarOperacion($currentUser);
             JsonResponse::success('Operacion normal reanudada.', $data);
+            break;
+
+        case 'activaciones.activarMantenimiento':
+            $activaciones = new Activaciones($db, new ShellyClient($db));
+            $data = $activaciones->activarMantenimiento($currentUser);
+            JsonResponse::success('Apagado por mantenimiento activado.', $data);
+            break;
+
+        case 'activaciones.desactivarMantenimiento':
+            $activaciones = new Activaciones($db, new ShellyClient($db));
+            $data = $activaciones->desactivarMantenimiento($currentUser);
+            JsonResponse::success('Bomba reactivada.', $data);
             break;
 
         case 'regla.obtenerActiva':

@@ -83,7 +83,33 @@ class Activaciones
                 'activada_por' => $this->configBomba->obtener('emergencia_activada_por'),
                 'activada_en' => $this->configBomba->obtener('emergencia_activada_en'),
             ],
+            'mantenimiento' => [
+                'activo' => $this->configBomba->obtenerBool('mantenimiento_activo'),
+                'activado_por' => $this->configBomba->obtener('mantenimiento_activado_por'),
+                'activado_en' => $this->configBomba->obtener('mantenimiento_activado_en'),
+            ],
         ];
+    }
+
+    /**
+     * Si algo esta bloqueando cualquier encendido (emergencia o
+     * mantenimiento), regresa el mensaje explicando por que; si no hay
+     * ningun bloqueo, regresa null. Se revisa antes de encender manual, usar
+     * el cronometro, o dejar que una regla encienda la bomba - esta por
+     * encima de todo lo demas.
+     */
+    private function motivoBloqueo(): ?string
+    {
+        if ($this->configBomba->obtenerBool('mantenimiento_activo')) {
+            $por = $this->configBomba->obtener('mantenimiento_activado_por', 'alguien');
+            return 'La bomba esta apagada por mantenimiento (activado por ' . $por . '). Ve a Mantenimiento para reactivarla.';
+        }
+
+        if ($this->configBomba->obtenerBool('emergencia_activa')) {
+            return 'La bomba esta en apagado de emergencia. Reanuda la operacion normal antes de encenderla.';
+        }
+
+        return null;
     }
 
     /**
@@ -131,6 +157,54 @@ class Activaciones
             (string) $usuario['nombre'] . ' reanudo la operacion normal de la bomba.'
         );
         $this->notificarPush('Operacion normal reanudada', (string) $usuario['nombre'] . ' reanudo la operacion normal de la bomba.');
+
+        return $this->estado();
+    }
+
+    /**
+     * Apagado por mantenimiento: independiente del apagado de emergencia
+     * (viven en su propia bandera), pensado para dejar la bomba apagada por
+     * varios dias sin que nadie la reactive sin querer desde el Panel - la
+     * reactivacion solo vive en la pantalla de Mantenimiento.
+     */
+    public function activarMantenimiento(array $usuario): array
+    {
+        $this->db->beginTransaction();
+        $abierta = $this->obtenerActivacionAbiertaForUpdate();
+        $this->configBomba->establecer('mantenimiento_activo', '1');
+        $this->configBomba->establecer('mantenimiento_activado_por', (string) $usuario['nombre']);
+        $this->configBomba->establecer('mantenimiento_activado_en', date('Y-m-d H:i:s'));
+        $this->marcarComando();
+        $this->db->commit();
+
+        $this->shelly->pulsarParo();
+
+        if ($abierta) {
+            $this->cerrarActivacion($abierta, date('Y-m-d H:i:s'), 'forzado');
+        }
+
+        $this->registrarBitacora(
+            $usuario,
+            'mantenimiento_activado',
+            (string) $usuario['nombre'] . ' activo el apagado por mantenimiento. La bomba no encendera (ni manual ni por programacion) hasta que se reactive desde Mantenimiento.'
+        );
+        $this->notificarPush('Bomba apagada por mantenimiento', (string) $usuario['nombre'] . ' activo el apagado por mantenimiento. La bomba no encendera hasta que se reactive desde esa pantalla.');
+
+        return $this->estado();
+    }
+
+    public function desactivarMantenimiento(array $usuario): array
+    {
+        $this->configBomba->establecer('mantenimiento_activo', '0');
+        $this->configBomba->establecer('mantenimiento_activado_por', '');
+        $this->configBomba->establecer('mantenimiento_activado_en', '');
+
+        $this->registrarBitacora(
+            $usuario,
+            'mantenimiento_desactivado',
+            (string) $usuario['nombre'] . ' reactivo la bomba desde Mantenimiento.'
+        );
+        $this->notificarPush('Mantenimiento finalizado', (string) $usuario['nombre'] . ' reactivo la bomba desde Mantenimiento.');
 
         return $this->estado();
     }
@@ -239,8 +313,9 @@ class Activaciones
     {
         $this->verificarProteccion();
 
-        if ($this->configBomba->obtenerBool('emergencia_activa')) {
-            throw new HttpException('La bomba esta en apagado de emergencia. Reanuda la operacion normal antes de encenderla.', 409);
+        $bloqueo = $this->motivoBloqueo();
+        if ($bloqueo !== null) {
+            throw new HttpException($bloqueo, 409);
         }
 
         $this->db->beginTransaction();
@@ -336,8 +411,9 @@ class Activaciones
 
         $this->verificarProteccion();
 
-        if ($this->configBomba->obtenerBool('emergencia_activa')) {
-            throw new HttpException('La bomba esta en apagado de emergencia. Reanuda la operacion normal antes de usar el cronometro.', 409);
+        $bloqueo = $this->motivoBloqueo();
+        if ($bloqueo !== null) {
+            throw new HttpException($bloqueo, 409);
         }
 
         $this->db->beginTransaction();

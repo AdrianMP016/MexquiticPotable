@@ -63,12 +63,13 @@ try {
     // mismo, la bomba debe estar encendida. Solo se apaga cuando ninguna
     // de las dos aplica.
     //
-    // El apagado de emergencia esta por encima de las dos: mientras este
-    // activo, ninguna regla puede encender la bomba (se tratan como si no
+    // El apagado de emergencia y el apagado por mantenimiento estan por
+    // encima de las dos reglas: mientras cualquiera de los dos este activo,
+    // ninguna regla puede encender la bomba (se tratan como si no
     // aplicaran), sin importar su horario.
-    $emergenciaActiva = $configBomba->obtenerBool('emergencia_activa');
-    $reglaPermanente = $emergenciaActiva ? null : regla_permanente_aplica($db, $diaIso, $horaActual);
-    $reglaTemporal = $emergenciaActiva ? null : regla_temporal_aplica($db, $ahora->format('Y-m-d H:i:s'));
+    $bloqueado = $configBomba->obtenerBool('emergencia_activa') || $configBomba->obtenerBool('mantenimiento_activo');
+    $reglaPermanente = $bloqueado ? null : regla_permanente_aplica($db, $diaIso, $horaActual);
+    $reglaTemporal = $bloqueado ? null : regla_temporal_aplica($db, $ahora->format('Y-m-d H:i:s'));
     $algunaReglaAplica = $reglaPermanente !== null || $reglaTemporal !== null;
 
     if ($abierta && $abierta['origen'] === 'cronometro') {

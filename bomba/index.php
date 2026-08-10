@@ -10,6 +10,19 @@ $jsFile = 'dashboard.js';
 require __DIR__ . '/app/views/_header.php';
 ?>
 
+<div class="bomba-card oculto" id="mantenimientoBanner">
+  <div class="emergencia-banner">
+    <i class="fas fa-tools"></i>
+    <div>
+      <strong>Bomba apagada por mantenimiento</strong>
+      <p id="mantenimientoBannerTexto" style="margin:4px 0 0;"></p>
+    </div>
+  </div>
+  <a href="mantenimiento.php" class="btn-grande primario" style="width:100%; justify-content:center; margin-top:14px; text-decoration:none;">
+    <i class="fas fa-tools"></i> Ir a Mantenimiento para reactivarla
+  </a>
+</div>
+
 <div class="bomba-card oculto" id="emergenciaBanner">
   <div class="emergencia-banner">
     <i class="fas fa-exclamation-triangle"></i>

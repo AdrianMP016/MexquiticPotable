@@ -46,6 +46,7 @@ $esAdminHeader = (string) ($currentUser['rol'] ?? '') === 'admin';
     <a href="index.php" class="<?= ($activeView ?? '') === 'panel' ? 'activo' : '' ?>"><i class="fas fa-tachometer-alt"></i> Panel</a>
     <a href="programacion.php" class="<?= ($activeView ?? '') === 'programacion' ? 'activo' : '' ?>"><i class="fas fa-clock"></i> Programacion</a>
     <a href="actividad.php" class="<?= ($activeView ?? '') === 'actividad' ? 'activo' : '' ?>"><i class="fas fa-chart-bar"></i> Actividad</a>
+    <a href="mantenimiento.php" class="<?= ($activeView ?? '') === 'mantenimiento' ? 'activo' : '' ?>"><i class="fas fa-tools"></i> Mantenimiento</a>
     <?php if ($esAdminHeader): ?>
     <a href="usuarios.php" class="<?= ($activeView ?? '') === 'usuarios' ? 'activo' : '' ?>"><i class="fas fa-users-cog"></i> Usuarios</a>
     <?php endif; ?>
