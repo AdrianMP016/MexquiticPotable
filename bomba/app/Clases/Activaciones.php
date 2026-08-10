@@ -60,6 +60,12 @@ class Activaciones
         // instantaneo en vez de esperar al siguiente tick del cron (hasta 1 min).
         $this->cerrarCronometroSiVencido();
 
+        // Si hay una entrada fisica configurada (contacto auxiliar del
+        // interruptor/contactor), esto detecta y corrige cuando alguien
+        // prende o apaga la bomba con el interruptor de pared, sin pasar por
+        // la plataforma. Mientras no este cableada esa entrada, no hace nada.
+        $this->reconciliarConEstadoReal();
+
         // El circuito es de pulso (Marcha/Paro), no de rele sostenido: el Shelly
         // no tiene forma de reportar si la bomba esta realmente encendida, asi
         // que "encendido" se calcula a partir de nuestra propia bitacora de
@@ -254,6 +260,68 @@ class Activaciones
         $finDt = $regla['fecha_fin'] . ' ' . $regla['hora_fin'];
 
         return ($ahoraTexto >= $inicioDt && $ahoraTexto < $finDt) ? $regla : null;
+    }
+
+    /**
+     * Compara lo que la plataforma cree (segun la bitacora de activaciones)
+     * contra la entrada fisica real del Shelly (si esta cableada), y corrige
+     * la diferencia cuando alguien prende o apaga la bomba con el
+     * interruptor de pared en vez de con la plataforma. Nunca manda un pulso
+     * para "corregir" la bomba - un interruptor que la puentea no reacciona
+     * a los pulsos del Shelly de todos modos; esto solo mantiene nuestros
+     * datos honestos y avisa a la gente de lo que realmente paso.
+     */
+    private function reconciliarConEstadoReal(): void
+    {
+        $estadoReal = null;
+        try {
+            $estadoReal = $this->shelly->leerEstadoReal();
+        } catch (Throwable $exception) {
+            return;
+        }
+
+        if ($estadoReal === null) {
+            return;
+        }
+
+        $this->db->beginTransaction();
+        $abierta = $this->obtenerActivacionAbiertaForUpdate();
+        $creemosEncendida = $abierta !== null;
+
+        if ($creemosEncendida === $estadoReal) {
+            $this->db->rollBack();
+            return;
+        }
+
+        $ahora = date('Y-m-d H:i:s');
+        $bloqueada = $this->configBomba->obtenerBool('mantenimiento_activo')
+            || $this->configBomba->obtenerBool('emergencia_activa');
+
+        if ($estadoReal && !$creemosEncendida) {
+            $stmt = $this->db->prepare(
+                "INSERT INTO bomba_activaciones (origen, inicio_at) VALUES ('manual', :inicio)"
+            );
+            $stmt->execute(['inicio' => $ahora]);
+            $this->db->commit();
+
+            $titulo = $bloqueada
+                ? 'Alerta: bomba encendida con mantenimiento/emergencia activo'
+                : 'Bomba encendida fuera de la plataforma';
+            $descripcion = 'Se detecto que la bomba se encendio con el interruptor fisico, no desde la plataforma.'
+                . ($bloqueada ? ' Esto paso mientras habia un apagado de emergencia o mantenimiento activo - revisen de inmediato.' : '');
+
+            $this->bitacora->registrar(['accion' => 'encendido_externo', 'descripcion' => $descripcion]);
+            $this->notificarPush($titulo, $descripcion);
+            return;
+        }
+
+        // !$estadoReal && $creemosEncendida: se apago fuera de la plataforma.
+        $this->cerrarActivacion($abierta, $ahora, 'externo');
+        $this->db->commit();
+
+        $descripcion = 'Se detecto que la bomba se apago con el interruptor fisico, no desde la plataforma.';
+        $this->bitacora->registrar(['accion' => 'apagado_externo', 'descripcion' => $descripcion]);
+        $this->notificarPush('Bomba apagada fuera de la plataforma', $descripcion);
     }
 
     private function cerrarCronometroSiVencido(): void

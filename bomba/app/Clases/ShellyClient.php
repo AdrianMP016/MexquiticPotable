@@ -79,6 +79,44 @@ class ShellyClient
         ];
     }
 
+    /**
+     * Lee el estado real de la bomba a partir de una entrada fisica del
+     * Shelly (contacto auxiliar del interruptor/contactor) - NO del estado
+     * de los canales de pulso, que nunca reflejan si la bomba sigue
+     * encendida despues del pulso.
+     *
+     * Regresa null si no hay una entrada configurada todavia (channel_entrada_estado
+     * en null), si esta en modo simulado, o si el Shelly no trae esa entrada
+     * en su respuesta (por ejemplo, si el cableado aun no esta hecho) - en
+     * cualquiera de esos casos, quien llama debe simplemente no reconciliar
+     * nada y seguir confiando en la bitacora como hasta ahora.
+     */
+    public function leerEstadoReal(): ?bool
+    {
+        if ($this->modoSimulado) {
+            return null;
+        }
+
+        $canal = $this->config['channel_entrada_estado'] ?? null;
+        if ($canal === null) {
+            return null;
+        }
+
+        $respuesta = $this->request('POST', '/device/status', [
+            'id' => $this->config['device_id_relay'],
+            'auth_key' => $this->config['auth_key'],
+        ]);
+
+        $status = (array) ($respuesta['device_status'] ?? []);
+        $entrada = $status['input:' . (int) $canal] ?? null;
+
+        if (!is_array($entrada) || !array_key_exists('state', $entrada)) {
+            return null;
+        }
+
+        return (bool) $entrada['state'];
+    }
+
     public function leerSensorTemperatura(): array
     {
         if ($this->modoSimulado) {

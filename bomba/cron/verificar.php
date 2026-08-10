@@ -43,6 +43,13 @@ try {
     $diaIso = (int) $ahora->format('N');
     $horaActual = $ahora->format('H:i:s');
 
+    // Si hay una entrada fisica configurada (contacto auxiliar del
+    // interruptor/contactor), esto detecta y corrige cuando alguien prendio
+    // o apago la bomba con el interruptor de pared, antes de decidir nada de
+    // las reglas - para que esa decision parta del estado real. Mientras no
+    // este cableada esa entrada, no hace nada.
+    reconciliar_con_estado_real($db, $shelly, $bitacora, $webPush, $configBomba);
+
     $db->beginTransaction();
 
     $abierta = $db->query(
@@ -224,6 +231,68 @@ function regla_temporal_aplica(PDO $db, string $ahoraTexto): ?array
     $finDt = $regla['fecha_fin'] . ' ' . $regla['hora_fin'];
 
     return ($ahoraTexto >= $inicioDt && $ahoraTexto < $finDt) ? $regla : null;
+}
+
+function reconciliar_con_estado_real(PDO $db, ShellyClient $shelly, BitacoraBomba $bitacora, WebPushClient $webPush, ConfigBomba $configBomba): void
+{
+    try {
+        $estadoReal = $shelly->leerEstadoReal();
+    } catch (Throwable $exception) {
+        return;
+    }
+
+    if ($estadoReal === null) {
+        return;
+    }
+
+    $db->beginTransaction();
+    $abierta = $db->query(
+        "SELECT * FROM bomba_activaciones WHERE fin_at IS NULL ORDER BY id DESC LIMIT 1 FOR UPDATE"
+    )->fetch();
+    $creemosEncendida = (bool) $abierta;
+
+    if ($creemosEncendida === $estadoReal) {
+        $db->rollBack();
+        return;
+    }
+
+    $ahora = date('Y-m-d H:i:s');
+    $bloqueada = $configBomba->obtenerBool('mantenimiento_activo') || $configBomba->obtenerBool('emergencia_activa');
+
+    if ($estadoReal && !$creemosEncendida) {
+        $stmt = $db->prepare("INSERT INTO bomba_activaciones (origen, inicio_at) VALUES ('manual', :inicio)");
+        $stmt->execute(['inicio' => $ahora]);
+        $db->commit();
+
+        $titulo = $bloqueada
+            ? 'Alerta: bomba encendida con mantenimiento/emergencia activo'
+            : 'Bomba encendida fuera de la plataforma';
+        $descripcion = 'Se detecto que la bomba se encendio con el interruptor fisico, no desde la plataforma.'
+            . ($bloqueada ? ' Esto paso mientras habia un apagado de emergencia o mantenimiento activo - revisen de inmediato.' : '');
+
+        $bitacora->registrar(['accion' => 'encendido_externo', 'descripcion' => $descripcion]);
+        try {
+            $webPush->enviarATodos($titulo, $descripcion);
+        } catch (Throwable $exception) {
+            // Un push fallido no debe afectar el resultado del cron.
+        }
+        return;
+    }
+
+    $duracion = max(0, strtotime($ahora) - strtotime((string) $abierta['inicio_at']));
+    $stmt = $db->prepare(
+        "UPDATE bomba_activaciones SET fin_at = :fin_at, duracion_segundos = :duracion, fin_motivo = 'externo' WHERE id = :id"
+    );
+    $stmt->execute(['fin_at' => $ahora, 'duracion' => $duracion, 'id' => $abierta['id']]);
+    $db->commit();
+
+    $descripcion = 'Se detecto que la bomba se apago con el interruptor fisico, no desde la plataforma.';
+    $bitacora->registrar(['accion' => 'apagado_externo', 'descripcion' => $descripcion]);
+    try {
+        $webPush->enviarATodos('Bomba apagada fuera de la plataforma', $descripcion);
+    } catch (Throwable $exception) {
+        // Un push fallido no debe afectar el resultado del cron.
+    }
 }
 
 function cerrar(PDO $db, array $abierta, string $finAt, string $finMotivo): void

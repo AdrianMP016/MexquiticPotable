@@ -13,6 +13,11 @@ return [
     // channel_paro   = canal que pulsa "Paro" (apaga la bomba)
     'channel_inicio' => 0,
     'channel_paro' => 1,
+    // Entrada fisica opcional que reporta si la bomba esta prendida de verdad
+    // (contacto auxiliar del interruptor/contactor cableado a una entrada
+    // libre del Shelly Pro 2). Dejar en null mientras no este cableado - el
+    // sistema sigue funcionando igual que ahora (sin leer estado real).
+    'channel_entrada_estado' => null,
     'device_id_sensor' => 'TU_ID_SHELLY_HT',
     'verify_ssl' => true,
 ];

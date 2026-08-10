@@ -125,7 +125,7 @@ class SystemBootstrap
                 inicio_at DATETIME NOT NULL,
                 fin_at DATETIME NULL,
                 duracion_segundos INT UNSIGNED NULL,
-                fin_motivo ENUM('manual','cronometro_expirado','regla_fin','error','forzado') NULL,
+                fin_motivo ENUM('manual','cronometro_expirado','regla_fin','error','forzado','externo') NULL,
                 cronometro_duracion_segundos INT UNSIGNED NULL,
                 created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY (id),
@@ -139,6 +139,14 @@ class SystemBootstrap
                     FOREIGN KEY (regla_automatica_id) REFERENCES bomba_regla_automatica (id)
                     ON DELETE SET NULL
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+        );
+
+        // La tabla ya existia en produccion antes de agregar 'externo' al
+        // catalogo de motivos de cierre - esto la actualiza sin perder datos
+        // (MODIFY COLUMN al mismo tipo es una operacion segura de repetir).
+        $db->exec(
+            "ALTER TABLE bomba_activaciones
+             MODIFY COLUMN fin_motivo ENUM('manual','cronometro_expirado','regla_fin','error','forzado','externo') NULL"
         );
     }
 
