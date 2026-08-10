@@ -56,7 +56,7 @@ class ShellyClient
                 'conectado' => true,
                 'en_linea' => true,
                 'simulado' => true,
-                'actualizado_at' => date('Y-m-d H:i:s'),
+                'consultado_en' => date('Y-m-d H:i:s'),
             ];
         }
 
@@ -70,7 +70,12 @@ class ShellyClient
         return [
             'conectado' => (bool) ($status['cloud']['connected'] ?? false),
             'en_linea' => (bool) ($respuesta['online'] ?? false),
-            'actualizado_at' => isset($status['_updated']) ? (string) $status['_updated'] : null,
+            // No se usa el "_updated" que manda Shelly: se comprobo en vivo que
+            // no se actualiza en tiempo real (se queda pegado en la ultima vez
+            // que algo cambio en su nube, no en "ahora"). En su lugar se usa la
+            // hora de nuestro propio servidor en el momento exacto de esta
+            // consulta, que si es confiable.
+            'consultado_en' => date('Y-m-d H:i:s'),
         ];
     }
 

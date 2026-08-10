@@ -328,8 +328,8 @@ $(function () {
         : '<i class="fas fa-times-circle" style="color:var(--agua-red);"></i> NO conectado a internet ahora mismo.';
 
       var html = '<p style="font-size:18px;">' + icono + '</p>';
-      if (data.actualizado_at) {
-        html += '<p style="color:var(--agua-muted);">Ultimo reporte del Shelly: ' + bombaFormatoFecha12h(data.actualizado_at) + '</p>';
+      if (data.consultado_en) {
+        html += '<p style="color:var(--agua-muted);">Consultado: ' + bombaFormatoFecha12h(data.consultado_en) + '</p>';
       }
       if (!data.conectado) {
         html += '<p style="color:var(--agua-muted);">Si mandaste un comando y esto sale "NO conectado", es probable que no le haya llegado. Revisa el cable de red / la energia del Shelly en el sitio.</p>';
