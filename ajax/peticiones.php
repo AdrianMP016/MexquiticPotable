@@ -12,6 +12,7 @@ require_once __DIR__ . '/../app/Clases/Pagos.php';
 require_once __DIR__ . '/../app/Clases/WhatsApp.php';
 require_once __DIR__ . '/../app/Clases/Verificador.php';
 require_once __DIR__ . '/../app/Clases/ImportadorPadronExcel.php';
+require_once __DIR__ . '/../app/Clases/ExportadorPadron.php';
 require_once __DIR__ . '/../app/Clases/UsuariosSistema.php';
 
 function mexquiticAllowedModules(string $accion): array
@@ -42,6 +43,7 @@ function mexquiticAllowedModules(string $accion): array
         'rutas.estadoVerificacion' => ['plataforma'],
         'rutas.faltantes' => ['plataforma'],
         'padron.importar' => ['plataforma'],
+        'padron.exportarExcel' => ['plataforma'],
         'verificador.prepararDatos' => ['verificador'],
         'verificador.guardarMedicion' => ['verificador'],
         'verificador.buscarUsuarios' => ['verificador'],
@@ -117,6 +119,7 @@ function mexquiticRegistrarBitacora(Auth $auth, PDO $db, string $accion, $data =
         'rutas.actualizar' => ['modulo' => 'plataforma', 'descripcion' => 'Actualización de ruta.'],
         'rutas.baja' => ['modulo' => 'plataforma', 'descripcion' => 'Baja de ruta.'],
         'padron.importar' => ['modulo' => 'plataforma', 'descripcion' => 'Importación de padrón desde Excel.'],
+        'padron.exportarExcel' => ['modulo' => 'plataforma', 'descripcion' => 'Exportación del padrón completo a Excel.'],
         'verificador.guardarMedicion' => ['modulo' => 'verificador', 'descripcion' => 'Captura o actualización de lectura.'],
         'recibos.generar' => ['modulo' => 'plataforma', 'descripcion' => 'Generación de recibo individual.'],
         'recibos.previsualizarPeriodo' => ['modulo' => 'plataforma', 'descripcion' => 'Preparación de vista previa masiva de recibos.'],
@@ -460,6 +463,13 @@ try {
             $data = $importador->importarPadronExcel((string) $excelPath);
             mexquiticRegistrarBitacora($auth, $db, $accion, $data);
             JsonResponse::success('Padron importado correctamente.', $data);
+            break;
+
+        case 'padron.exportarExcel':
+            $exportador = new ExportadorPadron($db);
+            $data = $exportador->exportarExcel();
+            mexquiticRegistrarBitacora($auth, $db, $accion, $data);
+            JsonResponse::success('Padron exportado correctamente.', $data);
             break;
 
         case 'verificador.prepararDatos':
