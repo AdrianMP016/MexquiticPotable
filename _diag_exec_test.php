@@ -2,30 +2,22 @@
 
 header('Content-Type: application/json; charset=utf-8');
 
+$python = '/opt/alt/python311/bin/python3';
 $resultado = [];
 
-$candidatos = [
-    'python3', 'python',
-    '/usr/bin/python3', '/usr/local/bin/python3',
-    '/opt/alt/python311/bin/python3', '/opt/alt/python310/bin/python3',
-    '/opt/alt/python39/bin/python3', '/opt/alt/python38/bin/python3',
-    '/opt/cpanel/ea-python311/root/usr/bin/python3',
-    '/opt/cpanel/ea-python39/root/usr/bin/python3',
-];
-
-foreach ($candidatos as $candidato) {
-    $out = [];
-    $code = 0;
-    @exec(escapeshellarg($candidato) . ' --version 2>&1', $out, $code);
-    $resultado[$candidato] = ['salida' => $out, 'codigo' => $code];
-}
-
 $out = [];
-@exec('find /opt -maxdepth 3 -iname "python3*" -type f 2>/dev/null', $out);
-$resultado['busqueda_opt'] = $out;
+$code = 0;
+@exec(escapeshellarg($python) . ' -c "import openpyxl; print(openpyxl.__version__)" 2>&1', $out, $code);
+$resultado['openpyxl'] = ['salida' => $out, 'codigo' => $code];
 
-$out = [];
-@exec('ls /opt/alt 2>&1', $out);
-$resultado['ls_opt_alt'] = $out;
+$out2 = [];
+$code2 = 0;
+@exec(escapeshellarg($python) . ' -m pip --version 2>&1', $out2, $code2);
+$resultado['pip'] = ['salida' => $out2, 'codigo' => $code2];
+
+$out3 = [];
+$code3 = 0;
+@exec(escapeshellarg($python) . ' -m pip list 2>&1', $out3, $code3);
+$resultado['pip_list'] = ['salida' => $out3, 'codigo' => $code3];
 
 echo json_encode($resultado, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
