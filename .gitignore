@@ -11,6 +11,7 @@ fachadas/
 mediciones/
 recibos/generados/
 uploads/
+padron/exportados/
 
 # Temporary local exports
 temp_alta_output.html
