@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(/c/wamp64/bin/php/php8.1.31/php.exe -r 'var_dump\\(class_exists\\(\"ZipArchive\"\\)\\);')"
+    ]
+  }
+}
