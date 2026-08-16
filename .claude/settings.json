@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(/c/wamp64/bin/php/php8.1.31/php.exe -r 'var_dump\\(class_exists\\(\"ZipArchive\"\\)\\);')"
+      "Bash(/c/wamp64/bin/php/php8.1.31/php.exe -r 'var_dump\\(class_exists\\(\"ZipArchive\"\\)\\);')",
+      "Bash(/c/wamp64/bin/php/php8.1.31/php.exe 'C:\\\\Users\\\\Acer_V\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--wamp64-www-mexquitic\\\\b1eaf0ea-1e48-4df4-b91a-2507262415b6\\\\scratchpad\\\\test_exportador.php')"
     ]
   }
 }
