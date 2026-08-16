@@ -26,27 +26,30 @@ class ExportadorPadron
             throw new RuntimeException('No hay usuarios registrados para exportar.');
         }
 
-        $porRuta = [];
+        // "Ruta" en esta base es un codigo individual por domicilio (ej.
+        // BELLAV-001, BELLAV-002...), no un agrupador compartido - separar
+        // por ahi daria casi una hoja por persona. Lo que si agrupa de forma
+        // real es la Comunidad (Centro 1, Pedregal, etc.), asi que las hojas
+        // se separan por ahi; el codigo de ruta individual sigue apareciendo
+        // como columna dentro de cada hoja.
+        $porComunidad = [];
         foreach ($filas as $fila) {
-            $ruta = trim((string) ($fila['ruta_nombre'] ?? ''));
-            if ($ruta === '') {
-                $ruta = trim((string) ($fila['ruta'] ?? ''));
-            }
-            if ($ruta === '') {
-                $ruta = 'Sin ruta asignada';
+            $comunidad = trim((string) ($fila['comunidad'] ?? ''));
+            if ($comunidad === '') {
+                $comunidad = 'Sin comunidad asignada';
             }
 
-            $porRuta[$ruta][] = $fila;
+            $porComunidad[$comunidad][] = $fila;
         }
-        ksort($porRuta, SORT_NATURAL | SORT_FLAG_CASE);
+        ksort($porComunidad, SORT_NATURAL | SORT_FLAG_CASE);
 
         $columnas = [
-            'N. Padron', 'Nombre', 'Telefono', 'WhatsApp', 'Comunidad',
+            'N. Padron', 'Nombre', 'Telefono', 'WhatsApp', 'Ruta',
             'Calle y numero', 'Colonia', 'N. Medidor', 'Estado del medidor', 'Activo',
         ];
 
         $writer = new XlsxWriter();
-        foreach ($porRuta as $nombreRuta => $usuarios) {
+        foreach ($porComunidad as $nombreComunidad => $usuarios) {
             $filasHoja = [];
             foreach ($usuarios as $u) {
                 $calleNumero = trim(
@@ -58,7 +61,7 @@ class ExportadorPadron
                     $u['nombre'] ?? '',
                     $u['telefono'] ?? '',
                     $u['whatsapp'] ?? '',
-                    $u['comunidad'] ?? '',
+                    $u['ruta_nombre'] ?? ($u['ruta'] ?? ''),
                     $calleNumero,
                     $u['colonia'] ?? '',
                     $u['medidor'] ?? '',
@@ -67,7 +70,7 @@ class ExportadorPadron
                 ];
             }
 
-            $writer->agregarHoja((string) $nombreRuta, $columnas, $filasHoja);
+            $writer->agregarHoja((string) $nombreComunidad, $columnas, $filasHoja);
         }
 
         if (!is_dir($this->outputDir) && !mkdir($this->outputDir, 0755, true) && !is_dir($this->outputDir)) {
@@ -82,7 +85,7 @@ class ExportadorPadron
         return [
             'url' => 'padron/exportados/' . $nombreArchivo,
             'total_usuarios' => count($filas),
-            'total_rutas' => count($porRuta),
+            'total_comunidades' => count($porComunidad),
         ];
     }
 
