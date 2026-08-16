@@ -4508,6 +4508,30 @@ $(function () {
     cargarUsuarios(1);
   });
 
+  $("#btnExportarPadron").on("click", function () {
+    var $btn = $(this);
+    var textoOriginal = $btn.html();
+    $btn.prop("disabled", true).html('<i class="fas fa-spinner fa-spin mr-1"></i>Generando...');
+
+    $.ajax({
+      url: ajaxUrl,
+      method: "POST",
+      dataType: "json",
+      data: { accion: "padron.exportarExcel" },
+      success: function (response) {
+        $btn.prop("disabled", false).html(textoOriginal);
+        var data = response.data || {};
+        if (data.url) {
+          window.location.href = data.url;
+        }
+      },
+      error: function (xhr) {
+        $btn.prop("disabled", false).html(textoOriginal);
+        alert(extractAjaxMessage(xhr, "No se pudo generar el Excel del padrón."));
+      }
+    });
+  });
+
   $("#usuariosPorPagina").on("change", function () {
     usuariosPorPaginaActual = Number($(this).val() || 25);
     usuariosPaginaActual = 1;
