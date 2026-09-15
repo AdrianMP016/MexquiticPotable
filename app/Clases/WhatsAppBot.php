@@ -9,9 +9,10 @@ class WhatsAppBot
     private WhatsApp $whatsApp;
     private string $rootDir;
     private string $flyerPath;
-    // TEMPORAL: aviso de cobro en efectivo, 16 y 17 de septiembre 2026 (la
-    // imagen dice "17" pero el texto que la acompana aclara que tambien
-    // aplica el 16). Quitar esta imagen y el envio en enviarFlyerPagos() el 18.
+    // TEMPORAL: aviso de pago de septiembre 2026 - 16 de septiembre unico dia
+    // de cobro en efectivo, 17 de septiembre ultimo dia de pago pero solo por
+    // transferencia/deposito. Quitar esta imagen y el envio en
+    // enviarFlyerPagos() el 18 de septiembre.
     private string $flyerEfectivoPath;
 
     public function __construct(PDO $db, Recibos $recibos, WhatsApp $whatsApp)
