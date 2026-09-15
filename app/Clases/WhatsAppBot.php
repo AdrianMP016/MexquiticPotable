@@ -156,7 +156,7 @@ class WhatsAppBot
         // TEMPORAL: ver nota junto a la propiedad flyerEfectivoPath.
         if (is_file($this->flyerEfectivoPath)) {
             try {
-                $this->whatsApp->enviarImagen($telefono, $this->flyerEfectivoPath, 'Cobro en efectivo los dias 16 y 17 de septiembre, de 8:00 am a 4:00 pm, en la oficina del Sistema de Agua.');
+                $this->whatsApp->enviarImagen($telefono, $this->flyerEfectivoPath, 'Cobro en efectivo unicamente el 16 de septiembre, de 8:00 am a 4:00 pm, en la oficina del Sistema de Agua. El 17 de septiembre es el ultimo dia de pago, pero solo por transferencia o deposito.');
             } catch (Throwable $exception) {
                 // No interrumpe el flujo si falla el envio del volante.
             }
