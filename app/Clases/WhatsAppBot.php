@@ -9,8 +9,9 @@ class WhatsAppBot
     private WhatsApp $whatsApp;
     private string $rootDir;
     private string $flyerPath;
-    // TEMPORAL: aviso de un solo dia (cobro en efectivo, 16 de septiembre 2026).
-    // Quitar esta imagen y el envio en enviarFlyerPagos() despues de esa fecha.
+    // TEMPORAL: aviso de cobro en efectivo, 16 y 17 de septiembre 2026 (la
+    // imagen dice "17" pero el texto que la acompana aclara que tambien
+    // aplica el 16). Quitar esta imagen y el envio en enviarFlyerPagos() el 18.
     private string $flyerEfectivoPath;
 
     public function __construct(PDO $db, Recibos $recibos, WhatsApp $whatsApp)
@@ -155,7 +156,7 @@ class WhatsAppBot
         // TEMPORAL: ver nota junto a la propiedad flyerEfectivoPath.
         if (is_file($this->flyerEfectivoPath)) {
             try {
-                $this->whatsApp->enviarImagen($telefono, $this->flyerEfectivoPath, 'Unico dia de cobro en efectivo: 16 de septiembre, de 8:00 am a 4:00 pm.');
+                $this->whatsApp->enviarImagen($telefono, $this->flyerEfectivoPath, 'Cobro en efectivo los dias 16 y 17 de septiembre, de 8:00 am a 4:00 pm, en la oficina del Sistema de Agua.');
             } catch (Throwable $exception) {
                 // No interrumpe el flujo si falla el envio del volante.
             }
