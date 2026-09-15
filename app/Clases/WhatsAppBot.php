@@ -9,6 +9,9 @@ class WhatsAppBot
     private WhatsApp $whatsApp;
     private string $rootDir;
     private string $flyerPath;
+    // TEMPORAL: aviso de un solo dia (cobro en efectivo, 16 de septiembre 2026).
+    // Quitar esta imagen y el envio en enviarFlyerPagos() despues de esa fecha.
+    private string $flyerEfectivoPath;
 
     public function __construct(PDO $db, Recibos $recibos, WhatsApp $whatsApp)
     {
@@ -17,6 +20,7 @@ class WhatsAppBot
         $this->whatsApp = $whatsApp;
         $this->rootDir = dirname(__DIR__, 2);
         $this->flyerPath = $this->rootDir . '/assets/img/flyer-transferencia.png';
+        $this->flyerEfectivoPath = $this->rootDir . '/assets/img/flyer-efectivo.png';
     }
 
     public function procesarMensajeEntrante(string $telefonoFrom, string $mensajeCrudo): void
@@ -140,14 +144,21 @@ class WhatsAppBot
 
     private function enviarFlyerPagos(string $telefono): void
     {
-        if (!is_file($this->flyerPath)) {
-            return;
+        if (is_file($this->flyerPath)) {
+            try {
+                $this->whatsApp->enviarImagen($telefono, $this->flyerPath, 'Datos para pago por transferencia bancaria.');
+            } catch (Throwable $exception) {
+                // No interrumpe el flujo si falla el envio del volante.
+            }
         }
 
-        try {
-            $this->whatsApp->enviarImagen($telefono, $this->flyerPath, 'Datos para pago por transferencia bancaria.');
-        } catch (Throwable $exception) {
-            // No interrumpe el flujo si falla el envio del volante.
+        // TEMPORAL: ver nota junto a la propiedad flyerEfectivoPath.
+        if (is_file($this->flyerEfectivoPath)) {
+            try {
+                $this->whatsApp->enviarImagen($telefono, $this->flyerEfectivoPath, 'Unico dia de cobro en efectivo: 16 de septiembre, de 8:00 am a 4:00 pm.');
+            } catch (Throwable $exception) {
+                // No interrumpe el flujo si falla el envio del volante.
+            }
         }
     }
 
