@@ -21,8 +21,8 @@ class WhatsAppBot
         $this->recibos = $recibos;
         $this->whatsApp = $whatsApp;
         $this->rootDir = dirname(__DIR__, 2);
-        $this->flyerPath = $this->rootDir . '/assets/img/flyer-transferencia.png';
-        $this->flyerEfectivoPath = $this->rootDir . '/assets/img/flyer-efectivo.png';
+        $this->flyerPath = $this->rootDir . '/assets/img/flyer-transferencia-2026-09.png';
+        $this->flyerEfectivoPath = $this->rootDir . '/assets/img/flyer-efectivo-2026-09.png';
     }
 
     public function procesarMensajeEntrante(string $telefonoFrom, string $mensajeCrudo): void
