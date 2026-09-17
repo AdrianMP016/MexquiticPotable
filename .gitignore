@@ -12,6 +12,7 @@ mediciones/
 recibos/generados/
 uploads/
 padron/exportados/
+bomba/exportados/
 
 # Temporary local exports
 temp_alta_output.html

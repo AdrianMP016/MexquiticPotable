@@ -22,7 +22,7 @@ class Activaciones
         $this->webPush = new WebPushClient($db);
     }
 
-    private static function formatoHorasMinutos(int $segundos): string
+    public static function formatoHorasMinutos(int $segundos): string
     {
         $horas = intdiv($segundos, 3600);
         $minutos = intdiv($segundos % 3600, 60);
@@ -669,6 +669,35 @@ class Activaciones
         $stmt->execute(['fecha' => $fecha]);
 
         return $stmt->fetchAll();
+    }
+
+    /**
+     * Historial completo de encendidos y apagados entre dos fechas (inclusive),
+     * para exportar. A diferencia de detalleDia(), cubre un rango de dias.
+     */
+    public function exportarRango(string $desde, string $hasta): array
+    {
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $desde) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $hasta)) {
+            throw new InvalidArgumentException(json_encode(['fecha' => 'Selecciona un rango de fechas valido.'], JSON_UNESCAPED_UNICODE));
+        }
+
+        if ($desde > $hasta) {
+            [$desde, $hasta] = [$hasta, $desde];
+        }
+
+        $stmt = $this->db->prepare(
+            "SELECT origen, iniciado_por_nombre, inicio_at, fin_at, duracion_segundos, fin_motivo
+             FROM bomba_activaciones
+             WHERE inicio_at >= :desde AND inicio_at < DATE_ADD(:hasta, INTERVAL 1 DAY)
+             ORDER BY inicio_at ASC"
+        );
+        $stmt->execute(['desde' => $desde . ' 00:00:00', 'hasta' => $hasta]);
+
+        return [
+            'desde' => $desde,
+            'hasta' => $hasta,
+            'registros' => $stmt->fetchAll(),
+        ];
     }
 
     private function cerrarActivacion(array $abierta, string $finAt, string $finMotivo): void

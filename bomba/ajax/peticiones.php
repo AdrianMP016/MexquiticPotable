@@ -6,6 +6,15 @@ require_once __DIR__ . '/../app/Clases/ReglaAutomatica.php';
 require_once __DIR__ . '/../app/Clases/ReglaTemporal.php';
 require_once __DIR__ . '/../app/Clases/UsuariosBomba.php';
 require_once __DIR__ . '/../app/Clases/WebPushClient.php';
+require_once __DIR__ . '/../app/Clases/ExportadorActividadBomba.php';
+
+/**
+ * Usuarios con acceso a la exportacion del historial de encendidos y
+ * apagados. Es una restriccion exclusiva por nombre de usuario, no por rol -
+ * si en el futuro se crea otra cuenta con rol admin para otra persona del
+ * comite, esa cuenta no debe entrar aqui.
+ */
+const BOMBA_USUARIOS_EXPORTACION = ['admin'];
 
 function bombaAccionesPermitidas(string $accion): array
 {
@@ -28,6 +37,7 @@ function bombaAccionesPermitidas(string $accion): array
         'activaciones.reanudarOperacion' => ['admin', 'operador'],
         'activaciones.activarMantenimiento' => ['admin', 'operador'],
         'activaciones.desactivarMantenimiento' => ['admin', 'operador'],
+        'activaciones.exportar' => ['admin'],
 
         'regla.obtenerActiva' => ['admin', 'operador'],
         'regla.guardar' => ['admin'],
@@ -195,6 +205,22 @@ try {
             $activaciones = new Activaciones($db, new ShellyClient($db));
             $data = $activaciones->desactivarMantenimiento($currentUser);
             JsonResponse::success('Bomba reactivada.', $data);
+            break;
+
+        case 'activaciones.exportar':
+            if (!in_array((string) ($currentUser['usuario'] ?? ''), BOMBA_USUARIOS_EXPORTACION, true)) {
+                JsonResponse::error('No tienes acceso a esta exportacion.', [], 403);
+            }
+
+            $activaciones = new Activaciones($db, new ShellyClient($db));
+            $exportador = new ExportadorActividadBomba($activaciones);
+            $formato = (string) Request::input('formato', 'excel') === 'txt' ? 'txt' : 'excel';
+            $data = $exportador->exportar(
+                (string) Request::input('desde', ''),
+                (string) Request::input('hasta', ''),
+                $formato
+            );
+            JsonResponse::success('Exportacion generada correctamente.', $data);
             break;
 
         case 'regla.obtenerActiva':

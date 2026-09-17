@@ -4,6 +4,7 @@
  */
 $cssVersion = @filemtime(__DIR__ . '/../../assets/css/bomba.css') ?: time();
 $esAdminHeader = (string) ($currentUser['rol'] ?? '') === 'admin';
+$esUsuarioSistemaHeader = (string) ($currentUser['usuario'] ?? '') === 'admin';
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -51,6 +52,9 @@ $esAdminHeader = (string) ($currentUser['rol'] ?? '') === 'admin';
     <a href="usuarios.php" class="<?= ($activeView ?? '') === 'usuarios' ? 'activo' : '' ?>"><i class="fas fa-users-cog"></i> Usuarios</a>
     <?php endif; ?>
     <a href="bitacora.php" class="<?= ($activeView ?? '') === 'bitacora' ? 'activo' : '' ?>"><i class="fas fa-history"></i> Bitacora</a>
+    <?php if ($esUsuarioSistemaHeader): ?>
+    <a href="exportar.php" class="<?= ($activeView ?? '') === 'exportar' ? 'activo' : '' ?>"><i class="fas fa-file-export"></i> Exportar</a>
+    <?php endif; ?>
   </div>
 
   <button type="button" class="bomba-drawer-push oculto" id="btnPushToggle">
